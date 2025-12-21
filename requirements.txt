@@ -1,0 +1,10 @@
+# Fedora Package Manager Requirements
+# 
+# This package manager uses only Python standard library.
+# No external dependencies are required.
+#
+# System requirements:
+# - dnf (Fedora package manager)
+# - rpm (RPM package manager)
+# - sudo access for package operations
+
