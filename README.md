@@ -1,6 +1,6 @@
 # Fedora Package Manager
 
-A modern, user-friendly package manager for Fedora Linux that provides both CLI and GUI interfaces for managing packages.
+A modern, user-friendly package manager for Fedora Linux that provides a clean CLI interface for managing packages.
 
 ## Features
 
@@ -17,36 +17,20 @@ A modern, user-friendly package manager for Fedora Linux that provides both CLI 
 
 ## Installation
 
-### Option 1: Install from RPM (Recommended)
-
-Build and install the RPM package:
-
-```bash
-./build-rpm.sh
-sudo dnf install rpmbuild/RPMS/noarch/fedora-pm-*.rpm
-```
-
-This installs both the CLI (`fedora-pm`) and GUI (`fedora-pm-gui`) versions.
-
-### Option 2: Manual Installation
-
 1. Make the script executable:
 ```bash
 chmod +x fedora-pm.py
-chmod +x fedora-pm-gui.py
 ```
 
-2. Optionally, create symlinks for easier access:
+2. Optionally, create a symlink for easier access:
 ```bash
 sudo ln -s $(pwd)/fedora-pm.py /usr/local/bin/fedora-pm
-sudo ln -s $(pwd)/fedora-pm-gui.py /usr/local/bin/fedora-pm-gui
 ```
 
-Or add them to your PATH by copying:
+Or add it to your PATH by copying it:
 ```bash
 sudo cp fedora-pm.py /usr/local/bin/fedora-pm
-sudo cp fedora-pm-gui.py /usr/local/bin/fedora-pm-gui
-sudo chmod +x /usr/local/bin/fedora-pm /usr/local/bin/fedora-pm-gui
+sudo chmod +x /usr/local/bin/fedora-pm
 ```
 
 ## Requirements
@@ -54,28 +38,8 @@ sudo chmod +x /usr/local/bin/fedora-pm /usr/local/bin/fedora-pm-gui
 - Python 3.6+
 - Fedora Linux with `dnf` and `rpm` installed
 - sudo access for package operations
-- For GUI: `python3-tkinter` (usually included with Python, or install with `sudo dnf install python3-tkinter`)
 
 ## Usage
-
-### GUI Version
-
-Launch the graphical interface:
-
-```bash
-fedora-pm-gui
-```
-
-Or find "Fedora Package Manager" in your applications menu.
-
-The GUI provides a tabbed interface for:
-- Package management (install, remove, update, list, info)
-- Package search with results table
-- Kernel management (standard and CachyOS kernels)
-- Driver management (GPU detection, Nvidia drivers)
-- System operations (clean cache, view history)
-
-### CLI Version
 
 ### Install packages
 ```bash
