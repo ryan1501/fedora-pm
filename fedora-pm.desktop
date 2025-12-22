@@ -1,0 +1,15 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Fedora Package Manager
+Name[en_US]=Fedora Package Manager
+Comment=Modern package manager for Fedora Linux
+Comment[en_US]=Modern package manager for Fedora Linux
+Exec=fedora-pm-gui
+Icon=system-software-install
+Terminal=false
+Categories=System;PackageManager;
+Keywords=package;manager;dnf;rpm;fedora;
+StartupNotify=true
+MimeType=
+
