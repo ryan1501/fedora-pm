@@ -28,7 +28,7 @@ from PySide6.QtWidgets import (
     QComboBox,
     QGroupBox,
 )
-from PySide6.QtGui import QFont, QPalette, QColor
+from PySide6.QtGui import QFont, QPalette, QColor, QTextCursor
 
 
 class FedoraPmGui(QWidget):
@@ -334,7 +334,7 @@ class FedoraPmGui(QWidget):
 
     def append_output(self, text: str):
         self.output.append(text)
-        self.output.moveCursor(self.output.textCursor().End)
+        self.output.moveCursor(QTextCursor.End)
 
     def _build_cli_command(self) -> list[str]:
         """Build the fedora-pm CLI command based on UI state."""
@@ -413,6 +413,7 @@ class FedoraPmGui(QWidget):
                 return
         
         # Check for RPM Fusion repositories
+        self.append_output("=" * 60)
         self.append_output("Checking RPM Fusion repositories...")
         rpmfusion_check = subprocess.run(
             ["dnf", "repolist", "enabled"],
@@ -424,6 +425,11 @@ class FedoraPmGui(QWidget):
         if rpmfusion_check.returncode == 0:
             output = rpmfusion_check.stdout.lower()
             rpmfusion_enabled = "rpmfusion" in output
+        
+        if rpmfusion_enabled:
+            self.append_output("✓ RPM Fusion repositories are enabled")
+        else:
+            self.append_output("✗ RPM Fusion repositories are not enabled")
         
         if not rpmfusion_enabled:
             reply = QMessageBox.warning(
@@ -438,6 +444,7 @@ class FedoraPmGui(QWidget):
             )
             
             if reply == QMessageBox.Yes:
+                self.append_output("")
                 self.append_output("Enabling RPM Fusion repositories...")
                 self._enable_rpmfusion()
             else:
@@ -467,6 +474,8 @@ class FedoraPmGui(QWidget):
             )
             
             if reply == QMessageBox.Yes:
+                self.append_output("")
+                self.append_output("=" * 60)
                 self.append_output("Building gaming meta package...")
                 build_script = script_dir / "build-gaming-meta.sh"
                 if build_script.exists():
@@ -503,10 +512,14 @@ class FedoraPmGui(QWidget):
         if rpm_files:
             # Install from local RPM
             rpm_path = rpm_files[0]
+            self.append_output("")
+            self.append_output("=" * 60)
             self.append_output(f"Installing from local RPM: {rpm_path.name}")
             self._install_rpm(str(rpm_path))
         else:
             # Try to install from repository (if available) or build from spec
+            self.append_output("")
+            self.append_output("=" * 60)
             self.append_output("Attempting to install gaming meta package...")
             
             # First, try to install directly (if available in repo)
@@ -537,17 +550,49 @@ class FedoraPmGui(QWidget):
 
     def _enable_rpmfusion(self):
         """Enable RPM Fusion repositories."""
-        fedora_release = subprocess.run(
+        # Get Fedora release version
+        release_result = subprocess.run(
             ["rpm", "-E", "%fedora"],
             capture_output=True,
             text=True,
-        ).stdout.strip()
+        )
+        
+        if release_result.returncode != 0:
+            error_msg = "Failed to determine Fedora release version."
+            if release_result.stderr:
+                error_msg += f"\nError: {release_result.stderr.strip()}"
+            self.append_output(f"✗ {error_msg}")
+            QMessageBox.critical(
+                self,
+                "Error",
+                f"{error_msg}\n\n"
+                "Cannot enable RPM Fusion repositories without knowing the Fedora version.\n"
+                "Please enable them manually or check your system configuration.",
+            )
+            return
+        
+        fedora_release = release_result.stdout.strip()
+        
+        if not fedora_release:
+            error_msg = "Fedora release version is empty. Cannot construct repository URLs."
+            self.append_output(f"✗ {error_msg}")
+            QMessageBox.critical(
+                self,
+                "Error",
+                f"{error_msg}\n\n"
+                "Please enable RPM Fusion repositories manually:\n"
+                "sudo dnf install https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm\n"
+                "sudo dnf install https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm",
+            )
+            return
         
         free_url = f"https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-{fedora_release}.noarch.rpm"
         nonfree_url = f"https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-{fedora_release}.noarch.rpm"
         
         # Install free repository
-        self.append_output(f"Installing RPM Fusion Free: {free_url}")
+        self.append_output("")
+        self.append_output(f"Installing RPM Fusion Free repository...")
+        self.append_output(f"URL: {free_url}")
         result = subprocess.run(
             ["sudo", "dnf", "install", "-y", free_url],
             text=True,
@@ -558,8 +603,15 @@ class FedoraPmGui(QWidget):
         if result.stderr:
             self.append_output(result.stderr)
         
+        if result.returncode == 0:
+            self.append_output("✓ RPM Fusion Free repository enabled")
+        else:
+            self.append_output("✗ Failed to enable RPM Fusion Free repository")
+        
         # Install nonfree repository
-        self.append_output(f"Installing RPM Fusion Nonfree: {nonfree_url}")
+        self.append_output("")
+        self.append_output(f"Installing RPM Fusion Nonfree repository...")
+        self.append_output(f"URL: {nonfree_url}")
         result = subprocess.run(
             ["sudo", "dnf", "install", "-y", nonfree_url],
             text=True,
@@ -570,12 +622,20 @@ class FedoraPmGui(QWidget):
         if result.stderr:
             self.append_output(result.stderr)
         
-        self.append_output("RPM Fusion repositories enabled!")
+        if result.returncode == 0:
+            self.append_output("✓ RPM Fusion Nonfree repository enabled")
+        else:
+            self.append_output("✗ Failed to enable RPM Fusion Nonfree repository")
+        
+        self.append_output("")
+        self.append_output("=" * 60)
+        self.append_output("RPM Fusion setup complete!")
 
     def _install_rpm(self, rpm_path: str):
         """Install an RPM file using dnf."""
         install_cmd = ["sudo", "dnf", "install", "-y", rpm_path]
         self.append_output(f"$ {' '.join(install_cmd)}")
+        self.append_output("")
         
         result = subprocess.run(
             install_cmd,
@@ -588,20 +648,29 @@ class FedoraPmGui(QWidget):
         if result.stderr:
             self.append_output(result.stderr)
         
+        self.append_output("")
+        self.append_output("=" * 60)
+        
         if result.returncode == 0:
+            self.append_output("✓ Installation completed successfully!")
+            self.append_output("")
+            self.append_output("Fedora Gaming Meta is now installed.")
+            self.append_output("All gaming tools (Steam, Lutris, Wine, GameMode, MangoHud, DXVK, etc.) are available.")
             QMessageBox.information(
                 self,
                 "Installation Complete",
                 "Fedora Gaming Meta package installed successfully!\n\n"
-                "All gaming tools (Steam, Lutris, Wine, etc.) are now available.",
+                "All gaming tools (Steam, Lutris, Wine, GameMode, MangoHud, DXVK, etc.) are now available.\n\n"
+                "You can now launch Steam, Lutris, or use Wine to play games!",
             )
         else:
+            self.append_output(f"✗ Installation failed (exit code: {result.returncode})")
             QMessageBox.critical(
                 self,
                 "Installation Failed",
                 f"Failed to install gaming meta package.\n\n"
                 f"Exit code: {result.returncode}\n\n"
-                f"Check the output for details.",
+                f"Check the output above for details.",
             )
 
 
