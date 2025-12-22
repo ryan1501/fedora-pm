@@ -77,6 +77,32 @@ class FedoraPmGui(QWidget):
 
         main_layout.addWidget(cmd_group)
 
+        # Quick Install section for gaming meta package
+        quick_install_group = QGroupBox("Quick Install")
+        quick_install_group.setObjectName("quickInstallGroup")
+        quick_install_layout = QVBoxLayout(quick_install_group)
+        quick_install_layout.setSpacing(10)
+        
+        gaming_desc = QLabel(
+            "Install Fedora Gaming Meta - A comprehensive gaming setup including "
+            "Steam, Lutris, Wine, GameMode, MangoHud, DXVK, and more."
+        )
+        gaming_desc.setWordWrap(True)
+        gaming_desc.setObjectName("gamingDesc")
+        quick_install_layout.addWidget(gaming_desc)
+        
+        gaming_button_layout = QHBoxLayout()
+        self.gaming_install_button = QPushButton("🎮 Install Gaming Meta Package")
+        self.gaming_install_button.setObjectName("gamingButton")
+        self.gaming_install_button.clicked.connect(self.install_gaming_meta)
+        self.gaming_install_button.setMinimumHeight(45)
+        gaming_button_layout.addStretch()
+        gaming_button_layout.addWidget(self.gaming_install_button)
+        gaming_button_layout.addStretch()
+        quick_install_layout.addLayout(gaming_button_layout)
+        
+        main_layout.addWidget(quick_install_group)
+
         # Package / argument input group
         input_group = QGroupBox("Arguments")
         input_group.setObjectName("inputGroup")
@@ -211,6 +237,32 @@ class FedoraPmGui(QWidget):
             background-color: #1e8449;
         }
         
+        /* Gaming install button */
+        QPushButton#gamingButton {
+            background-color: #9b59b6;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 30px;
+            font-weight: bold;
+            font-size: 12pt;
+            min-width: 250px;
+        }
+        
+        QPushButton#gamingButton:hover {
+            background-color: #8e44ad;
+        }
+        
+        QPushButton#gamingButton:pressed {
+            background-color: #7d3c98;
+        }
+        
+        /* Gaming description */
+        QLabel#gamingDesc {
+            color: #34495e;
+            padding: 5px;
+        }
+        
         /* Checkbox */
         QCheckBox#yesCheckbox {
             color: #2c3e50;
@@ -338,6 +390,219 @@ class FedoraPmGui(QWidget):
 
         if result.returncode != 0:
             self.append_output(f"[exit status: {result.returncode}]")
+
+    def install_gaming_meta(self):
+        """Install the Fedora Gaming Meta package."""
+        # Check if package is already installed
+        check_result = subprocess.run(
+            ["rpm", "-q", "fedora-gaming-meta"],
+            capture_output=True,
+            text=True,
+        )
+        
+        if check_result.returncode == 0:
+            reply = QMessageBox.question(
+                self,
+                "Already Installed",
+                "Fedora Gaming Meta appears to be already installed.\n\n"
+                "Do you want to reinstall it?",
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.No,
+            )
+            if reply == QMessageBox.No:
+                return
+        
+        # Check for RPM Fusion repositories
+        self.append_output("Checking RPM Fusion repositories...")
+        rpmfusion_check = subprocess.run(
+            ["dnf", "repolist", "enabled"],
+            capture_output=True,
+            text=True,
+        )
+        
+        rpmfusion_enabled = False
+        if rpmfusion_check.returncode == 0:
+            output = rpmfusion_check.stdout.lower()
+            rpmfusion_enabled = "rpmfusion" in output
+        
+        if not rpmfusion_enabled:
+            reply = QMessageBox.warning(
+                self,
+                "RPM Fusion Required",
+                "RPM Fusion repositories are not enabled.\n\n"
+                "The gaming meta package requires RPM Fusion for Steam and other packages.\n\n"
+                "Would you like to enable RPM Fusion repositories now?\n"
+                "(This will require sudo access)",
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.Yes,
+            )
+            
+            if reply == QMessageBox.Yes:
+                self.append_output("Enabling RPM Fusion repositories...")
+                self._enable_rpmfusion()
+            else:
+                QMessageBox.information(
+                    self,
+                    "Installation Cancelled",
+                    "Please enable RPM Fusion repositories first:\n\n"
+                    "sudo dnf install https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm\n"
+                    "sudo dnf install https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm",
+                )
+                return
+        
+        # Check if gaming meta package RPM exists locally
+        script_dir = Path(__file__).parent
+        rpm_files = list(script_dir.glob("rpmbuild/RPMS/noarch/fedora-gaming-meta-*.rpm"))
+        
+        if not rpm_files:
+            # Try to build it first
+            reply = QMessageBox.question(
+                self,
+                "Build Required",
+                "Gaming meta package RPM not found.\n\n"
+                "Would you like to build it now?\n"
+                "(This requires build tools and may take a moment)",
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.Yes,
+            )
+            
+            if reply == QMessageBox.Yes:
+                self.append_output("Building gaming meta package...")
+                build_script = script_dir / "build-gaming-meta.sh"
+                if build_script.exists():
+                    build_result = subprocess.run(
+                        ["bash", str(build_script)],
+                        capture_output=True,
+                        text=True,
+                    )
+                    if build_result.stdout:
+                        self.append_output(build_result.stdout)
+                    if build_result.stderr:
+                        self.append_output(build_result.stderr)
+                    
+                    if build_result.returncode != 0:
+                        QMessageBox.critical(
+                            self,
+                            "Build Failed",
+                            "Failed to build gaming meta package.\n\n"
+                            "Please check the output for errors.",
+                        )
+                        return
+                    
+                    # Refresh RPM file list
+                    rpm_files = list(script_dir.glob("rpmbuild/RPMS/noarch/fedora-gaming-meta-*.rpm"))
+                else:
+                    QMessageBox.warning(
+                        self,
+                        "Build Script Not Found",
+                        "Build script not found. Please build the package manually:\n\n"
+                        "./build-gaming-meta.sh",
+                    )
+                    return
+        
+        if rpm_files:
+            # Install from local RPM
+            rpm_path = rpm_files[0]
+            self.append_output(f"Installing from local RPM: {rpm_path.name}")
+            self._install_rpm(str(rpm_path))
+        else:
+            # Try to install from repository (if available) or build from spec
+            self.append_output("Attempting to install gaming meta package...")
+            
+            # First, try to install directly (if available in repo)
+            install_cmd = ["sudo", "dnf", "install", "-y", "fedora-gaming-meta"]
+            self.append_output(f"$ {' '.join(install_cmd)}")
+            
+            result = subprocess.run(
+                install_cmd,
+                text=True,
+                capture_output=True,
+            )
+            
+            if result.stdout:
+                self.append_output(result.stdout)
+            if result.stderr:
+                self.append_output(result.stderr)
+            
+            if result.returncode != 0:
+                # If not in repo, try building and installing
+                QMessageBox.information(
+                    self,
+                    "Package Not in Repository",
+                    "The gaming meta package is not available in repositories.\n\n"
+                    "Please build it first using:\n"
+                    "./build-gaming-meta.sh\n\n"
+                    "Then install the built RPM.",
+                )
+
+    def _enable_rpmfusion(self):
+        """Enable RPM Fusion repositories."""
+        fedora_release = subprocess.run(
+            ["rpm", "-E", "%fedora"],
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        
+        free_url = f"https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-{fedora_release}.noarch.rpm"
+        nonfree_url = f"https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-{fedora_release}.noarch.rpm"
+        
+        # Install free repository
+        self.append_output(f"Installing RPM Fusion Free: {free_url}")
+        result = subprocess.run(
+            ["sudo", "dnf", "install", "-y", free_url],
+            text=True,
+            capture_output=True,
+        )
+        if result.stdout:
+            self.append_output(result.stdout)
+        if result.stderr:
+            self.append_output(result.stderr)
+        
+        # Install nonfree repository
+        self.append_output(f"Installing RPM Fusion Nonfree: {nonfree_url}")
+        result = subprocess.run(
+            ["sudo", "dnf", "install", "-y", nonfree_url],
+            text=True,
+            capture_output=True,
+        )
+        if result.stdout:
+            self.append_output(result.stdout)
+        if result.stderr:
+            self.append_output(result.stderr)
+        
+        self.append_output("RPM Fusion repositories enabled!")
+
+    def _install_rpm(self, rpm_path: str):
+        """Install an RPM file using dnf."""
+        install_cmd = ["sudo", "dnf", "install", "-y", rpm_path]
+        self.append_output(f"$ {' '.join(install_cmd)}")
+        
+        result = subprocess.run(
+            install_cmd,
+            text=True,
+            capture_output=True,
+        )
+        
+        if result.stdout:
+            self.append_output(result.stdout)
+        if result.stderr:
+            self.append_output(result.stderr)
+        
+        if result.returncode == 0:
+            QMessageBox.information(
+                self,
+                "Installation Complete",
+                "Fedora Gaming Meta package installed successfully!\n\n"
+                "All gaming tools (Steam, Lutris, Wine, etc.) are now available.",
+            )
+        else:
+            QMessageBox.critical(
+                self,
+                "Installation Failed",
+                f"Failed to install gaming meta package.\n\n"
+                f"Exit code: {result.returncode}\n\n"
+                f"Check the output for details.",
+            )
 
 
 def main():
