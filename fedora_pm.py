@@ -639,7 +639,11 @@ class FedoraPackageManager:
         
         # Check for AMD GPU
         if result and ('AMD' in result.upper() or 'RADEON' in result.upper()):
-            amd_lines = [line for line in result.split('\n') if 'AMD' in result.upper() or 'RADEON' in result.upper()]
+            # Filter per line rather than the whole output to avoid false matches
+            amd_lines = [
+                line for line in result.split('\n')
+                if 'AMD' in line.upper() or 'RADEON' in line.upper()
+            ]
             if amd_lines:
                 gpus['amd'] = amd_lines[0].strip()
         

@@ -11,11 +11,12 @@ Group: Applications/System
 Source0: %{name}-%{version}.tar.gz
 BuildArch: noarch
 Requires: python3 >= 3.6
-Requires: python3-tkinter
+Requires: python3-pyside6
 Requires: dnf
 Requires: rpm
 Requires: sudo
 BuildRequires: python3-devel
+BuildRequires: python3-pyside6
 
 %description
 Fedora Package Manager is a modern, user-friendly package manager for Fedora Linux
