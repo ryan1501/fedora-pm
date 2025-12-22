@@ -22,8 +22,11 @@ if ! command -v rpmbuild &> /dev/null; then
     exit 1
 fi
 
-# Create build directories
-mkdir -p "$SOURCES_DIR" "$SPECS_DIR" "$BUILDROOT_DIR"
+# Create rpmbuild tree (rpmbuild will expect these)
+mkdir -p "$BUILD_DIR/BUILD" "$BUILD_DIR/BUILDROOT" "$BUILD_DIR/RPMS" "$BUILD_DIR/SOURCES" "$BUILD_DIR/SPECS" "$BUILD_DIR/SRPMS"
+
+# Ensure our local SOURCES/SPECS paths exist (they point inside rpmbuild/)
+mkdir -p "$SOURCES_DIR" "$SPECS_DIR"
 
 # Create source tarball
 echo "Creating source tarball..."
@@ -46,9 +49,6 @@ cp fedora-pm.spec "$SPECS_DIR/"
 # Build RPM
 echo "Building RPM..."
 rpmbuild --define "_topdir $(pwd)/$BUILD_DIR" \
-         --define "_builddir %{_topdir}/BUILD" \
-         --define "_rpmdir %{_topdir}/RPMS" \
-         --define "_srcrpmdir %{_topdir}/SRPMS" \
          -ba "$SPECS_DIR/fedora-pm.spec"
 
 # Find and display the built RPM
