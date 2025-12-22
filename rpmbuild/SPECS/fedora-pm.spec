@@ -48,9 +48,6 @@ install -m 755 fedora-pm.py %{buildroot}%{_bindir}/fedora-pm
 # Install GUI script
 install -m 755 fedora-pm-gui.py %{buildroot}%{_bindir}/fedora-pm-gui
 
-# Install module
-install -m 644 fedora_pm.py %{buildroot}%{_datadir}/%{name}/
-
 # Install desktop entry
 install -m 644 fedora-pm.desktop %{buildroot}%{_datadir}/applications/
 
@@ -62,10 +59,8 @@ fi
 %files
 %{_bindir}/fedora-pm
 %{_bindir}/fedora-pm-gui
-%{_datadir}/%{name}/fedora_pm.py
 %{_datadir}/applications/fedora-pm.desktop
 %doc README.md
-%doc LICENSE
 %{_mandir}/man1/fedora-pm.1*
 
 %changelog

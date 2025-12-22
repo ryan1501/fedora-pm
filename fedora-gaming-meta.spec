@@ -76,7 +76,7 @@ After installation, you'll have everything needed to play games on Fedora,
 including Windows games through Wine/Proton, native Linux games, and emulators.
 
 %prep
-# Meta-package, no source to unpack
+%setup -q
 
 %build
 # Meta-package, nothing to build
@@ -84,6 +84,7 @@ including Windows games through Wine/Proton, native Linux games, and emulators.
 %install
 # Meta-package, no files to install
 # All dependencies are pulled in via Requires
+# Documentation is handled automatically by %doc directive in %files section
 
 %files
 # Meta-package has no files of its own
