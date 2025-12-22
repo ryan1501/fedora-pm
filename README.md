@@ -1,9 +1,10 @@
 # Fedora Package Manager
 
-A modern, user-friendly package manager for Fedora Linux that provides a clean CLI interface for managing packages.
+A modern, user-friendly package manager for Fedora Linux that provides both CLI and GUI interfaces for managing packages, kernels, drivers, and gaming setups.
 
 ## Features
 
+### Package Management
 - **Install packages** - Easy package installation
 - **Remove packages** - Clean package removal
 - **Update system** - Update all packages or specific ones
@@ -12,34 +13,113 @@ A modern, user-friendly package manager for Fedora Linux that provides a clean C
 - **List packages** - List installed or available packages
 - **Clean cache** - Clean package cache and metadata
 - **History tracking** - Track all package management operations
+
+### Advanced Features
 - **Kernel management** - Manage Linux kernels (list, install, remove, info)
+- **CachyOS kernels** - Install optimized gaming kernels with BORE scheduler
 - **Driver management** - Manage GPU drivers with Nvidia support (detect, install, remove, status)
+- **Gaming meta package** - One-click installation of complete gaming setup (Steam, Lutris, Wine, GameMode, MangoHud, DXVK, etc.)
+
+### User Interface
+- **CLI interface** - Fast command-line interface for power users
+- **Modern Qt GUI** - Beautiful graphical interface built with PySide6
+- **Quick install buttons** - One-click installation of gaming packages
 
 ## Installation
 
-1. Make the script executable:
+### Option 1: Install from RPM (Recommended)
+
+Build and install the RPM package:
+
 ```bash
-chmod +x fedora-pm.py
+# Install build dependencies
+sudo dnf install rpm-build rpmdevtools python3-pyside6
+
+# Create source tarball
+tar -czf ~/rpmbuild/SOURCES/fedora-pm-1.0.0.tar.gz \
+    --exclude='rpmbuild' --exclude='.git' \
+    fedora-pm.py fedora-pm-gui.py fedora-pm.desktop \
+    README.md requirements.txt install.sh
+
+# Copy spec file
+cp rpmbuild/SPECS/fedora-pm.spec ~/rpmbuild/SPECS/
+
+# Build the RPM
+cd ~/rpmbuild/SPECS
+rpmbuild -ba fedora-pm.spec
+
+# Install the built RPM
+sudo dnf install ~/rpmbuild/RPMS/noarch/fedora-pm-*.rpm
 ```
 
-2. Optionally, create a symlink for easier access:
+This installs both the CLI (`fedora-pm`) and GUI (`fedora-pm-gui`) versions. The GUI will appear in your applications menu as "Fedora Package Manager".
+
+### Option 2: Manual Installation
+
+1. Make the scripts executable:
+```bash
+chmod +x fedora-pm.py fedora-pm-gui.py
+```
+
+2. Optionally, create symlinks for easier access:
 ```bash
 sudo ln -s $(pwd)/fedora-pm.py /usr/local/bin/fedora-pm
+sudo ln -s $(pwd)/fedora-pm-gui.py /usr/local/bin/fedora-pm-gui
 ```
 
-Or add it to your PATH by copying it:
+Or add them to your PATH by copying:
 ```bash
 sudo cp fedora-pm.py /usr/local/bin/fedora-pm
-sudo chmod +x /usr/local/bin/fedora-pm
+sudo cp fedora-pm-gui.py /usr/local/bin/fedora-pm-gui
+sudo chmod +x /usr/local/bin/fedora-pm /usr/local/bin/fedora-pm-gui
 ```
 
 ## Requirements
 
+### System Requirements
 - Python 3.6+
 - Fedora Linux with `dnf` and `rpm` installed
 - sudo access for package operations
 
+### GUI Requirements
+- **PySide6** (Qt for Python) - For the graphical interface
+  ```bash
+  sudo dnf install python3-pyside6
+  ```
+
+### Optional Requirements
+- **RPM Fusion repositories** - Required for some features (Nvidia drivers, Steam, etc.)
+  ```bash
+  sudo dnf install https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm
+  sudo dnf install https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm
+  ```
+
 ## Usage
+
+### GUI Version
+
+Launch the graphical interface:
+
+```bash
+fedora-pm-gui
+```
+
+Or find "Fedora Package Manager" in your applications menu.
+
+The GUI provides:
+- **Command selector** - Choose from install, remove, update, search, info, list, clean
+- **Quick Install** - One-click installation of Fedora Gaming Meta package
+- **Auto-confirm option** - Skip confirmation prompts for batch operations
+- **Real-time output** - See command output in a terminal-style window
+- **Modern interface** - Beautiful Qt-based UI with customizable themes
+
+**Quick Install Gaming Meta:**
+Click the "🎮 Install Gaming Meta Package" button in the GUI to install a complete gaming setup including Steam, Lutris, Wine, GameMode, MangoHud, DXVK, and more. The GUI will automatically:
+- Check and enable RPM Fusion repositories if needed
+- Build the gaming meta package if not already built
+- Install all gaming packages with a single click
+
+### CLI Version
 
 ### Install packages
 ```bash
@@ -153,6 +233,36 @@ sudo dnf install https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-releas
 sudo dnf install https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm
 ```
 
+### Gaming Meta Package
+
+Install a complete gaming setup with one command:
+
+**Via GUI:**
+- Click the "🎮 Install Gaming Meta Package" button in the GUI
+
+**Via CLI:**
+```bash
+# Build the gaming meta package
+./build-gaming-meta.sh
+
+# Install it
+sudo dnf install rpmbuild/RPMS/noarch/fedora-gaming-meta-*.rpm
+```
+
+**What's included:**
+- Steam - Digital game distribution platform
+- Lutris - Open gaming platform for Linux
+- Wine + Winetricks - Windows compatibility layer
+- GameMode - Automatic performance optimization
+- MangoHud - FPS/temperature overlay
+- DXVK/VKD3D - DirectX to Vulkan translation layers
+- Vulkan - Modern graphics API
+- Gaming fonts - Unicode and emoji support
+- Controller tools - Gamepad configuration utilities
+- PipeWire - Low-latency audio stack
+
+See `fedora-gaming-meta-README.md` and `GAMING_META_QUICKSTART.md` for detailed information.
+
 ## Configuration
 
 Configuration is stored in `~/.fedora-pm/config.json`. You can edit this file to customize behavior:
@@ -173,6 +283,7 @@ All package management operations are logged to `~/.fedora-pm/history.json` for 
 
 ## Examples
 
+### Basic Package Management
 ```bash
 # Install development tools
 fedora-pm install git vim python3-pip nodejs
@@ -191,8 +302,11 @@ fedora-pm clean
 
 # View recent operations
 fedora-pm history
+```
 
-# Kernel management
+### Kernel Management
+```bash
+# List kernels
 fedora-pm kernel list
 fedora-pm kernel install
 fedora-pm kernel remove-old --keep 2
@@ -201,23 +315,54 @@ fedora-pm kernel remove-old --keep 2
 fedora-pm kernel cachyos check-cpu
 fedora-pm kernel cachyos enable gcc
 fedora-pm kernel cachyos install lts
+```
 
-# Driver management
+### Driver Management
+```bash
+# Check driver status
 fedora-pm driver status
 fedora-pm driver detect
+
+# Install Nvidia drivers
 fedora-pm driver install nvidia --cuda
 fedora-pm driver check
+```
+
+### Gaming Setup
+```bash
+# Install complete gaming setup (via CLI)
+./build-gaming-meta.sh
+sudo dnf install rpmbuild/RPMS/noarch/fedora-gaming-meta-*.rpm
+
+# Or use the GUI - click "Install Gaming Meta Package" button
+fedora-pm-gui
 ```
 
 ## How it works
 
 This package manager is a wrapper around Fedora's native `dnf` and `rpm` tools, providing:
-- A cleaner, more intuitive interface
+- A cleaner, more intuitive interface (both CLI and GUI)
 - Operation history tracking
 - Better output formatting
 - Configuration management
+- One-click gaming setup
 
-Under the hood, it uses:
+### Architecture
+
+**CLI Interface:**
+- Direct Python wrapper around system tools
+- Fast and scriptable
+- Full feature parity with GUI
+
+**GUI Interface:**
+- Built with PySide6 (Qt for Python)
+- Modern, customizable interface
+- Wraps CLI commands for user-friendly operation
+- Includes quick install buttons for common tasks
+
+### Under the Hood
+
+The tool uses:
 - `dnf` for package installation, removal, updates, and searching
 - `rpm` for querying installed packages and package information
 - `uname` for kernel version detection
@@ -227,6 +372,33 @@ Under the hood, it uses:
 - Kernel management integrates with dnf/rpm for kernel package operations
 - Driver management uses RPM Fusion repositories for Nvidia drivers (akmod-nvidia)
 - CachyOS kernels are available through COPR repositories (bieszczaders/kernel-cachyos)
+- Gaming meta package provides RPM-based meta-package for complete gaming setup
+
+## Customization
+
+### GUI Appearance
+
+The GUI supports extensive customization through Qt stylesheets. See `GUI_CUSTOMIZATION.md` for:
+- Color themes (light, dark, custom)
+- Font customization
+- Button styles
+- Window layout adjustments
+- And more!
+
+### Gaming Meta Package
+
+Customize the gaming meta package by editing `fedora-gaming-meta.spec` to add or remove packages. See `fedora-gaming-meta-README.md` for details.
+
+## Related Files
+
+- `fedora-pm.py` - Main CLI script
+- `fedora-pm-gui.py` - Qt GUI interface
+- `fedora-pm.desktop` - Desktop entry file
+- `fedora-gaming-meta.spec` - Gaming meta package spec file
+- `build-gaming-meta.sh` - Build script for gaming meta package
+- `GUI_CUSTOMIZATION.md` - Guide for customizing GUI appearance
+- `fedora-gaming-meta-README.md` - Detailed gaming meta package documentation
+- `GAMING_META_QUICKSTART.md` - Quick start guide for gaming setup
 
 ## License
 
