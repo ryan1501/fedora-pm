@@ -26,22 +26,36 @@ from PySide6.QtWidgets import (
     QCheckBox,
     QMessageBox,
     QComboBox,
+    QGroupBox,
 )
+from PySide6.QtGui import QFont, QPalette, QColor
 
 
 class FedoraPmGui(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Fedora Package Manager")
-        self.resize(800, 500)
+        self.resize(900, 600)
+        
+        # Apply modern styling
+        self._apply_styles()
 
         main_layout = QVBoxLayout(self)
+        main_layout.setSpacing(15)
+        main_layout.setContentsMargins(20, 20, 20, 20)
 
-        # Command selection
-        cmd_layout = QHBoxLayout()
-        cmd_layout.addWidget(QLabel("Command:"))
+        # Command selection group
+        cmd_group = QGroupBox("Command")
+        cmd_group.setObjectName("commandGroup")
+        cmd_layout = QHBoxLayout(cmd_group)
+        cmd_layout.setSpacing(10)
+
+        cmd_label = QLabel("Command:")
+        cmd_label.setObjectName("sectionLabel")
+        cmd_layout.addWidget(cmd_label)
 
         self.command_box = QComboBox()
+        self.command_box.setObjectName("commandCombo")
         self.command_box.addItems(
             [
                 "install",
@@ -57,34 +71,214 @@ class FedoraPmGui(QWidget):
         cmd_layout.addWidget(self.command_box)
 
         self.yes_checkbox = QCheckBox("Auto-confirm (-y)")
+        self.yes_checkbox.setObjectName("yesCheckbox")
         cmd_layout.addWidget(self.yes_checkbox)
         cmd_layout.addStretch()
 
-        main_layout.addLayout(cmd_layout)
+        main_layout.addWidget(cmd_group)
 
-        # Package / argument input
-        pkg_layout = QHBoxLayout()
-        pkg_layout.addWidget(QLabel("Arguments:"))
+        # Package / argument input group
+        input_group = QGroupBox("Arguments")
+        input_group.setObjectName("inputGroup")
+        pkg_layout = QVBoxLayout(input_group)
+        pkg_layout.setSpacing(5)
+        
         self.input_edit = QLineEdit()
+        self.input_edit.setObjectName("inputEdit")
         self.input_edit.setPlaceholderText(
             "Package names or other arguments (e.g. vim git or --no-cache)"
         )
         pkg_layout.addWidget(self.input_edit)
-        main_layout.addLayout(pkg_layout)
+        main_layout.addWidget(input_group)
 
         # Run button
         run_layout = QHBoxLayout()
-        self.run_button = QPushButton("Run")
+        self.run_button = QPushButton("▶ Run Command")
+        self.run_button.setObjectName("runButton")
         self.run_button.clicked.connect(self.run_command)
+        self.run_button.setMinimumHeight(40)
         run_layout.addStretch()
         run_layout.addWidget(self.run_button)
+        run_layout.addStretch()
         main_layout.addLayout(run_layout)
 
-        # Output area
-        main_layout.addWidget(QLabel("Output:"))
+        # Output area group
+        output_group = QGroupBox("Output")
+        output_group.setObjectName("outputGroup")
+        output_layout = QVBoxLayout(output_group)
+        output_layout.setContentsMargins(5, 10, 5, 5)
+        
         self.output = QTextEdit()
+        self.output.setObjectName("outputText")
         self.output.setReadOnly(True)
-        main_layout.addWidget(self.output)
+        self.output.setFont(QFont("Monospace", 9))
+        output_layout.addWidget(self.output)
+        main_layout.addWidget(output_group)
+
+    def _apply_styles(self):
+        """Apply modern Qt stylesheet for a better appearance."""
+        # You can customize colors, fonts, and styles here
+        stylesheet = """
+        /* Main window background */
+        QWidget {
+            background-color: #f5f5f5;
+            font-family: "Segoe UI", "DejaVu Sans", sans-serif;
+            font-size: 10pt;
+        }
+        
+        /* Group boxes */
+        QGroupBox {
+            font-weight: bold;
+            border: 2px solid #d0d0d0;
+            border-radius: 8px;
+            margin-top: 10px;
+            padding-top: 15px;
+            background-color: white;
+        }
+        
+        QGroupBox::title {
+            subcontrol-origin: margin;
+            subcontrol-position: top left;
+            padding: 0 8px;
+            background-color: white;
+            color: #2c3e50;
+        }
+        
+        /* Labels */
+        QLabel#sectionLabel {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        /* Combo box */
+        QComboBox#commandCombo {
+            padding: 6px 12px;
+            border: 2px solid #3498db;
+            border-radius: 6px;
+            background-color: white;
+            min-width: 150px;
+        }
+        
+        QComboBox#commandCombo:hover {
+            border-color: #2980b9;
+            background-color: #ecf0f1;
+        }
+        
+        QComboBox#commandCombo::drop-down {
+            border: none;
+            width: 20px;
+        }
+        
+        QComboBox#commandCombo QAbstractItemView {
+            border: 2px solid #3498db;
+            border-radius: 6px;
+            background-color: white;
+            selection-background-color: #3498db;
+            selection-color: white;
+        }
+        
+        /* Line edit */
+        QLineEdit#inputEdit {
+            padding: 8px 12px;
+            border: 2px solid #bdc3c7;
+            border-radius: 6px;
+            background-color: white;
+            font-size: 10pt;
+        }
+        
+        QLineEdit#inputEdit:focus {
+            border-color: #3498db;
+            background-color: #f8f9fa;
+        }
+        
+        /* Push button */
+        QPushButton#runButton {
+            background-color: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 30px;
+            font-weight: bold;
+            font-size: 11pt;
+            min-width: 150px;
+        }
+        
+        QPushButton#runButton:hover {
+            background-color: #229954;
+        }
+        
+        QPushButton#runButton:pressed {
+            background-color: #1e8449;
+        }
+        
+        /* Checkbox */
+        QCheckBox#yesCheckbox {
+            color: #2c3e50;
+            spacing: 5px;
+        }
+        
+        QCheckBox#yesCheckbox::indicator {
+            width: 18px;
+            height: 18px;
+            border: 2px solid #3498db;
+            border-radius: 4px;
+            background-color: white;
+        }
+        
+        QCheckBox#yesCheckbox::indicator:checked {
+            background-color: #3498db;
+            border-color: #2980b9;
+        }
+        
+        /* Text edit (output) */
+        QTextEdit#outputText {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            border: 2px solid #34495e;
+            border-radius: 6px;
+            padding: 10px;
+            font-family: "Consolas", "Monaco", "Courier New", monospace;
+        }
+        
+        /* Scrollbar styling */
+        QScrollBar:vertical {
+            background-color: #34495e;
+            width: 12px;
+            border-radius: 6px;
+        }
+        
+        QScrollBar::handle:vertical {
+            background-color: #7f8c8d;
+            border-radius: 6px;
+            min-height: 20px;
+        }
+        
+        QScrollBar::handle:vertical:hover {
+            background-color: #95a5a6;
+        }
+        
+        QScrollBar:horizontal {
+            background-color: #34495e;
+            height: 12px;
+            border-radius: 6px;
+        }
+        
+        QScrollBar::handle:horizontal {
+            background-color: #7f8c8d;
+            border-radius: 6px;
+            min-width: 20px;
+        }
+        
+        QScrollBar::handle:horizontal:hover {
+            background-color: #95a5a6;
+        }
+        """
+        
+        self.setStyleSheet(stylesheet)
+        
+        # Alternative: Use system theme (uncomment to use native OS styling)
+        # app = QApplication.instance()
+        # app.setStyle("Fusion")  # or "Windows", "macOS", etc.
 
     def append_output(self, text: str):
         self.output.append(text)
@@ -148,6 +342,11 @@ class FedoraPmGui(QWidget):
 
 def main():
     app = QApplication(sys.argv)
+    app.setApplicationName("Fedora Package Manager")
+    
+    # Optional: Set application-wide style
+    # app.setStyle("Fusion")  # Modern cross-platform style
+    
     win = FedoraPmGui()
     win.show()
     sys.exit(app.exec())
