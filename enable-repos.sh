@@ -74,18 +74,17 @@ echo "=========================================="
 echo "Checking Package Availability"
 echo "=========================================="
 
-# Extract packages from spec file
-if [ -f "fedora-gaming-meta.spec" ]; then
-    PACKAGES=$(grep -E "^Requires:" fedora-gaming-meta.spec | sed 's/Requires: //' | tr '\n' ' ')
-    
+SPEC_PATH="fedora-gaming-meta.spec"
+if [ -f "$SPEC_PATH" ]; then
+    PACKAGES=$(grep -E "^Requires:" "$SPEC_PATH" | sed 's/Requires: //' | tr '\n' ' ')
+
     echo "Checking which repositories provide the required packages..."
     echo ""
-    
+
     MISSING_PACKAGES=()
     FOUND_PACKAGES=()
-    
+
     for pkg in $PACKAGES; do
-        # Check if package is available
         REPO_INFO=$(dnf repoquery --available --qf "%{name} from %{repoid}" "$pkg" 2>/dev/null | head -1)
         if [ -n "$REPO_INFO" ]; then
             echo "✓ $REPO_INFO"
@@ -95,14 +94,14 @@ if [ -f "fedora-gaming-meta.spec" ]; then
             MISSING_PACKAGES+=("$pkg")
         fi
     done
-    
+
     echo ""
     echo "=========================================="
     echo "Summary"
     echo "=========================================="
     echo "Found packages: ${#FOUND_PACKAGES[@]}"
     echo "Missing packages: ${#MISSING_PACKAGES[@]}"
-    
+
     if [ ${#MISSING_PACKAGES[@]} -gt 0 ]; then
         echo ""
         echo "Missing packages:"
@@ -111,6 +110,7 @@ if [ -f "fedora-gaming-meta.spec" ]; then
         done
         echo ""
         echo "Note: Some packages may need additional repositories or may not be available for your Fedora version."
+        echo "If DXVK/VKD3D are missing, ensure RPM Fusion Nonfree is enabled."
     fi
 else
     echo "Warning: fedora-gaming-meta.spec not found. Skipping package availability check."
