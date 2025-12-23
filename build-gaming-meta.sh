@@ -27,29 +27,29 @@ mkdir -p "$BUILD_DIR/BUILD" "$BUILD_DIR/BUILDROOT" "$BUILD_DIR/RPMS" "$BUILD_DIR
 chmod 755 "$BUILD_DIR/BUILD" 2>/dev/null || true
 
 # Create source tarball (meta-package doesn't need much, but RPM requires it)
+# %setup expects the tarball to extract into a directory named ${NAME}-${VERSION}
 echo "Creating source tarball..."
-if tar -czf "$SOURCES_DIR/${NAME}-${VERSION}.tar.gz" \
-    --exclude='rpmbuild' \
-    --exclude='.git' \
-    --exclude='*.rpm' \
-    --exclude='*.spec.bak' \
-    fedora-gaming-meta.spec \
-    fedora-gaming-meta-README.md 2>/dev/null; then
-    echo "✓ Source tarball created: $SOURCES_DIR/${NAME}-${VERSION}.tar.gz"
-elif tar -czf "$SOURCES_DIR/${NAME}-${VERSION}.tar.gz" \
-    fedora-gaming-meta.spec \
-    fedora-gaming-meta-README.md 2>/dev/null; then
-    echo "✓ Source tarball created (fallback): $SOURCES_DIR/${NAME}-${VERSION}.tar.gz"
-else
-    echo "Error: Failed to create source tarball"
-    exit 1
-fi
+TEMP_DIR=$(mktemp -d)
+trap "rm -rf $TEMP_DIR" EXIT
+
+# Create the expected directory structure
+mkdir -p "$TEMP_DIR/${NAME}-${VERSION}"
+
+# Copy files into the temp directory
+cp fedora-gaming-meta.spec "$TEMP_DIR/${NAME}-${VERSION}/" 2>/dev/null || true
+cp fedora-gaming-meta-README.md "$TEMP_DIR/${NAME}-${VERSION}/" 2>/dev/null || true
+
+# Create tarball from the temp directory (this ensures proper top-level directory)
+cd "$TEMP_DIR"
+tar -czf "$SCRIPT_DIR/$SOURCES_DIR/${NAME}-${VERSION}.tar.gz" "${NAME}-${VERSION}"
+cd "$SCRIPT_DIR"
 
 # Verify tarball exists
 if [ ! -f "$SOURCES_DIR/${NAME}-${VERSION}.tar.gz" ]; then
     echo "Error: Source tarball was not created"
     exit 1
 fi
+echo "✓ Source tarball created: $SOURCES_DIR/${NAME}-${VERSION}.tar.gz"
 
 # Copy spec file
 cp fedora-gaming-meta.spec "$SPECS_DIR/"
