@@ -44,16 +44,16 @@ A comprehensive meta-package that installs all essential gaming tools and librar
 
 ## Installation
 
-### Prerequisites
+### Prerequisites (enable RPM Fusion first)
 
-Before building or installing, you should enable RPM Fusion repositories (required for most gaming packages):
+DXVK/VKD3D, Steam, and several drivers come from RPM Fusion. Enable both repos before building or installing:
 
-**Option 1: Use the automated script (recommended):**
+**Option 1: Use the automated script (recommended)**
 ```bash
 ./enable-repos.sh
 ```
 
-**Option 2: Manual setup:**
+**Option 2: Manual setup**
 ```bash
 # Enable RPM Fusion Free
 sudo dnf install https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm
@@ -64,7 +64,7 @@ sudo dnf install https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-
 
 ### Build and Install from Source
 
-1. Install build dependencies:
+1. Install build dependencies (uses RPM Fusion-enabled dnf):
 ```bash
 sudo dnf install rpm-build rpmdevtools
 ```
@@ -74,14 +74,14 @@ sudo dnf install rpm-build rpmdevtools
 ./build-gaming-meta.sh
 ```
 
-3. Install the built RPM:
+3. Install the built RPM (pulls all dependencies via RPM Fusion):
 ```bash
 sudo dnf install rpmbuild/RPMS/noarch/fedora-gaming-meta-*.rpm
 ```
 
 This will automatically install all required dependencies including Steam, Lutris, Wine, GameMode, GameScope, MangoHud, DXVK, Mesa Vulkan drivers, and more.
 
-### Manual Build
+### Manual Build (alternative)
 
 1. Create source tarball (meta-package doesn't need source, but RPM requires it):
 ```bash
@@ -102,7 +102,7 @@ cd ~/rpmbuild/SPECS
 rpmbuild -ba fedora-gaming-meta.spec
 ```
 
-4. Install:
+4. Install (requires RPM Fusion enabled):
 ```bash
 sudo dnf install ~/rpmbuild/RPMS/noarch/fedora-gaming-meta-*.rpm
 ```

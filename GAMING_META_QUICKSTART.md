@@ -6,15 +6,14 @@
 
 ## Quick Installation
 
-### Prerequisites
+### Prerequisites (enable RPM Fusion first)
 
-1. **Enable RPM Fusion repositories** (required for Steam, DXVK/VKD3D, and other packages):
-
+1) Enable RPM Fusion (required for Steam, DXVK/VKD3D, some drivers)
 ```bash
 # Free repository
 sudo dnf install https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm
 
-# Nonfree repository  
+# Nonfree repository
 sudo dnf install https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm
 ```
 
