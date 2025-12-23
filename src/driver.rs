@@ -49,7 +49,7 @@ impl DriverManager {
             packages.push("xorg-x11-drv-nvidia-cuda".into());
             packages.push("xorg-x11-drv-nvidia-cuda-libs".into());
         }
-        if !packages.iter().any(|p| p.contains("xorg-x11-drv-nvidia")) {
+        if !packages.iter().any(|p| p == "xorg-x11-drv-nvidia") {
             packages.push("xorg-x11-drv-nvidia".into());
         }
         println!("Installing Nvidia driver packages: {}", packages.join(", "));
