@@ -25,6 +25,9 @@ A modern, user-friendly package manager for Fedora Linux. The CLI is now rewritt
 - **Modern Qt GUI** - Beautiful graphical interface built with PySide6 (optional)
 - **Quick install buttons** - One-click installation of gaming packages
 
+### GUI Preview
+![Fedora Package Manager GUI mockup](gui-mock.png)
+
 ## Installation
 
 ### Option 1: Build and install the Rust CLI (recommended)
