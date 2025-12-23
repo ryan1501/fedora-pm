@@ -1,6 +1,6 @@
 # Fedora Package Manager
 
-A modern, user-friendly package manager for Fedora Linux that provides both CLI and GUI interfaces for managing packages, kernels, drivers, and gaming setups.
+A modern, user-friendly package manager for Fedora Linux. The CLI is now rewritten in Rust for better performance and reliability, and the GUI remains a Qt (PySide6) frontend.
 
 ## Features
 
@@ -21,25 +21,30 @@ A modern, user-friendly package manager for Fedora Linux that provides both CLI 
 - **Gaming meta package** - One-click installation of complete gaming setup (Steam, Lutris, Wine, GameMode, MangoHud, DXVK, etc.)
 
 ### User Interface
-- **CLI interface** - Fast command-line interface for power users
-- **Modern Qt GUI** - Beautiful graphical interface built with PySide6
+- **CLI interface (Rust)** - Fast, reliable command-line interface for power users
+- **Modern Qt GUI** - Beautiful graphical interface built with PySide6 (optional)
 - **Quick install buttons** - One-click installation of gaming packages
 
 ## Installation
 
-### Option 1: Install from RPM (Recommended)
+### Option 1: Build and install the Rust CLI (recommended)
 
-Build and install the RPM package:
+```bash
+# Install Rust toolchain (if needed)
+sudo dnf install cargo rust
+
+# Build release binary
+cargo build --release
+
+# Install binary (system-wide)
+sudo install -m 0755 target/release/fedora-pm /usr/local/bin/fedora-pm
+```
+
+### Option 2: Build RPM (CLI + GUI)
 
 ```bash
 # Install build dependencies
-sudo dnf install rpm-build rpmdevtools python3-pyside6
-
-# Create source tarball
-tar -czf ~/rpmbuild/SOURCES/fedora-pm-1.0.0.tar.gz \
-    --exclude='rpmbuild' --exclude='.git' \
-    fedora-pm.py fedora-pm-gui.py fedora-pm.desktop \
-    README.md requirements.txt install.sh
+sudo dnf install rpm-build rpmdevtools python3-pyside6 cargo rust
 
 # Copy spec file
 cp rpmbuild/SPECS/fedora-pm.spec ~/rpmbuild/SPECS/
@@ -48,38 +53,25 @@ cp rpmbuild/SPECS/fedora-pm.spec ~/rpmbuild/SPECS/
 cd ~/rpmbuild/SPECS
 rpmbuild -ba fedora-pm.spec
 
-# Install the built RPM
+# Install the built RPM (includes CLI + GUI)
 sudo dnf install ~/rpmbuild/RPMS/noarch/fedora-pm-*.rpm
 ```
 
-This installs both the CLI (`fedora-pm`) and GUI (`fedora-pm-gui`) versions. The GUI will appear in your applications menu as "Fedora Package Manager".
+The GUI will appear in your applications menu as "Fedora Package Manager".
 
-### Option 2: Manual Installation
+### Option 3: Manual GUI-only install
 
-1. Make the scripts executable:
 ```bash
-chmod +x fedora-pm.py fedora-pm-gui.py
-```
-
-2. Optionally, create symlinks for easier access:
-```bash
-sudo ln -s $(pwd)/fedora-pm.py /usr/local/bin/fedora-pm
+chmod +x fedora-pm-gui.py
 sudo ln -s $(pwd)/fedora-pm-gui.py /usr/local/bin/fedora-pm-gui
-```
-
-Or add them to your PATH by copying:
-```bash
-sudo cp fedora-pm.py /usr/local/bin/fedora-pm
-sudo cp fedora-pm-gui.py /usr/local/bin/fedora-pm-gui
-sudo chmod +x /usr/local/bin/fedora-pm /usr/local/bin/fedora-pm-gui
 ```
 
 ## Requirements
 
 ### System Requirements
-- Python 3.6+
-- Fedora Linux with `dnf` and `rpm` installed
+- Fedora Linux with `dnf` and `rpm`
 - sudo access for package operations
+- Rust toolchain (`cargo`, `rustc`) for building the CLI from source
 
 ### GUI Requirements
 - **PySide6** (Qt for Python) - For the graphical interface
@@ -349,12 +341,12 @@ This package manager is a wrapper around Fedora's native `dnf` and `rpm` tools, 
 
 ### Architecture
 
-**CLI Interface:**
-- Direct Python wrapper around system tools
-- Fast and scriptable
-- Full feature parity with GUI
+**CLI Interface (Rust):**
+- Native Rust binary wrapping Fedora package tooling
+- Fast, scriptable, and dependency-light once built
+- Full feature parity with the GUI for core operations
 
-**GUI Interface:**
+**GUI Interface (PySide6):**
 - Built with PySide6 (Qt for Python)
 - Modern, customizable interface
 - Wraps CLI commands for user-friendly operation
@@ -363,16 +355,14 @@ This package manager is a wrapper around Fedora's native `dnf` and `rpm` tools, 
 ### Under the Hood
 
 The tool uses:
-- `dnf` for package installation, removal, updates, and searching
-- `rpm` for querying installed packages and package information
+- Rust CLI orchestrating `dnf`/`rpm` for package, kernel, and driver operations
 - `uname` for kernel version detection
 - `lspci` for GPU hardware detection
 - `nvidia-smi` for Nvidia driver status checking
 - `dnf copr` for managing COPR repositories (CachyOS kernels)
-- Kernel management integrates with dnf/rpm for kernel package operations
-- Driver management uses RPM Fusion repositories for Nvidia drivers (akmod-nvidia)
-- CachyOS kernels are available through COPR repositories (bieszczaders/kernel-cachyos)
-- Gaming meta package provides RPM-based meta-package for complete gaming setup
+- RPM Fusion repositories for Nvidia drivers (akmod-nvidia)
+- CachyOS kernels via COPR (bieszczaders/kernel-cachyos)
+- Gaming meta package provided as an RPM-based meta-package for complete gaming setup
 
 ## Customization
 
