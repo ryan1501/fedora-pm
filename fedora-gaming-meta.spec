@@ -26,13 +26,17 @@ Requires: mangohud
 Requires: vulkan-loader
 Requires: vulkan-tools
 Requires: mesa-vulkan-drivers
-Requires: mesa-vulkan-drivers.i686
+# 32-bit Vulkan drivers (optional, but recommended for Wine compatibility)
+# Note: May not be available on all systems - moved to Suggests
+# DXVK and VKD3D (from RPM Fusion - requires RPM Fusion Nonfree repository)
+# Note: Enable RPM Fusion repositories before installation: ./enable-repos.sh
 Requires: dxvk
 Requires: vkd3d
 
 # Wine dependencies for better compatibility
+# Note: These require RPM Fusion Nonfree repository
 Requires: wine-dxvk
-Requires: wine-vkd3d
+# wine-vkd3d may not be available in all repositories - moved to Suggests below
 
 # Audio for gaming
 Requires: pipewire-pulseaudio
@@ -41,7 +45,9 @@ Requires: pipewire-jack-audio-connection-kit
 
 # Gaming fonts (better Unicode support)
 Requires: gdouros-symbola-fonts
-Requires: google-noto-fonts
+# Note: Package name may vary - try google-noto-fonts-common or google-noto-sans-fonts
+# If not available, install manually: sudo dnf install google-noto-fonts-common
+Suggests: google-noto-fonts-common
 Requires: google-noto-emoji-fonts
 
 # Input devices and controllers
@@ -49,11 +55,22 @@ Requires: jstest-gtk
 Requires: antimicrox
 
 # System utilities for gaming
-Requires: gamemode-daemon
-Requires: libgamemode
-Requires: libgamemodeauto
+# Note: gamemode-daemon, libgamemode, and libgamemodeauto are typically provided by the gamemode package
+# If they're separate packages in your distribution, uncomment these:
+# Requires: gamemode-daemon
+# Requires: libgamemode
+# Requires: libgamemodeauto
 
-# Optional but recommended
+# Optional packages that may not be available in all repositories
+# These are moved to Suggests so installation doesn't fail if they're unavailable
+# Install these manually if needed after enabling RPM Fusion repositories
+Suggests: mesa-vulkan-drivers.i686
+Suggests: gamemode-daemon
+Suggests: libgamemode
+Suggests: libgamemodeauto
+Suggests: wine-vkd3d
+
+# Other optional but recommended
 Suggests: obs-studio
 Suggests: discord
 Suggests: goverlay
