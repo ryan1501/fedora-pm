@@ -8,7 +8,7 @@
 
 ### Prerequisites
 
-1. **Enable RPM Fusion repositories** (required for Steam and some packages):
+1. **Enable RPM Fusion repositories** (required for Steam, DXVK/VKD3D, and other packages):
 
 ```bash
 # Free repository
@@ -45,8 +45,8 @@ This will install all gaming packages automatically!
 
 ### Graphics APIs
 - ✅ Vulkan (loader + tools)
-- ✅ DXVK (DirectX → Vulkan)
-- ✅ VKD3D (DirectX 12 → Vulkan)
+- ✅ DXVK (DirectX → Vulkan, from RPM Fusion)
+- ✅ VKD3D (DirectX 12 → Vulkan, from RPM Fusion)
 
 ### Audio
 - ✅ PipeWire (low-latency audio)
