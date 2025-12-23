@@ -2,12 +2,13 @@
 Version=1.0
 Type=Application
 Name=Fedora Package Manager
-Comment=Modern package manager for Fedora Linux
+GenericName=Package Manager
+Comment=Modern package manager for Fedora Linux with GUI and CLI interfaces
 Exec=fedora-pm-gui
 Icon=system-software-install
 Terminal=false
-Categories=System;PackageManager;
-Keywords=package;manager;dnf;rpm;fedora;
+Categories=System;PackageManager;Settings;
+Keywords=package;manager;dnf;rpm;fedora;install;update;remove;
 StartupNotify=true
 MimeType=
 
