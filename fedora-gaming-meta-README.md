@@ -18,8 +18,8 @@ A comprehensive meta-package that installs all essential gaming tools and librar
 ### Graphics APIs & Translation Layers
 - **Vulkan** - Modern graphics API (loader and tools)
 - **Mesa Vulkan Drivers** - Open-source Vulkan drivers for 64-bit and 32-bit applications (essential for Vulkan support)
-- **DXVK** - Vulkan-based translation layer for DirectX 9/10/11
-- **VKD3D** - Vulkan-based translation layer for DirectX 12
+- **DXVK** - Vulkan-based translation layer for DirectX 9/10/11 (from RPM Fusion)
+- **VKD3D** - Vulkan-based translation layer for DirectX 12 (from RPM Fusion)
 - **Wine-DXVK/VKD3D** - Wine integration for DXVK and VKD3D
 
 ### Audio Stack

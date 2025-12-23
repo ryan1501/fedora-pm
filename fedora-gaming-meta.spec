@@ -26,12 +26,16 @@ Requires: mangohud
 Requires: vulkan-loader
 Requires: vulkan-tools
 Requires: mesa-vulkan-drivers
-# 32-bit Vulkan drivers (optional, but recommended for Wine compatibility)
-# Note: May not be available on all systems - moved to Suggests
 # DXVK and VKD3D (from RPM Fusion - requires RPM Fusion Nonfree repository)
 # Note: Enable RPM Fusion repositories before installation: ./enable-repos.sh
 Requires: dxvk
 Requires: vkd3d
+# 32-bit Vulkan drivers (optional, but recommended for Wine compatibility)
+# Note: May not be available on all systems - moved to Suggests
+# Prefer not to fail the transaction if i686 variants are unavailable
+Suggests: mesa-vulkan-drivers.i686
+Suggests: dxvk.i686
+Suggests: vkd3d.i686
 
 # Wine dependencies for better compatibility
 # Note: These require RPM Fusion Nonfree repository
