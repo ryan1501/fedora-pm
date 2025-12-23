@@ -19,11 +19,14 @@ Requires: winetricks
 
 # Performance optimization tools
 Requires: gamemode
+Requires: gamescope
 Requires: mangohud
 
 # Graphics APIs and translation layers
 Requires: vulkan-loader
 Requires: vulkan-tools
+Requires: mesa-vulkan-drivers
+Requires: mesa-vulkan-drivers.i686
 Requires: dxvk
 Requires: vkd3d
 
@@ -67,8 +70,10 @@ This package includes:
 - Wine - Compatibility layer for running Windows games
 - Winetricks - Helper script for Wine
 - GameMode - Optimize system performance for games
+- GameScope - Micro-compositor for games (Steam Deck-like experience)
 - MangoHud - Vulkan overlay for monitoring FPS, temperatures, etc.
 - DXVK/VKD3D - Vulkan-based translation layers for DirectX
+- Mesa Vulkan drivers - Open-source Vulkan drivers (64-bit and 32-bit)
 - Gaming fonts - Better Unicode and emoji support
 - Controller support tools - Gamepad configuration utilities
 - Audio stack - PipeWire for low-latency audio
@@ -94,6 +99,8 @@ including Windows games through Wine/Proton, native Linux games, and emulators.
 %changelog
 * Wed Jan 01 2025 Fedora Gaming Meta <packager@example.com> - 1.0.0-1
 - Initial release
-- Includes Steam, Lutris, Wine, GameMode, MangoHud, DXVK, and more
+- Includes Steam, Lutris, Wine, GameMode, GameScope, MangoHud, DXVK, and more
+- Added Mesa Vulkan drivers (64-bit and 32-bit) for better compatibility
+- Added GameScope micro-compositor for enhanced gaming experience
 - Comprehensive gaming setup for Fedora Linux
 
