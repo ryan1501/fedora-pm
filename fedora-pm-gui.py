@@ -28,7 +28,7 @@ from PySide6.QtWidgets import (
     QComboBox,
     QGroupBox,
 )
-from PySide6.QtGui import QFont, QPalette, QColor, QTextCursor
+from PySide6.QtGui import QFont, QTextCursor
 
 
 class FedoraPmGui(QWidget):
