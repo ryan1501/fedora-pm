@@ -21,21 +21,35 @@ if ! command -v rpmbuild &> /dev/null; then
     exit 1
 fi
 
-# Create rpmbuild tree
+# Create rpmbuild tree (ensure all directories exist with proper permissions)
 mkdir -p "$BUILD_DIR/BUILD" "$BUILD_DIR/BUILDROOT" "$BUILD_DIR/RPMS" "$BUILD_DIR/SOURCES" "$BUILD_DIR/SPECS" "$BUILD_DIR/SRPMS"
+# Ensure BUILD directory is writable
+chmod 755 "$BUILD_DIR/BUILD" 2>/dev/null || true
 
 # Create source tarball (meta-package doesn't need much, but RPM requires it)
 echo "Creating source tarball..."
-tar -czf "$SOURCES_DIR/${NAME}-${VERSION}.tar.gz" \
+if tar -czf "$SOURCES_DIR/${NAME}-${VERSION}.tar.gz" \
     --exclude='rpmbuild' \
     --exclude='.git' \
     --exclude='*.rpm' \
     --exclude='*.spec.bak' \
     fedora-gaming-meta.spec \
-    fedora-gaming-meta-README.md 2>/dev/null || \
-    tar -czf "$SOURCES_DIR/${NAME}-${VERSION}.tar.gz" \
-        fedora-gaming-meta.spec \
-        fedora-gaming-meta-README.md
+    fedora-gaming-meta-README.md 2>/dev/null; then
+    echo "✓ Source tarball created: $SOURCES_DIR/${NAME}-${VERSION}.tar.gz"
+elif tar -czf "$SOURCES_DIR/${NAME}-${VERSION}.tar.gz" \
+    fedora-gaming-meta.spec \
+    fedora-gaming-meta-README.md 2>/dev/null; then
+    echo "✓ Source tarball created (fallback): $SOURCES_DIR/${NAME}-${VERSION}.tar.gz"
+else
+    echo "Error: Failed to create source tarball"
+    exit 1
+fi
+
+# Verify tarball exists
+if [ ! -f "$SOURCES_DIR/${NAME}-${VERSION}.tar.gz" ]; then
+    echo "Error: Source tarball was not created"
+    exit 1
+fi
 
 # Copy spec file
 cp fedora-gaming-meta.spec "$SPECS_DIR/"

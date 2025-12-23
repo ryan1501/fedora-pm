@@ -9,6 +9,7 @@ Release: %{release}
 License: GPLv3+
 Group: Applications/Games
 BuildArch: noarch
+Source0: %{name}-%{version}.tar.gz
 
 # Core gaming platforms and launchers
 Requires: steam
