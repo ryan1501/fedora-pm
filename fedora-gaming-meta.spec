@@ -1,3 +1,4 @@
+# RPM Spec File
 %define name fedora-gaming-meta
 %define version 1.0.0
 %define release 1%{?dist}

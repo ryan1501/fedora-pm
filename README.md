@@ -13,17 +13,43 @@ A modern, user-friendly package manager for Fedora Linux. The CLI is now rewritt
 - **List packages** - List installed or available packages
 - **Clean cache** - Clean package cache and metadata
 - **History tracking** - Track all package management operations
+- **Rollback operations** - Undo package installations and removals
+- **Dependency visualization** - View dependency trees and reverse dependencies
+- **Package groups** - Manage package groups easily
 
 ### Advanced Features
 - **Kernel management** - Manage Linux kernels (list, install, remove, info)
 - **CachyOS kernels** - Install optimized gaming kernels with BORE scheduler
 - **Driver management** - Manage GPU drivers with Nvidia support (detect, install, remove, status)
 - **Gaming meta package** - One-click installation of complete gaming setup (Steam, Lutris, Wine, GameMode, MangoHud, DXVK, etc.)
+- **Flatpak integration** - Manage Flatpak applications alongside DNF packages
+- **Repository management** - Enable, disable, add, and remove repositories
+- **Security audits** - Check for security updates and CVE fixes
+- **System health check** - Comprehensive system diagnostics (doctor command)
+
+### Backup & Restore
+- **Export package lists** - Save installed packages to a file
+- **Import package lists** - Restore packages from a backup file
+- **Flatpak export** - Include Flatpak apps in exports
+
+### Download & Offline
+- **Download packages** - Download packages without installing
+- **Offline installation** - Install from downloaded RPM files
+- **Download with dependencies** - Download packages with all dependencies
+
+### Information & Analysis
+- **Changelog viewer** - View package changelogs
+- **What's new** - See changelogs for pending updates
+- **Disk space analysis** - Analyze package sizes and disk usage
+- **Orphaned packages** - Find and remove orphaned packages
+- **Top packages** - List largest installed packages
 
 ### User Interface
-- **CLI interface (Rust)** - Fast, reliable command-line interface for power users
+- **CLI interface (Rust)** - Fast, reliable command-line interface with extensive features
 - **Modern Qt GUI** - Beautiful graphical interface built with PySide6 (optional)
 - **Quick install buttons** - One-click installation of gaming packages
+- **Verbose logging** - Adjustable verbosity levels for debugging
+- **Colored output** - Easy-to-read colored terminal output
 
 ### GUI Preview
 ![Fedora Package Manager GUI mockup](gui-mock.png)
@@ -168,6 +194,107 @@ fedora-pm history           # Show last 10 operations
 fedora-pm history -n 20     # Show last 20 operations
 ```
 
+### Rollback operations
+```bash
+fedora-pm rollback                    # Undo last operation
+fedora-pm rollback --id 5             # Rollback specific operation by ID
+fedora-pm rollback --yes              # Skip confirmation
+```
+
+### Dependency management
+```bash
+fedora-pm deps vim --tree             # Show dependency tree
+fedora-pm deps vim --reverse          # Show what depends on vim
+```
+
+### Package groups
+```bash
+fedora-pm group list                  # List all package groups
+fedora-pm group info "Development Tools"  # Show group info
+fedora-pm group install "Development Tools"  # Install a group
+fedora-pm group remove "Development Tools"   # Remove a group
+```
+
+### System health check
+```bash
+fedora-pm doctor                      # Run comprehensive system check
+# Checks: broken dependencies, orphaned packages, disk space,
+#         repositories, duplicates, security updates
+```
+
+### Flatpak management
+```bash
+fedora-pm flatpak setup-flathub       # Setup Flathub repository
+fedora-pm flatpak search spotify      # Search for Flatpak apps
+fedora-pm flatpak install com.spotify.Client  # Install Flatpak
+fedora-pm flatpak list                # List installed Flatpaks
+fedora-pm flatpak update              # Update all Flatpaks
+fedora-pm flatpak remove com.spotify.Client   # Remove Flatpak
+fedora-pm flatpak info com.spotify.Client     # Show Flatpak info
+```
+
+### Export/Import packages
+```bash
+fedora-pm export packages.txt         # Export installed packages
+fedora-pm export packages.txt --with-flatpak  # Include Flatpaks
+fedora-pm import packages.txt         # Import and install packages
+fedora-pm import packages.txt --yes   # Skip confirmation
+```
+
+### Repository management
+```bash
+fedora-pm repo list                   # List enabled repositories
+fedora-pm repo list --all             # List all repositories
+fedora-pm repo enable rpmfusion-free  # Enable a repository
+fedora-pm repo disable updates-testing  # Disable a repository
+fedora-pm repo add myrepo https://example.com/repo  # Add repository
+fedora-pm repo remove myrepo          # Remove repository
+fedora-pm repo info fedora            # Show repository info
+fedora-pm repo refresh                # Refresh repository metadata
+```
+
+### Security management
+```bash
+fedora-pm security check              # Check for security updates
+fedora-pm security list               # List security updates
+fedora-pm security list --severity critical  # Filter by severity
+fedora-pm security update             # Install security updates only
+fedora-pm security audit              # Full security audit
+fedora-pm security cve CVE-2024-1234  # Check specific CVE
+fedora-pm security info FEDORA-2024-123  # Show advisory info
+```
+
+### Download packages
+```bash
+fedora-pm download vim git            # Download to current directory
+fedora-pm download vim --dest /tmp    # Download to specific directory
+fedora-pm download vim --with-deps    # Download with dependencies
+fedora-pm install-offline *.rpm       # Install downloaded RPMs
+```
+
+### Changelog viewer
+```bash
+fedora-pm changelog vim               # View full changelog
+fedora-pm changelog vim -n 5          # Show last 5 entries
+fedora-pm whatsnew                    # Show changelogs for pending updates
+```
+
+### Disk space analysis
+```bash
+fedora-pm size --analyze              # Full disk space analysis
+fedora-pm size --top 20               # Show 20 largest packages
+fedora-pm size --total                # Show total package size
+fedora-pm clean-orphans               # Remove orphaned packages
+fedora-pm clean-orphans --yes         # Skip confirmation
+```
+
+### Verbose output
+```bash
+fedora-pm -v install vim              # Verbose output
+fedora-pm -vv install vim             # Very verbose (debug)
+fedora-pm --quiet install vim         # Minimal output
+```
+
 ### Kernel management
 ```bash
 fedora-pm kernel current              # Show current running kernel
@@ -297,6 +424,62 @@ fedora-pm clean
 
 # View recent operations
 fedora-pm history
+
+# Rollback last operation
+fedora-pm rollback
+```
+
+### System Maintenance
+```bash
+# Run system health check
+fedora-pm doctor
+
+# Check for security updates
+fedora-pm security audit
+
+# Analyze disk space
+fedora-pm size --analyze
+
+# Clean orphaned packages
+fedora-pm clean-orphans -y
+
+# See what's new in updates
+fedora-pm whatsnew
+```
+
+### Backup and Restore
+```bash
+# Export installed packages
+fedora-pm export my-packages.txt --with-flatpak
+
+# On another system, restore packages
+fedora-pm import my-packages.txt -y
+```
+
+### Flatpak Management
+```bash
+# Setup Flathub
+fedora-pm flatpak setup-flathub
+
+# Install apps
+fedora-pm flatpak install com.spotify.Client
+fedora-pm flatpak install org.gimp.GIMP
+
+# Update all Flatpaks
+fedora-pm flatpak update -y
+```
+
+### Repository Management
+```bash
+# Enable RPM Fusion
+fedora-pm repo enable rpmfusion-free
+fedora-pm repo enable rpmfusion-nonfree
+
+# List all repositories
+fedora-pm repo list --all
+
+# Refresh metadata
+fedora-pm repo refresh
 ```
 
 ### Kernel Management
@@ -319,8 +502,8 @@ fedora-pm driver status
 fedora-pm driver detect
 
 # Install Nvidia drivers
-fedora-pm driver install nvidia --cuda
-fedora-pm driver check
+fedora-pm driver install-nvidia --cuda
+fedora-pm driver check-nvidia
 ```
 
 ### Gaming Setup
@@ -331,6 +514,27 @@ sudo dnf install rpmbuild/RPMS/noarch/fedora-gaming-meta-*.rpm
 
 # Or use the GUI - click "Install Gaming Meta Package" button
 fedora-pm-gui
+```
+
+### Advanced Usage
+```bash
+# View dependency tree
+fedora-pm deps firefox --tree
+
+# Download packages for offline use
+fedora-pm download firefox --with-deps --dest /media/usb
+
+# Install offline
+fedora-pm install-offline /media/usb/*.rpm -y
+
+# View changelog before updating
+fedora-pm changelog kernel
+
+# Install only security updates
+fedora-pm security update -y
+
+# Find largest packages
+fedora-pm size --top 10
 ```
 
 ## How it works

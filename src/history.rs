@@ -14,7 +14,7 @@ pub struct HistoryEntry {
 
 #[derive(Debug, Clone)]
 pub struct History {
-    path: PathBuf,
+    pub path: PathBuf,
 }
 
 impl History {
