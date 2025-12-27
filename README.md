@@ -54,6 +54,14 @@ A modern, user-friendly package manager for Fedora Linux. The CLI is now rewritt
 ### GUI Preview
 ![Fedora Package Manager GUI mockup](gui-mock.png)
 
+**Modern Tabbed Interface:**
+- **📦 Packages** - Install, remove, update, search, rollback, export/import
+- **🔧 System** - Health check (doctor), security audit, disk analysis, gaming setup
+- **📱 Flatpak** - Flatpak app management and Flathub setup
+- **⚙️ Advanced** - Repository management, dependency analysis, downloads
+
+See [GUI_FEATURES.md](GUI_FEATURES.md) for complete GUI documentation.
+
 ## Installation
 
 ### Option 1: Build and install the Rust CLI (recommended)

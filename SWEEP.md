@@ -304,6 +304,42 @@ cargo clippy
 cargo test
 ```
 
+### Pushing changes
+
+#### Check status
+```bash
+git status
+git log --oneline -5
+```
+
+#### Add and commit changes
+```bash
+git add .
+git commit -m "feat: Add comprehensive package management features"
+```
+
+#### Push to remote
+```bash
+# Normal push
+git push origin main
+
+# Force push (use with caution - only if you own the repo)
+git push origin main --force
+
+# Push new branch
+git checkout -b feature/my-feature
+git push origin feature/my-feature
+```
+
+#### Update from remote
+```bash
+# Pull latest changes
+git pull origin main
+
+# Pull with rebase
+git pull origin main --rebase
+```
+
 ## Performance Tips
 
 1. Use `--release` for production builds
