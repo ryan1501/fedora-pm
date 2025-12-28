@@ -331,6 +331,15 @@ git checkout -b feature/my-feature
 git push origin feature/my-feature
 ```
 
+**Note:** Git push commands may require authentication (SSH passphrase or username/password).
+If using automated tools, the push command may timeout waiting for credentials. In such cases,
+manually run the push command in your terminal to provide authentication when prompted.
+
+**Authentication Setup:**
+- For SSH: Ensure SSH keys are set up and added to ssh-agent
+- For HTTPS: Configure git credential helper to cache credentials
+- Check authentication: `git remote -v` to see which protocol is being used
+
 #### Update from remote
 ```bash
 # Pull latest changes

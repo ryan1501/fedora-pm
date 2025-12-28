@@ -64,11 +64,15 @@ class FedoraPmGui(QWidget):
         # Create tabs
         self.packages_tab = self._create_packages_tab()
         self.system_tab = self._create_system_tab()
+        self.kernel_tab = self._create_kernel_tab()
+        self.driver_tab = self._create_driver_tab()
         self.flatpak_tab = self._create_flatpak_tab()
         self.advanced_tab = self._create_advanced_tab()
 
         self.tabs.addTab(self.packages_tab, "📦 Packages")
         self.tabs.addTab(self.system_tab, "🔧 System")
+        self.tabs.addTab(self.kernel_tab, "🐧 Kernel")
+        self.tabs.addTab(self.driver_tab, "🖥️ Drivers")
         self.tabs.addTab(self.flatpak_tab, "📱 Flatpak")
         self.tabs.addTab(self.advanced_tab, "⚙️ Advanced")
 
@@ -262,6 +266,207 @@ class FedoraPmGui(QWidget):
 
         return tab
 
+    def _create_kernel_tab(self):
+        """Create the kernel management tab."""
+        tab = QWidget()
+        layout = QVBoxLayout(tab)
+        layout.setSpacing(15)
+        layout.setContentsMargins(10, 10, 10, 10)
+
+        # Kernel info group
+        info_group = QGroupBox("Kernel Information")
+        info_group.setObjectName("kernelGroup")
+        info_layout = QVBoxLayout(info_group)
+        info_layout.setSpacing(10)
+
+        # Current kernel button
+        current_btn = QPushButton("🐧 Show Current Kernel")
+        current_btn.setObjectName("kernelButton")
+        current_btn.clicked.connect(lambda: self.run_cli_command(["kernel", "current"]))
+        current_btn.setMinimumHeight(40)
+        info_layout.addWidget(current_btn)
+
+        # List kernels buttons
+        list_layout = QHBoxLayout()
+        list_installed_btn = QPushButton("📋 List Installed Kernels")
+        list_installed_btn.setObjectName("actionButton")
+        list_installed_btn.clicked.connect(lambda: self.run_cli_command(["kernel", "list"]))
+        list_installed_btn.setMinimumHeight(35)
+        list_layout.addWidget(list_installed_btn)
+
+        list_available_btn = QPushButton("🔍 List Available Kernels")
+        list_available_btn.setObjectName("actionButton")
+        list_available_btn.clicked.connect(lambda: self.run_cli_command(["kernel", "list", "--available"]))
+        list_available_btn.setMinimumHeight(35)
+        list_layout.addWidget(list_available_btn)
+        info_layout.addLayout(list_layout)
+
+        layout.addWidget(info_group)
+
+        # Kernel operations group
+        ops_group = QGroupBox("Kernel Operations")
+        ops_group.setObjectName("kernelOpsGroup")
+        ops_layout = QVBoxLayout(ops_group)
+        ops_layout.setSpacing(10)
+
+        # Install kernel
+        install_layout = QHBoxLayout()
+        self.kernel_version_input = QLineEdit()
+        self.kernel_version_input.setObjectName("inputEdit")
+        self.kernel_version_input.setPlaceholderText("Kernel version (leave empty for latest)")
+        install_layout.addWidget(self.kernel_version_input)
+
+        install_kernel_btn = QPushButton("⬇️ Install Kernel")
+        install_kernel_btn.setObjectName("actionButton")
+        install_kernel_btn.clicked.connect(self.install_kernel)
+        install_kernel_btn.setMinimumHeight(35)
+        install_layout.addWidget(install_kernel_btn)
+        ops_layout.addLayout(install_layout)
+
+        # Remove old kernels
+        remove_old_btn = QPushButton("🗑️ Remove Old Kernels (Keep Latest 2)")
+        remove_old_btn.setObjectName("actionButton")
+        remove_old_btn.clicked.connect(lambda: self.run_cli_command(["kernel", "remove-old", "-y"]))
+        remove_old_btn.setMinimumHeight(35)
+        ops_layout.addWidget(remove_old_btn)
+
+        layout.addWidget(ops_group)
+
+        # CachyOS Kernel group
+        cachyos_group = QGroupBox("CachyOS Performance Kernels")
+        cachyos_group.setObjectName("cachyosGroup")
+        cachyos_layout = QVBoxLayout(cachyos_group)
+        cachyos_layout.setSpacing(10)
+
+        cachyos_desc = QLabel(
+            "CachyOS kernels are optimized for performance with advanced CPU scheduling. "
+            "These kernels can improve gaming and desktop responsiveness."
+        )
+        cachyos_desc.setWordWrap(True)
+        cachyos_desc.setObjectName("cachyosDesc")
+        cachyos_layout.addWidget(cachyos_desc)
+
+        # CachyOS buttons
+        cachyos_btn_layout = QHBoxLayout()
+
+        cachyos_check_btn = QPushButton("🔍 Check CachyOS Support")
+        cachyos_check_btn.setObjectName("actionButton")
+        cachyos_check_btn.clicked.connect(lambda: self.run_cli_command(["kernel", "cachyos", "check"]))
+        cachyos_check_btn.setMinimumHeight(35)
+        cachyos_btn_layout.addWidget(cachyos_check_btn)
+
+        cachyos_list_btn = QPushButton("📋 List CachyOS Kernels")
+        cachyos_list_btn.setObjectName("actionButton")
+        cachyos_list_btn.clicked.connect(lambda: self.run_cli_command(["kernel", "cachyos", "list"]))
+        cachyos_list_btn.setMinimumHeight(35)
+        cachyos_btn_layout.addWidget(cachyos_list_btn)
+        cachyos_layout.addLayout(cachyos_btn_layout)
+
+        # Enable CachyOS repo
+        enable_cachyos_btn = QPushButton("⚡ Enable CachyOS Repository")
+        enable_cachyos_btn.setObjectName("cachyosButton")
+        enable_cachyos_btn.clicked.connect(lambda: self.run_cli_command(["kernel", "cachyos", "enable", "-y"]))
+        enable_cachyos_btn.setMinimumHeight(40)
+        cachyos_layout.addWidget(enable_cachyos_btn)
+
+        # Install CachyOS kernel
+        install_cachyos_btn = QPushButton("🚀 Install CachyOS Default Kernel")
+        install_cachyos_btn.setObjectName("cachyosButton")
+        install_cachyos_btn.clicked.connect(lambda: self.run_cli_command(["kernel", "cachyos", "install", "-y"]))
+        install_cachyos_btn.setMinimumHeight(40)
+        cachyos_layout.addWidget(install_cachyos_btn)
+
+        layout.addWidget(cachyos_group)
+        layout.addStretch()
+
+        return tab
+
+    def _create_driver_tab(self):
+        """Create the driver management tab."""
+        tab = QWidget()
+        layout = QVBoxLayout(tab)
+        layout.setSpacing(15)
+        layout.setContentsMargins(10, 10, 10, 10)
+
+        # Driver detection group
+        detect_group = QGroupBox("Driver Detection")
+        detect_group.setObjectName("driverGroup")
+        detect_layout = QVBoxLayout(detect_group)
+        detect_layout.setSpacing(10)
+
+        # Status and detect buttons
+        status_detect_layout = QHBoxLayout()
+        status_btn = QPushButton("📊 Driver Status")
+        status_btn.setObjectName("driverButton")
+        status_btn.clicked.connect(lambda: self.run_cli_command(["driver", "status"]))
+        status_btn.setMinimumHeight(40)
+        status_detect_layout.addWidget(status_btn)
+
+        detect_btn = QPushButton("🔍 Detect Hardware")
+        detect_btn.setObjectName("driverButton")
+        detect_btn.clicked.connect(lambda: self.run_cli_command(["driver", "detect"]))
+        detect_btn.setMinimumHeight(40)
+        status_detect_layout.addWidget(detect_btn)
+        detect_layout.addLayout(status_detect_layout)
+
+        layout.addWidget(detect_group)
+
+        # NVIDIA driver group
+        nvidia_group = QGroupBox("NVIDIA Drivers")
+        nvidia_group.setObjectName("nvidiaGroup")
+        nvidia_layout = QVBoxLayout(nvidia_group)
+        nvidia_layout.setSpacing(10)
+
+        nvidia_desc = QLabel(
+            "Install proprietary NVIDIA drivers for better gaming and GPU performance. "
+            "Requires RPM Fusion repositories."
+        )
+        nvidia_desc.setWordWrap(True)
+        nvidia_desc.setObjectName("nvidiaDesc")
+        nvidia_layout.addWidget(nvidia_desc)
+
+        # NVIDIA info buttons
+        nvidia_info_layout = QHBoxLayout()
+        check_nvidia_btn = QPushButton("🔍 Check NVIDIA GPU")
+        check_nvidia_btn.setObjectName("actionButton")
+        check_nvidia_btn.clicked.connect(lambda: self.run_cli_command(["driver", "check-nvidia"]))
+        check_nvidia_btn.setMinimumHeight(35)
+        nvidia_info_layout.addWidget(check_nvidia_btn)
+
+        list_nvidia_btn = QPushButton("📋 List NVIDIA Drivers")
+        list_nvidia_btn.setObjectName("actionButton")
+        list_nvidia_btn.clicked.connect(lambda: self.run_cli_command(["driver", "list-nvidia"]))
+        list_nvidia_btn.setMinimumHeight(35)
+        nvidia_info_layout.addWidget(list_nvidia_btn)
+        nvidia_layout.addLayout(nvidia_info_layout)
+
+        # Install/Remove NVIDIA
+        nvidia_ops_layout = QHBoxLayout()
+        install_nvidia_btn = QPushButton("⬇️ Install NVIDIA Drivers")
+        install_nvidia_btn.setObjectName("nvidiaButton")
+        install_nvidia_btn.clicked.connect(lambda: self.run_cli_command(["driver", "install-nvidia", "-y"]))
+        install_nvidia_btn.setMinimumHeight(40)
+        nvidia_ops_layout.addWidget(install_nvidia_btn)
+
+        remove_nvidia_btn = QPushButton("🗑️ Remove NVIDIA Drivers")
+        remove_nvidia_btn.setObjectName("actionButton")
+        remove_nvidia_btn.clicked.connect(lambda: self.run_cli_command(["driver", "remove-nvidia", "-y"]))
+        remove_nvidia_btn.setMinimumHeight(40)
+        nvidia_ops_layout.addWidget(remove_nvidia_btn)
+        nvidia_layout.addLayout(nvidia_ops_layout)
+
+        # Install CUDA
+        install_cuda_btn = QPushButton("🧮 Install CUDA Toolkit")
+        install_cuda_btn.setObjectName("nvidiaButton")
+        install_cuda_btn.clicked.connect(lambda: self.run_cli_command(["driver", "install-cuda", "-y"]))
+        install_cuda_btn.setMinimumHeight(40)
+        nvidia_layout.addWidget(install_cuda_btn)
+
+        layout.addWidget(nvidia_group)
+        layout.addStretch()
+
+        return tab
+
     def _create_flatpak_tab(self):
         """Create the Flatpak management tab."""
         tab = QWidget()
@@ -358,6 +563,41 @@ class FedoraPmGui(QWidget):
 
         layout.addWidget(repo_group)
 
+        # Package Groups
+        groups_group = QGroupBox("Package Groups")
+        groups_group.setObjectName("groupsGroup")
+        groups_layout = QVBoxLayout(groups_group)
+        groups_layout.setSpacing(10)
+
+        # List groups
+        list_groups_btn = QPushButton("📋 List All Package Groups")
+        list_groups_btn.setObjectName("actionButton")
+        list_groups_btn.clicked.connect(lambda: self.run_cli_command(["group", "list"]))
+        list_groups_btn.setMinimumHeight(35)
+        groups_layout.addWidget(list_groups_btn)
+
+        # Group operations
+        group_ops_layout = QHBoxLayout()
+        self.group_input = QLineEdit()
+        self.group_input.setObjectName("inputEdit")
+        self.group_input.setPlaceholderText("Group name (e.g., 'Development Tools')")
+        group_ops_layout.addWidget(self.group_input)
+
+        group_info_btn = QPushButton("ℹ️ Info")
+        group_info_btn.setObjectName("actionButton")
+        group_info_btn.clicked.connect(self.show_group_info)
+        group_info_btn.setMinimumHeight(35)
+        group_ops_layout.addWidget(group_info_btn)
+
+        group_install_btn = QPushButton("⬇️ Install")
+        group_install_btn.setObjectName("actionButton")
+        group_install_btn.clicked.connect(self.install_group)
+        group_install_btn.setMinimumHeight(35)
+        group_ops_layout.addWidget(group_install_btn)
+
+        groups_layout.addLayout(group_ops_layout)
+        layout.addWidget(groups_group)
+
         # Information tools
         info_group = QGroupBox("Information & Analysis")
         info_group.setObjectName("infoGroup")
@@ -380,11 +620,25 @@ class FedoraPmGui(QWidget):
         info_layout.addLayout(deps_layout)
 
         # Changelog
-        changelog_btn = QPushButton("📜 What's New in Updates")
+        changelog_layout = QHBoxLayout()
+        self.changelog_input = QLineEdit()
+        self.changelog_input.setObjectName("inputEdit")
+        self.changelog_input.setPlaceholderText("Package name for changelog")
+        changelog_layout.addWidget(self.changelog_input)
+
+        changelog_btn = QPushButton("📜 View Changelog")
         changelog_btn.setObjectName("actionButton")
-        changelog_btn.clicked.connect(lambda: self.run_cli_command(["whatsnew"]))
+        changelog_btn.clicked.connect(self.show_changelog)
         changelog_btn.setMinimumHeight(35)
-        info_layout.addWidget(changelog_btn)
+        changelog_layout.addWidget(changelog_btn)
+        info_layout.addLayout(changelog_layout)
+
+        # What's new
+        whatsnew_btn = QPushButton("📰 What's New in Updates")
+        whatsnew_btn.setObjectName("actionButton")
+        whatsnew_btn.clicked.connect(lambda: self.run_cli_command(["whatsnew"]))
+        whatsnew_btn.setMinimumHeight(35)
+        info_layout.addWidget(whatsnew_btn)
 
         # Top packages
         top_btn = QPushButton("📊 Show Top 20 Largest Packages")

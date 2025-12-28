@@ -1,0 +1,12 @@
+/home/ryanb/Documents/fedora-pm/target/debug/deps/colored-0832305205b4f75d.d: /home/ryanb/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/colored-2.2.0/src/lib.rs /home/ryanb/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/colored-2.2.0/src/color.rs /home/ryanb/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/colored-2.2.0/src/control.rs /home/ryanb/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/colored-2.2.0/src/error.rs /home/ryanb/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/colored-2.2.0/src/style.rs /home/ryanb/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/colored-2.2.0/src/customcolors.rs
+
+/home/ryanb/Documents/fedora-pm/target/debug/deps/libcolored-0832305205b4f75d.rlib: /home/ryanb/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/colored-2.2.0/src/lib.rs /home/ryanb/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/colored-2.2.0/src/color.rs /home/ryanb/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/colored-2.2.0/src/control.rs /home/ryanb/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/colored-2.2.0/src/error.rs /home/ryanb/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/colored-2.2.0/src/style.rs /home/ryanb/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/colored-2.2.0/src/customcolors.rs
+
+/home/ryanb/Documents/fedora-pm/target/debug/deps/libcolored-0832305205b4f75d.rmeta: /home/ryanb/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/colored-2.2.0/src/lib.rs /home/ryanb/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/colored-2.2.0/src/color.rs /home/ryanb/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/colored-2.2.0/src/control.rs /home/ryanb/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/colored-2.2.0/src/error.rs /home/ryanb/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/colored-2.2.0/src/style.rs /home/ryanb/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/colored-2.2.0/src/customcolors.rs
+
+/home/ryanb/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/colored-2.2.0/src/lib.rs:
+/home/ryanb/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/colored-2.2.0/src/color.rs:
+/home/ryanb/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/colored-2.2.0/src/control.rs:
+/home/ryanb/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/colored-2.2.0/src/error.rs:
+/home/ryanb/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/colored-2.2.0/src/style.rs:
+/home/ryanb/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/colored-2.2.0/src/customcolors.rs:
