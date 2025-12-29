@@ -29,8 +29,8 @@ Requires: vulkan-tools
 Requires: mesa-vulkan-drivers
 # DXVK and VKD3D (from RPM Fusion - requires RPM Fusion Nonfree repository)
 # Note: Enable RPM Fusion repositories before installation: ./enable-repos.sh
-Requires: dxvk
-Requires: vkd3d
+#Requires: dxvk
+#Requires: vkd3d
 # 32-bit Vulkan drivers (optional, but recommended for Wine compatibility)
 # Note: May not be available on all systems - moved to Suggests
 # Prefer not to fail the transaction if i686 variants are unavailable
