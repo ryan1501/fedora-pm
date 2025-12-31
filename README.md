@@ -83,11 +83,16 @@ See [GUI_FEATURES.md](GUI_FEATURES.md) for complete GUI documentation.
 
 ### 🚀 Quick Install (Recommended)
 
-Use the unified installer script for seamless installation:
-
+#### Recommended Installation
 ```bash
 # Install both CLI and GUI (recommended)
 ./install.sh --both
+
+# Install CLI only
+./install.sh --cli
+
+# Install GUI only
+./install.sh --gui
 
 # Install CLI only
 ./install.sh --cli

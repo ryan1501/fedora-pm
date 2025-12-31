@@ -17,7 +17,7 @@ copr --version
 ```
 
 ### Fedora Account
-- Register at: https://copr.fedorainfra.org/
+- Register at: https://copr.fedorainfracloud.org/
 - Note your COPR username (needed for API access)
 
 ## Quick Upload Process
@@ -35,7 +35,7 @@ tar -czf fedora-pm-1.1.0.tar.gz \
 ```
 
 ### Step 2: Upload via Web Interface
-1. Visit: https://copr.fedorainfra.org/coprs/yourusername/fedora-pm/new_build/
+1. Visit: https://copr.fedorainfracloud.org/coprs/yourusername/fedora-pm/new_build/
 2. Upload: `fedora-pm-1.1.0.tar.gz`
 3. Configure:
    - **Build Method**: `mock` (Rust packages)
