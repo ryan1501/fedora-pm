@@ -61,7 +61,7 @@ install_deps() {
     fi
 }
 
-# Check dependencies
+# Check dependencies (without installation)
 check_deps() {
     for cmd in fedpkg-packager mock copr-cli; do
         command -v "$cmd" >/dev/null 2>&1 || { 
@@ -225,6 +225,11 @@ ${YELLOW}Examples:${NC}
   $0 myusername                    # Upload as myusername
   $0 myusername --force              # Force rebuild
   $0 --help                        # Show this help
+
+${YELLOW}Built RPMs:${NC}
+• fedora-pm-1.1.0-1.fedora39.src.rpm     (source RPM)
+• fedora-pm-1.1.0-1.fedora39.x86_64.rpm   (binary RPM)
+• Each for multiple Fedora versions
 
 ${YELLOW}After Upload:${NC}
   sudo dnf copr enable myusername/fedora-pm
