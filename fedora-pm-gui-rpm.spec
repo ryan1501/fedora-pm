@@ -1,6 +1,6 @@
 # RPM Spec File for Fedora Package Manager GUI
 %define name fedora-pm-gui
-%define version 1.0.0
+%define version 2.0.0
 %define release 1%{?dist}
 
 Summary: Qt GUI front-end for Fedora Package Manager
