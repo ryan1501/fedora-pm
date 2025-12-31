@@ -17,16 +17,16 @@ sudo dnf install https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-releas
 sudo dnf install https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm
 ```
 
-### Build and Install
+### Quick Install
 
-1. **Build the RPM:**
+1. **Enable required repositories:**
 ```bash
-./build-gaming-meta.sh
+./enable-repos.sh
 ```
 
-2. **Install the package:**
+2. **Install gaming packages:**
 ```bash
-sudo dnf install rpmbuild/RPMS/noarch/fedora-gaming-meta-*.rpm
+fedora-pm gaming install
 ```
 
 This will install all gaming packages automatically!

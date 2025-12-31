@@ -622,8 +622,8 @@ One-click installation of complete gaming setup.
 
 ### Via CLI
 ```bash
-./build-gaming-meta.sh
-sudo dnf install rpmbuild/RPMS/noarch/fedora-gaming-meta-*.rpm
+./enable-repos.sh
+fedora-pm gaming install
 ```
 
 ### Via GUI

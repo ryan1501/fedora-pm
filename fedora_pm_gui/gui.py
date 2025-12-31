@@ -1263,10 +1263,24 @@ class FedoraPmGui(QWidget):
                 self.append_output("")
                 self.append_output("=" * 60)
                 self.append_output("Building gaming meta package...")
-                build_script = script_dir / "build-gaming-meta.sh"
-                if build_script.exists():
+                install_script = script_dir / "install.sh"
+                if install_script.exists():
+                    # First enable repositories, then install gaming packages
+                    enable_script = script_dir / "enable-repos.sh"
+                    if enable_script.exists():
+                        enable_result = subprocess.run(
+                            ["bash", str(enable_script)],
+                            capture_output=True,
+                            text=True,
+                        )
+                        if enable_result.stdout:
+                            self.append_output(enable_result.stdout)
+                        if enable_result.stderr:
+                            self.append_output(enable_result.stderr)
+                    
+                    # Install gaming meta package
                     build_result = subprocess.run(
-                        ["bash", str(build_script)],
+                        ["bash", str(install_script), "--gui"],
                         capture_output=True,
                         text=True,
                     )
@@ -1289,9 +1303,10 @@ class FedoraPmGui(QWidget):
                 else:
                     QMessageBox.warning(
                         self,
-                        "Build Script Not Found",
-                        "Build script not found. Please build the package manually:\n\n"
-                        "./build-gaming-meta.sh",
+                        "Install Script Not Found",
+                        "Install script not found. Please install the package manually:\n\n"
+                        "./enable-repos.sh\n"
+                        "fedora-pm gaming install",
                     )
                     return
         
@@ -1329,9 +1344,9 @@ class FedoraPmGui(QWidget):
                     self,
                     "Package Not in Repository",
                     "The gaming meta package is not available in repositories.\n\n"
-                    "Please build it first using:\n"
-                    "./build-gaming-meta.sh\n\n"
-                    "Then install the built RPM.",
+                    "Please install it using:\n"
+                    "./enable-repos.sh\n"
+                    "fedora-pm gaming install",
                 )
 
     def _enable_rpmfusion(self):

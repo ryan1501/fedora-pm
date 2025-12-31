@@ -1,6 +1,22 @@
 # Fedora Package Manager
 
-A modern, user-friendly package manager for Fedora Linux. The CLI is now rewritten in Rust for better performance and reliability, and the GUI remains a Qt (PySide6) frontend.
+A modern, user-friendly package manager for Fedora Linux. The CLI is rewritten in Rust for better performance and reliability, with a beautiful Qt (PySide6) GUI frontend.
+
+## 🚀 Quick Start
+
+**Install both CLI and GUI (recommended):**
+```bash
+./install.sh --both
+```
+
+This single command installs the complete package management suite with automatic dependency handling.
+
+**Choose your installation:**
+- `./install.sh --both` - CLI + GUI (complete setup)
+- `./install.sh --cli` - CLI only (fast, lightweight)
+- `./install.sh --gui` - GUI only (user-friendly)
+- `./install.sh --user --both` - Install to user directory
+- `./install.sh --cli --build` - Auto-build CLI from source
 
 ## Features
 
@@ -65,53 +81,92 @@ See [GUI_FEATURES.md](GUI_FEATURES.md) for complete GUI documentation.
 
 ## Installation
 
-### Option 1: Build and install the Rust CLI (recommended)
+### 🚀 Quick Install (Recommended)
+
+Use the unified installer script for seamless installation:
 
 ```bash
-# Install Rust toolchain (if needed)
-sudo dnf install cargo rust
+# Install both CLI and GUI (recommended)
+./install.sh --both
 
-# Build release binary
+# Install CLI only
+./install.sh --cli
+
+# Install GUI only  
+./install.sh --gui
+
+# Install to user directory
+./install.sh --user --both
+
+# Install to custom path
+./install.sh --prefix /opt/fedora-pm --both
+
+# Auto-build CLI if needed
+./install.sh --cli --build
+
+# Install GUI from RPM (if available)
+./install.sh --gui --rpm-install
+
+# Preview what would be installed
+./install.sh --dry-run --both
+```
+
+The unified installer automatically:
+- ✅ Checks and installs dependencies (Rust, PySide6)
+- ✅ Builds CLI from source when needed
+- ✅ Installs both components to proper locations
+- ✅ Sets correct permissions
+- ✅ Provides clear usage instructions
+- ✅ Supports dry-run for testing
+
+### 📦 Installation Options
+
+#### CLI Only Installation
+- **Fast, lightweight** command-line tool
+- Ideal for servers and headless systems
+- Auto-builds with `--build` flag
+- Full package management functionality
+
+#### GUI Only Installation  
+- **Modern Qt interface** with PySide6
+- User-friendly graphical package manager
+- Quick install buttons for common tasks
+- Optional RPM package installation
+
+#### Full Installation (CLI + GUI)
+- **Complete package management suite**
+- CLI for power users and scripting
+- GUI for everyday use and beginners
+- Both components work together seamlessly
+
+### 🔧 Advanced Installation Options
+
+#### GUI RPM Installation
+
+For proper system package installation with desktop integration:
+
+```bash
+# See GUI_RPM_INSTALLATION.md for detailed build instructions
+./install.sh --gui --rpm-install
+```
+
+This installs the GUI as a proper system package with:
+- ✅ Desktop integration with application menu entry
+- ✅ AppStream metadata for software centers  
+- ✅ Automatic dependency resolution
+- ✅ System-wide installation in `/usr/bin/`
+
+#### Manual Installation
+
+For advanced users who want full control:
+
+```bash
+# CLI only
 cargo build --release
-
-# Install binary (system-wide)
 sudo install -m 0755 target/release/fedora-pm /usr/local/bin/fedora-pm
-```
 
-### Option 2: Build RPM (CLI + GUI)
-
-```bash
-# Install build dependencies
-sudo dnf install rpm-build rpmdevtools python3-pyside6 cargo rust
-
-# Build CLI + GUI RPM
-./build-rpm.sh
-
-# Install built RPM (includes CLI + GUI)
-sudo dnf install ~/rpmbuild/RPMS/noarch/fedora-pm-*.rpm
-```
-
-The GUI will appear in your applications menu as "Fedora Package Manager".
-
-### Option 3: Build GUI-only RPM (NEW)
-
-```bash
-# Install build dependencies
-sudo dnf install rpm-build rpmdevtools python3-pyside6 desktop-file-utils libappstream-glib
-
-# Build GUI RPM
-./build-gui-rpm.sh
-
-# Install built GUI RPM
-sudo dnf install rpmbuild/RPMS/noarch/fedora-pm-gui-*.noarch.rpm
-```
-
-This installs the GUI as a proper system package with desktop integration.
-
-### Option 4: Manual GUI-only install
-
-```bash
-chmod +x fedora-pm-gui.py
+# GUI only (requires PySide6)
+sudo dnf install python3-pyside6 python3-pyside6-qtwidgets
 sudo ln -s $(pwd)/fedora-pm-gui.py /usr/local/bin/fedora-pm-gui
 ```
 
@@ -121,8 +176,7 @@ The fedora-pm-gui can now be built and installed as a proper Fedora RPM package:
 
 ```bash
 # Build and install GUI RPM
-./build-gui-rpm.sh
-sudo dnf install rpmbuild/RPMS/noarch/fedora-pm-gui-*.noarch.rpm
+./install.sh --gui --rpm-install
 ```
 
 **Features of RPM Installation:**
@@ -181,8 +235,7 @@ Or find "Fedora Package Manager" in your applications menu.
 **GUI RPM Installation:**
 ```bash
 # Build and install as system package
-./build-gui-rpm.sh
-sudo dnf install rpmbuild/RPMS/noarch/fedora-pm-gui-*.noarch.rpm
+./install.sh --gui --rpm-install
 ```
 
 The GUI will appear in applications menu after RPM installation with proper desktop integration.
@@ -424,11 +477,11 @@ Install a complete gaming setup with one command:
 
 **Via CLI:**
 ```bash
-# Build the gaming meta package
-./build-gaming-meta.sh
+# Enable RPM Fusion repositories first
+./enable-repos.sh
 
-# Install it
-sudo dnf install rpmbuild/RPMS/noarch/fedora-gaming-meta-*.rpm
+# Install gaming meta package (built automatically)
+fedora-pm gaming install
 ```
 
 **What's included:**
@@ -569,8 +622,8 @@ fedora-pm driver check-nvidia
 ### Gaming Setup
 ```bash
 # Install complete gaming setup (via CLI)
-./build-gaming-meta.sh
-sudo dnf install rpmbuild/RPMS/noarch/fedora-gaming-meta-*.rpm
+./enable-repos.sh
+fedora-pm gaming install
 
 # Or use the GUI - click "Install Gaming Meta Package" button
 fedora-pm-gui
@@ -648,17 +701,16 @@ Customize the gaming meta package by editing `fedora-gaming-meta.spec` to add or
 
 ## Related Files
 
-- `fedora-pm.py` - Main CLI script
+- `install.sh` - Unified installation script (CLI + GUI)
+- `enable-repos.sh` - Repository enablement script
 - `fedora-pm-gui.py` - Qt GUI interface
 - `fedora-pm-gui-rpm.spec` - GUI RPM specification file
-- `build-gui-rpm.sh` - GUI RPM build script
 - `fedora-pm-gui-launcher.py` - GUI fallback launcher
 - `GUI_RPM_INSTALLATION.md` - Complete GUI RPM installation guide
 - `setup.py` - Python packaging configuration
 - `fedora_pm_gui/` - Python package structure
 - `fedora-pm.desktop` - Desktop entry file
 - `fedora-gaming-meta.spec` - Gaming meta package spec file
-- `build-gaming-meta.sh` - Build script for gaming meta package
 - `GUI_CUSTOMIZATION.md` - Guide for customizing GUI appearance
 - `fedora-gaming-meta-README.md` - Detailed gaming meta package documentation
 - `GAMING_META_QUICKSTART.md` - Quick start guide for gaming setup
@@ -670,13 +722,11 @@ The fedora-pm-gui supports **complete RPM packaging** for Fedora systems:
 ### 📦 RPM Features
 - **Proper Dependencies**: PySide6 packages correctly specified
 - **Desktop Integration**: Desktop file and AppStream metadata
-- **Build Automation**: One-click RPM building with validation
 - **System Integration**: Installs to `/usr/bin/` with proper permissions
 - **Validation**: Desktop file and metadata validation during build
 
 ### 📂 RPM Files
 - `fedora-pm-gui-rpm.spec` - Main RPM specification
-- `build-gui-rpm.sh` - Automated build script
 - `GUI_RPM_INSTALLATION.md` - Complete installation guide
 
 ### 🔧 Build Requirements
@@ -684,13 +734,16 @@ The fedora-pm-gui supports **complete RPM packaging** for Fedora systems:
 # Install build dependencies
 sudo dnf install rpm-build rpmdevtools python3-pyside6 desktop-file-utils libappstream-glib
 
-# Build RPM
-./build-gui-rpm.sh
+# Build and install via unified script
+./install.sh --gui --rpm-install
 ```
 
 ### 📱 Installation
 ```bash
-# Install built RPM
+# Install via unified script (recommended)
+./install.sh --gui --rpm-install
+
+# Or install built RPM manually
 sudo dnf install rpmbuild/RPMS/noarch/fedora-pm-gui-*.noarch.rpm
 ```
 

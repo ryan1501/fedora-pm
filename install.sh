@@ -1,34 +1,135 @@
-#!/usr/bin/env bash
-# Installation script for Fedora Package Manager
+#!/bin/bash
+
+# Unified Installation Script for Fedora Package Manager (CLI + GUI)
 
 set -euo pipefail
-trap 'echo "Error on line $LINENO" >&2; exit 1' ERR
 
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 INSTALL_DIR="/usr/local/bin"
 SCRIPT_NAME="fedora-pm"
 DRY_RUN=0
+AUTO_BUILD=0
+RPM_INSTALL=0
 
+# Parse command line arguments
+INSTALL_CLI=0
+INSTALL_GUI=0
+INSTALL_BOTH=0
+
+# Help function
 usage() {
     cat <<EOF
-Usage: $0 [--prefix DIR] [--user] [--dry-run] [--help]
+${BLUE}Fedora Package Manager - Unified Installation Script${NC}
 
-Installs the Fedora Package Manager executable into a system or user bin directory.
+${YELLOW}Usage:${NC} $0 [OPTIONS]
 
-Options:
-  --prefix DIR   Install into DIR (defaults to /usr/local)
-  --user         Install into the current user's ~/.local/bin
-  --dry-run      Show actions but do not perform them
-  -h, --help     Show this help message
+${YELLOW}Installation Options:${NC}
+  --cli              Install CLI only (Rust binary)
+  --gui              Install GUI only (PySide6 interface)
+  --both             Install both CLI and GUI (recommended, default)
+
+${YELLOW}Installation Locations:${NC}
+  --prefix DIR       Install into DIR (default: /usr/local/bin)
+  --user             Install into user directory (\$HOME/.local/bin)
+
+${YELLOW}Build Options:${NC}
+  --build            Auto-build CLI from source
+  --rpm-install      Install GUI from RPM package (if available)
+
+${YELLOW}Utility Options:${NC}
+  --dry-run          Show actions without executing them
+  -h, --help         Show this help message
+
+${YELLOW}Examples:${NC}
+  $0 --both                    # Install both CLI and GUI (recommended)
+  $0 --cli                     # Install CLI only
+  $0 --gui                     # Install GUI only
+  $0 --user --both             # Install both to user directory
+  $0 --prefix /opt/fedora-pm --both  # Install both to custom path
+  $0 --cli --build             # Install CLI with auto-build
+  $0 --gui --rpm-install       # Install GUI from RPM package
+  $0 --dry-run --both          # Preview what would be installed
+
+${YELLOW}Installation Types:${NC}
+  1. CLI Only: ${GREEN}Fast, lightweight command-line tool${NC}
+     - Built from source (Rust)
+     - Full package management functionality
+     - Ideal for servers and scripting
+     
+  2. GUI Only: ${GREEN}Modern graphical interface${NC}
+     - Built with PySide6 (Qt)
+     - User-friendly package management
+     - Quick install buttons for common tasks
+     
+  3. Both: ${GREEN}Complete package management suite${NC}
+     - CLI for power users and automation
+     - GUI for everyday use and beginners
+     - Seamless integration between both
+
+${YELLOW}System Requirements:${NC}
+  - Fedora Linux 38+
+  - sudo access for system-wide installation
+  - Rust toolchain (for CLI auto-build)
+  - Python 3.8+ with PySide6 (for GUI)
+
+${BLUE}For detailed GUI RPM installation, see GUI_RPM_INSTALLATION.md${NC}
 EOF
-    exit 1
+    exit 0
 }
 
-# Parse args
-while [[ ${#} -gt 0 ]]; do
+# Print colored output
+print_info() {
+    echo -e "${BLUE}[INFO]${NC} $1"
+}
+
+print_success() {
+    echo -e "${GREEN}[SUCCESS]${NC} $1"
+}
+
+print_warning() {
+    echo -e "${YELLOW}[WARNING]${NC} $1"
+}
+
+print_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
+
+# Parse arguments
+while [[ $# -gt 0 ]]; do
     case "$1" in
+        --cli)
+            INSTALL_CLI=1
+            shift
+            ;;
+        --gui)
+            INSTALL_GUI=1
+            shift
+            ;;
+        --both)
+            INSTALL_BOTH=1
+            shift
+            ;;
+        --build)
+            AUTO_BUILD=1
+            shift
+            ;;
+        --rpm-install)
+            RPM_INSTALL=1
+            shift
+            ;;
         --prefix)
-            if [[ -z "${2-}" ]]; then echo "--prefix requires a directory" >&2; usage; fi
+            if [[ -z "${2-}" ]]; then 
+                print_error "--prefix requires a directory"
+                usage
+            fi
             INSTALL_DIR="$2"
             shift 2
             ;;
@@ -44,49 +145,166 @@ while [[ ${#} -gt 0 ]]; do
             usage
             ;;
         *)
-            echo "Unknown option: $1" >&2
+            print_error "Unknown option: $1"
             usage
             ;;
     esac
 done
 
-# Prefer a built binary, then repo executable, then the Python script
-if [[ -x "$SCRIPT_DIR/target/release/$SCRIPT_NAME" ]]; then
-    SRC="$SCRIPT_DIR/target/release/$SCRIPT_NAME"
-elif [[ -x "$SCRIPT_DIR/$SCRIPT_NAME" ]]; then
-    SRC="$SCRIPT_DIR/$SCRIPT_NAME"
-elif [[ -f "$SCRIPT_DIR/${SCRIPT_NAME}.py" ]]; then
-    SRC="$SCRIPT_DIR/${SCRIPT_NAME}.py"
+# Determine what to install
+if [[ $INSTALL_BOTH -eq 1 ]]; then
+    print_info "Installing both CLI and GUI (recommended)..."
+    INSTALL_CLI=1
+    INSTALL_GUI=1
+elif [[ $INSTALL_CLI -eq 1 ]]; then
+    print_info "Installing CLI only..."
+elif [[ $INSTALL_GUI -eq 1 ]]; then
+    print_info "Installing GUI only..."
 else
-    echo "Error: no executable or script found to install. Build the project first (e.g. cargo build --release) or ensure ${SCRIPT_NAME} or ${SCRIPT_NAME}.py exists." >&2
-    exit 2
+    print_info "Installing CLI (default)..."
+    INSTALL_CLI=1
 fi
 
-TARGET="$INSTALL_DIR/$SCRIPT_NAME"
+# Check dependencies
+check_dependencies() {
+    local missing_deps=()
+    
+    if [[ $INSTALL_CLI -eq 1 ]] && [[ $AUTO_BUILD -eq 1 ]]; then
+        if ! command -v cargo &> /dev/null; then
+            missing_deps+=("rustc")
+            missing_deps+=("cargo")
+        fi
+    fi
+    
+    if [[ $INSTALL_GUI -eq 1 ]]; then
+        if ! python3 -c "import PySide6" &> /dev/null 2>&1; then
+            missing_deps+=("python3-pyside6")
+            missing_deps+=("python3-pyside6-qtwidgets")
+        fi
+    fi
+    
+    if [[ ${#missing_deps[@]} -gt 0 ]]; then
+        print_warning "Missing dependencies: ${missing_deps[*]}"
+        if [[ $DRY_RUN -eq 0 ]]; then
+            print_info "Installing missing dependencies..."
+            sudo dnf install -y "${missing_deps[@]}" || {
+                print_error "Failed to install dependencies"
+                print_info "Please install manually: sudo dnf install ${missing_deps[*]}"
+                exit 1
+            }
+        fi
+    fi
+}
 
-echo "Installing $SCRIPT_NAME -> $TARGET"
+# CLI Installation
+install_cli() {
+    print_info "Setting up CLI installation..."
+    
+    local src_binary=""
+    
+    if [[ $AUTO_BUILD -eq 1 ]]; then
+        print_info "Auto-building CLI from source..."
+        if [[ $DRY_RUN -eq 1 ]]; then
+            print_info "[DRY RUN] Would build with: cargo build --release"
+            src_binary="$SCRIPT_DIR/target/release/$SCRIPT_NAME"
+        else
+            if cargo build --release; then
+                src_binary="$SCRIPT_DIR/target/release/$SCRIPT_NAME"
+                print_success "CLI built successfully"
+            else
+                print_error "Failed to build CLI. Make sure Rust and cargo are installed."
+                exit 1
+            fi
+        fi
+    elif [[ -x "$SCRIPT_DIR/target/release/$SCRIPT_NAME" ]]; then
+        src_binary="$SCRIPT_DIR/target/release/$SCRIPT_NAME"
+        print_info "Found pre-built CLI binary"
+    elif [[ -x "$SCRIPT_DIR/$SCRIPT_NAME" ]]; then
+        src_binary="$SCRIPT_DIR/$SCRIPT_NAME"
+        print_info "Found CLI binary in root"
+    elif [[ -f "$SCRIPT_DIR/${SCRIPT_NAME}.py" ]]; then
+        src_binary="$SCRIPT_DIR/${SCRIPT_NAME}.py"
+        print_info "Found Python CLI script"
+    else
+        print_error "No CLI executable found. Build the project first:"
+        print_info "  ./install.sh --cli --build"
+        exit 2
+    fi
+    
+    CLI_TARGET="$INSTALL_DIR/$SCRIPT_NAME"
+    MAKE_DIR_CMD=(mkdir -p "$INSTALL_DIR")
+    COPY_CLI_CMD=(cp "$src_binary" "$CLI_TARGET")
+    CHMOD_CLI_CMD=(chmod +x "$CLI_TARGET")
+}
 
-# Ensure install dir exists; use sudo when necessary
-MAKE_DIR_CMD=(mkdir -p "$INSTALL_DIR")
-COPY_CMD=(cp "$SRC" "$TARGET")
-CHMOD_CMD=(chmod +x "$TARGET")
+# GUI Installation
+install_gui() {
+    print_info "Setting up GUI installation..."
+    
+    if [[ $RPM_INSTALL -eq 1 ]]; then
+        print_info "Installing GUI from RPM package..."
+        if compgen -G "$SCRIPT_DIR/rpmbuild/RPMS/noarch/fedora-pm-gui-*.noarch.rpm" > /dev/null 2>&1; then
+            if [[ $DRY_RUN -eq 1 ]]; then
+                print_info "[DRY RUN] Would install: sudo dnf install $SCRIPT_DIR/rpmbuild/RPMS/noarch/fedora-pm-gui-*.noarch.rpm"
+            else
+                sudo dnf install "$SCRIPT_DIR"/rpmbuild/RPMS/noarch/fedora-pm-gui-*.noarch.rpm
+            fi
+            GUI_TARGET="/usr/bin/fedora-pm-gui"
+        else
+            if [[ $DRY_RUN -eq 1 ]]; then
+                print_info "[DRY RUN] No GUI RPM found - would prompt to build it first"
+            else
+                print_error "No GUI RPM found. Build it first with:"
+                print_info "  See GUI_RPM_INSTALLATION.md for instructions"
+                exit 2
+            fi
+        fi
+    else
+        local gui_src=""
+        
+        # Look for GUI sources
+        if [[ -f "$SCRIPT_DIR/fedora-pm-gui.py" ]]; then
+            gui_src="$SCRIPT_DIR/fedora-pm-gui.py"
+            print_info "Found main GUI Python script"
+        elif [[ -f "$SCRIPT_DIR/fedora_pm_gui/main.py" ]]; then
+            gui_src="$SCRIPT_DIR/fedora_pm_gui/main.py"
+            print_info "Found GUI module main.py"
+        elif [[ -f "$SCRIPT_DIR/fedora_pm_gui/gui.py" ]]; then
+            gui_src="$SCRIPT_DIR/fedora_pm_gui/gui.py"
+            print_info "Found GUI module gui.py"
+        else
+            print_error "No GUI executable found. Check GUI_RPM_INSTALLATION.md for setup."
+            exit 2
+        fi
+        
+        GUI_TARGET="$INSTALL_DIR/${SCRIPT_NAME}-gui"
+        COPY_GUI_CMD=(cp "$gui_src" "$GUI_TARGET")
+        CHMOD_GUI_CMD=(chmod +x "$GUI_TARGET")
+    fi
+}
 
-NEED_SUDO=0
-if [[ ! -d "$INSTALL_DIR" ]]; then
-    # directory doesn't exist; check parent write permission
-    PARENT_DIR="$(dirname "$INSTALL_DIR")"
-    if [[ ! -w "$PARENT_DIR" && $(id -u) -ne 0 ]]; then
+# Check if we need sudo
+check_sudo_requirements() {
+    NEED_SUDO=0
+    
+    if [[ ! -d "$INSTALL_DIR" ]]; then
+        PARENT_DIR="$(dirname "$INSTALL_DIR")"
+        if [[ ! -w "$PARENT_DIR" && $(id -u) -ne 0 ]]; then
+            NEED_SUDO=1
+        fi
+    elif [[ ! -w "$INSTALL_DIR" && $(id -u) -ne 0 ]]; then
         NEED_SUDO=1
     fi
-else
-    if [[ ! -w "$INSTALL_DIR" && $(id -u) -ne 0 ]]; then
-        NEED_SUDO=1
-    fi
-fi
+}
 
+# Execute command (with sudo if needed)
 run_cmd() {
     if [[ $DRY_RUN -eq 1 ]]; then
-        echo "+ $*"
+        if [[ $NEED_SUDO -eq 1 ]]; then
+            echo "[DRY RUN] sudo $*"
+        else
+            echo "[DRY RUN] $*"
+        fi
     else
         if [[ $NEED_SUDO -eq 1 ]]; then
             sudo "$@"
@@ -96,19 +314,102 @@ run_cmd() {
     fi
 }
 
-# Create directory and copy
-run_cmd "${MAKE_DIR_CMD[@]}"
-run_cmd "${COPY_CMD[@]}"
-run_cmd "${CHMOD_CMD[@]}"
-
-# Post-install messages
-if [[ $DRY_RUN -eq 1 ]]; then
-    echo "Dry-run complete. No changes were made."
-else
-    echo "✓ $SCRIPT_NAME installed to $TARGET"
-    if [[ "$INSTALL_DIR" == "$HOME/.local/bin" ]]; then
-        echo "Ensure $HOME/.local/bin is in your PATH, e.g. add to ~/.profile or ~/.bashrc:"
-        echo '  export PATH="$HOME/.local/bin:$PATH"'
+# Main installation process
+main() {
+    print_info "Starting Fedora Package Manager installation..."
+    
+    if [[ $DRY_RUN -eq 1 ]]; then
+        print_warning "DRY RUN MODE - No actual changes will be made"
     fi
-    echo "Run: $SCRIPT_NAME --help"
-fi
+    
+    # Check dependencies
+    check_dependencies
+    
+    # Determine installation locations and commands
+    if [[ $INSTALL_CLI -eq 1 ]]; then
+        install_cli
+    fi
+    
+    if [[ $INSTALL_GUI -eq 1 ]]; then
+        install_gui
+    fi
+    
+    # Check if sudo is needed
+    check_sudo_requirements
+    
+    # Create install directory
+    run_cmd "${MAKE_DIR_CMD[@]}"
+    
+    # Install components
+    if [[ $INSTALL_CLI -eq 1 ]]; then
+        run_cmd "${COPY_CLI_CMD[@]}"
+        run_cmd "${CHMOD_CLI_CMD[@]}"
+    fi
+    
+    if [[ $INSTALL_GUI -eq 1 && $RPM_INSTALL -ne 1 ]]; then
+        run_cmd "${COPY_GUI_CMD[@]}"
+        run_cmd "${CHMOD_GUI_CMD[@]}"
+    fi
+    
+    # Installation complete
+    if [[ $DRY_RUN -eq 1 ]]; then
+        print_success "Dry run completed. No changes were made."
+        exit 0
+    fi
+    
+    # Show installation summary
+    echo
+    print_success "Installation completed successfully!"
+    echo
+    
+    if [[ $INSTALL_CLI -eq 1 && $INSTALL_GUI -eq 1 ]]; then
+        echo -e "${GREEN}✓${NC} CLI installed at: ${BLUE}$CLI_TARGET${NC}"
+        if [[ $RPM_INSTALL -eq 1 ]]; then
+            echo -e "${GREEN}✓${NC} GUI installed via RPM package"
+        else
+            echo -e "${GREEN}✓${NC} GUI installed at: ${BLUE}$GUI_TARGET${NC}"
+        fi
+        echo
+        echo -e "${YELLOW}Usage:${NC}"
+        echo "  Run '${BLUE}fedora-pm${NC}' for CLI interface"
+        echo "  Run '${BLUE}fedora-pm-gui${NC}' for graphical interface"
+    elif [[ $INSTALL_CLI -eq 1 ]]; then
+        echo -e "${GREEN}✓${NC} CLI installed at: ${BLUE}$CLI_TARGET${NC}"
+        echo
+        echo -e "${YELLOW}Usage:${NC}"
+        echo "  Run '${BLUE}fedora-pm${NC}' for package management"
+    elif [[ $INSTALL_GUI -eq 1 ]]; then
+        if [[ $RPM_INSTALL -eq 1 ]]; then
+            echo -e "${GREEN}✓${NC} GUI installed via RPM package"
+        else
+            echo -e "${GREEN}✓${NC} GUI installed at: ${BLUE}$GUI_TARGET${NC}"
+        fi
+        echo
+        echo -e "${YELLOW}Usage:${NC}"
+        echo "  Run '${BLUE}fedora-pm-gui${NC}' for graphical interface"
+    fi
+    
+    # Path recommendations
+    echo
+    if [[ "$INSTALL_DIR" == "$HOME/.local/bin" ]]; then
+        echo -e "${YELLOW}Note:${NC} Ensure \$HOME/.local/bin is in your PATH:"
+        echo "  export PATH=\"\$HOME/.local/bin:\$PATH\""
+        echo "  Add to ~/.bashrc or ~/.profile for persistence"
+    elif [[ "$INSTALL_DIR" == "/usr/local/bin" ]]; then
+        echo -e "${YELLOW}Note:${NC} Ensure /usr/local/bin is in your PATH"
+        echo "  Most Fedora systems include this by default"
+    fi
+    
+    # Additional information
+    if [[ $INSTALL_GUI -eq 1 ]]; then
+        echo
+        print_info "For detailed GUI RPM installation and troubleshooting, see:"
+        echo "  ${BLUE}GUI_RPM_INSTALLATION.md${NC}"
+    fi
+    
+    echo
+    print_success "Fedora Package Manager is ready to use!"
+}
+
+# Run main function
+main "$@"

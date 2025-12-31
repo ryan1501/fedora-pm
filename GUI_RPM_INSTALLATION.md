@@ -30,23 +30,21 @@ sudo dnf install -y fedora-pm dnf rpm
 
 ## Building the RPM
 
-### Using the Build Script
+### Using the Unified Install Script
 
-The easiest way to build the RPM is using the provided build script:
+The easiest way to build and install the GUI RPM is using the unified install script:
 
 ```bash
-# Make the build script executable
-chmod +x build-gui-rpm.sh
-
-# Run the build script
-./build-gui-rpm.sh
+# Build and install GUI RPM
+./install.sh --gui --rpm-install
 ```
 
 This will:
-1. Create the rpmbuild directory structure
-2. Generate a source tarball
-3. Build the source and binary RPMs
-4. Place the results in `rpmbuild/RPMS/noarch/` and `rpmbuild/SRPMS/`
+1. Install build dependencies
+2. Create the rpmbuild directory structure
+3. Generate a source tarball
+4. Build the source and binary RPMs
+5. Install the GUI RPM with proper dependencies
 
 ### Manual Build Process
 
@@ -75,7 +73,10 @@ rpmbuild -ba --define "_topdir $(pwd)/rpmbuild" rpmbuild/SPECS/fedora-pm-gui-rpm
 ### Installing the Built Package
 
 ```bash
-# Install the binary RPM (adjust path as needed)
+# Install via unified script (recommended)
+./install.sh --gui --rpm-install
+
+# Or install the binary RPM manually (adjust path as needed)
 sudo dnf install -y rpmbuild/RPMS/noarch/fedora-pm-gui-1.0.0-1.fc*.noarch.rpm
 ```
 

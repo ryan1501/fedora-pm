@@ -150,7 +150,7 @@ Quick command reference for fedora-pm.
 | Command | Description |
 |---------|-------------|
 | `fedora-pm gaming install` | Install gaming meta package |
-| `./build-gaming-meta.sh` | Build gaming meta package |
+| `./enable-repos.sh` | Enable required repositories |
 
 ## Global Options
 
@@ -195,8 +195,7 @@ fedora-pm import my-packages.txt -y
 
 ### Gaming Setup
 ```bash
-fedora-pm repo enable rpmfusion-free
-fedora-pm repo enable rpmfusion-nonfree
+./enable-repos.sh
 fedora-pm gaming install -y
 ```
 

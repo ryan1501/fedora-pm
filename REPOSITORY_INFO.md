@@ -65,18 +65,19 @@ Some packages are available in standard Fedora repositories:
 ## Quick Setup
 
 1. **Enable repositories:**
-   ```bash
-   ./enable-repos.sh
+    ```bash
+    # Automatic (recommended) - uses unified install.sh
+    ./install.sh --both
    ```
 
 2. **Check package availability:**
-   ```bash
-   ./check-package-repos.sh
+    ```bash
+    ./install.sh --dry-run --both --build  # Dry run to check package availability
    ```
 
 3. **Install dependencies:**
-   ```bash
-   ./install-dependencies.sh
+    ```bash
+    ./install.sh --both --build  # Dry run to check package availability
    ```
 
 ## Troubleshooting
