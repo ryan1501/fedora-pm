@@ -78,6 +78,23 @@ class FedoraPackageManager:
                 print(e.stderr if hasattr(e, 'stderr') else str(e))
                 sys.exit(1)
             return None
+
+    def _sanitize_packages(self, packages: List[str]) -> List[str]:
+        """Sanitize package names to prevent command injection"""
+        sanitized = []
+        for pkg in packages:
+            # Remove shell metacharacters and dangerous patterns
+            safe_pkg = ''.join(c for c in pkg if c.isalnum() or c in '.-+_')
+            if safe_pkg and len(safe_pkg) > 0:
+                sanitized.append(safe_pkg)
+        return sanitized
+
+    def _build_command(self, base_cmd: str, packages: Optional[List[str]] = None) -> List[str]:
+        """Build secure command with proper argument handling"""
+        cmd = [base_cmd]
+        if packages:
+            cmd.extend(self._sanitize_packages(packages))
+        return cmd
     
     def _log_action(self, action: str, packages: List[str]):
         """Log package management actions"""
@@ -109,8 +126,9 @@ class FedoraPackageManager:
         
         print(f"Installing packages: {', '.join(packages)}")
         
-        cmd = ['sudo', 'dnf', 'install', '-y' if yes else ''] + packages
-        cmd = [c for c in cmd if c]  # Remove empty strings
+        cmd = ['sudo', 'dnf', 'install'] + self._sanitize_packages(packages)
+        if yes:
+            cmd.append('-y')
         
         try:
             self._run_command(cmd, check=True)
@@ -937,7 +955,7 @@ class FedoraPackageManager:
         
         # Check if Nvidia drivers are installed
         nvidia_status = self.driver_check_nvidia()
-        if not nvidia_status.get('installed', False):
+        if not nvidia_status or not nvidia_status.get('installed', False):
             print("⚠ Warning: Nvidia drivers do not appear to be installed.")
             print("  It's recommended to install Nvidia drivers first.")
             if not yes:
