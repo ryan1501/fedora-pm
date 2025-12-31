@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Complete COPR upload script that builds RPMs and uploads
+# COPR RPM upload script with dependency installation
 # Usage: ./copr-rpm-upload.sh [username]
 
 set -e
@@ -21,17 +21,51 @@ log() { echo -e "${NC}$1"; }
 error() { echo -e "${RED}[ERROR]${NC} $1"; exit 1; }
 success() { echo -e "${GREEN}[SUCCESS]${NC} $1"; }
 info() { echo -e "${BLUE}[INFO]${NC} $1"; }
+warning() { echo -e "${YELLOW}[WARNING]${NC} $1"; }
+
+# Install missing dependencies
+install_deps() {
+    local missing_deps=()
+    
+    # Check for required commands
+    for cmd in fedpkg-packager mock copr-cli; do
+        if ! command -v "$cmd" >/dev/null 2>&1; then
+            missing_deps+=("$cmd")
+        fi
+    done
+    
+    if [ ${#missing_deps[@]} -gt 0 ]; then
+        log "Installing missing dependencies..."
+        local packages=""
+        for dep in "${missing_deps[@]}"; do
+            case "$dep" in
+                fedpkg-packager)
+                    packages="$packages fedpkg-packager"
+                    ;;
+                mock)
+                    packages="$packages mock"
+                    ;;
+                copr-cli)
+                    packages="$packages copr-cli"
+                    ;;
+            esac
+        done
+        
+        log "Running: sudo dnf install $packages"
+        if ! sudo dnf install -y $packages; then
+            error "Failed to install dependencies. Please install manually."
+        fi
+        success "Dependencies installed: ${missing_deps[*]}"
+    else
+        log "All dependencies are available"
+    fi
+}
 
 # Check dependencies
 check_deps() {
-    info "Checking dependencies..."
     for cmd in fedpkg-packager mock copr-cli; do
         command -v "$cmd" >/dev/null 2>&1 || { 
-            if [ "$cmd" = "mock" ]; then
-                error "Missing: $cmd. Install with: sudo dnf install fedpkg-packager mock"
-            else
-                error "Missing: $cmd. Install with: sudo dnf install $cmd"
-            fi
+            error "Missing: $cmd. Please install with: sudo dnf install $cmd"
         }
     done
     success "Dependencies OK"
@@ -65,17 +99,17 @@ build_rpms() {
         RPMS_SUBDIR="${RPMS_DIR}/${FEDORA}"
         mkdir -p "${RPMS_SUBDIR}"
         
-        # Build with fedpkg-packager
-        fedpkg-packager \
+        # Try to build with fedpkg-packager
+        if fedpkg-packager \
             --branch "${FEDORA}" \
-            --spec-file "${PROJECT_NAME}.spec" \
+            --spec-file "${PROJECT_NAME}-rpm.spec" \
             --source-dir "${TEMP_DIR}" \
             --resultdir "${RPMS_SUBDIR}" \
             --name "${PROJECT_NAME}" \
             --version "${VERSION}" \
-            --release "1"
-        
-        if [ $? -eq 0 ]; then
+            --release "1" \
+            --no-cleanup; then
+            
             success "RPMs built for ${FEDORA}"
             
             # List built RPMs
@@ -152,7 +186,9 @@ upload_rpms() {
 upload_to_copr() {
     local username="$1"
     
-    check_deps
+    # Install dependencies if missing
+    install_deps
+    
     local rpms_dir=$(build_rpms)
     
     info "Built RPMs are ready in: ${rpms_dir}"
@@ -172,15 +208,16 @@ Builds RPMs for multiple Fedora versions and uploads to COPR repository
 
 ${YELLOW}Features:${NC}
 • Builds for Fedora 39, 40, 41, 42, 43
+• Creates both .src.rpm and .nosrc.rpm packages
+• Auto-installs missing dependencies (fedpkg-packager, mock, copr-cli)
 • Uses fedpkg-packager for proper building
-• Uploads both src.rpm and nosrc.rpm packages
 • Handles .spec, .nosrc.rpm, .src.rpm files
 • Comprehensive error checking and logging
 
 ${YELLOW}Requirements:${NC}
-• fedpkg-packager
-• mock
-• copr-cli
+• fedpkg-packager (auto-installed if missing)
+• mock (auto-installed if missing)
+• copr-cli (auto-installed if missing)
 • Valid COPR project
 • Proper COPR username
 
@@ -189,21 +226,18 @@ ${YELLOW}Examples:${NC}
   $0 myusername --force              # Force rebuild
   $0 --help                        # Show this help
 
-${YELLOW}Built RPMs:${NC}
-• fedora-pm-1.1.0-1.src.rpm     (source RPM)
-• fedora-pm-1.1.0-1.x86_64.rpm   (binary RPM)
-• Each for multiple Fedora versions
-
 ${YELLOW}After Upload:${NC}
   sudo dnf copr enable myusername/fedora-pm
   sudo dnf install fedora-pm
+
+${YELLOW}Web Interface:${NC}
+  https://copr.fedorainfracloud.org/coprs/myusername/fedora-pm/new_build/
 
 EOF
 }
 
 # Parse arguments
 FORCE_BUILD=false
-USERNAME=""
 
 while [[ $# -gt 0 ]]; do
     case $1 in
