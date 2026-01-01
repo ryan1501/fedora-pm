@@ -176,10 +176,13 @@ check_dependencies() {
         fi
     fi
     
-    if [[ $INSTALL_GUI -eq 1 ]]; then
-        if ! python3 -c "import PySide6" &> /dev/null 2>&1; then
-            missing_deps+=("python3-pyside6")
-            missing_deps+=("python3-pyside6-qtwidgets")
+    if [[ $INSTALL_GUI -eq 1 ]] && [[ $RPM_INSTALL -eq 1 ]]; then
+        # Only check for Python deps if using legacy Python GUI
+        if [[ -f "$SCRIPT_DIR/fedora-pm-gui.py" ]] || [[ -f "$SCRIPT_DIR/fedora_pm_gui/main.py" ]]; then
+            if ! python3 -c "import PySide6" &> /dev/null 2>&1; then
+                missing_deps+=("python3-pyside6")
+                missing_deps+=("python3-pyside6-qtwidgets")
+            fi
         fi
     fi
     
@@ -222,9 +225,6 @@ install_cli() {
     elif [[ -x "$SCRIPT_DIR/$SCRIPT_NAME" ]]; then
         src_binary="$SCRIPT_DIR/$SCRIPT_NAME"
         print_info "Found CLI binary in root"
-    elif [[ -f "$SCRIPT_DIR/${SCRIPT_NAME}.py" ]]; then
-        src_binary="$SCRIPT_DIR/${SCRIPT_NAME}.py"
-        print_info "Found Python CLI script"
     else
         print_error "No CLI executable found. Build the project first:"
         print_info "  ./install.sh --cli --build"
@@ -243,11 +243,11 @@ install_gui() {
     
     if [[ $RPM_INSTALL -eq 1 ]]; then
         print_info "Installing GUI from RPM package..."
-        if compgen -G "$SCRIPT_DIR/rpmbuild/RPMS/noarch/fedora-pm-gui-*.noarch.rpm" > /dev/null 2>&1; then
+        if compgen -G "$SCRIPT_DIR/rpmbuild/RPMS/x86_64/fedora-pm-gui-*.rpm" > /dev/null 2>&1; then
             if [[ $DRY_RUN -eq 1 ]]; then
-                print_info "[DRY RUN] Would install: sudo dnf install $SCRIPT_DIR/rpmbuild/RPMS/noarch/fedora-pm-gui-*.noarch.rpm"
+                print_info "[DRY RUN] Would install: sudo dnf install $SCRIPT_DIR/rpmbuild/RPMS/x86_64/fedora-pm-gui-*.rpm"
             else
-                sudo dnf install "$SCRIPT_DIR"/rpmbuild/RPMS/noarch/fedora-pm-gui-*.noarch.rpm
+                sudo dnf install "$SCRIPT_DIR"/rpmbuild/RPMS/x86_64/fedora-pm-gui-*.rpm
             fi
             GUI_TARGET="/usr/bin/fedora-pm-gui"
         else
@@ -255,25 +255,39 @@ install_gui() {
                 print_info "[DRY RUN] No GUI RPM found - would prompt to build it first"
             else
                 print_error "No GUI RPM found. Build it first with:"
-                print_info "  See GUI_RPM_INSTALLATION.md for instructions"
+                print_info "  cargo build --release --bin fedora-pm-gui"
                 exit 2
             fi
         fi
     else
         local gui_src=""
         
-        # Look for GUI sources
-        if [[ -f "$SCRIPT_DIR/fedora-pm-gui.py" ]]; then
+        # Look for native GUI binary
+        if [[ -x "$SCRIPT_DIR/target/release/fedora-pm-gui" ]]; then
+            gui_src="$SCRIPT_DIR/target/release/fedora-pm-gui"
+            print_info "Found native GUI binary"
+        elif [[ -f "$SCRIPT_DIR/src/bin/fedora-pm-gui.rs" ]]; then
+            print_info "Building GUI from source..."
+            if [[ $DRY_RUN -eq 1 ]]; then
+                print_info "[DRY RUN] Would build: cargo build --release --bin fedora-pm-gui"
+                gui_src="$SCRIPT_DIR/target/release/fedora-pm-gui"
+            else
+                if cargo build --release --bin fedora-pm-gui; then
+                    gui_src="$SCRIPT_DIR/target/release/fedora-pm-gui"
+                    print_success "GUI built successfully"
+                else
+                    print_error "Failed to build GUI. Make sure Rust and cargo are installed."
+                    exit 1
+                fi
+            fi
+        elif [[ -f "$SCRIPT_DIR/fedora-pm-gui.py" ]]; then
             gui_src="$SCRIPT_DIR/fedora-pm-gui.py"
-            print_info "Found main GUI Python script"
+            print_warning "Found legacy Python GUI - consider using native Rust GUI"
         elif [[ -f "$SCRIPT_DIR/fedora_pm_gui/main.py" ]]; then
             gui_src="$SCRIPT_DIR/fedora_pm_gui/main.py"
-            print_info "Found GUI module main.py"
-        elif [[ -f "$SCRIPT_DIR/fedora_pm_gui/gui.py" ]]; then
-            gui_src="$SCRIPT_DIR/fedora_pm_gui/gui.py"
-            print_info "Found GUI module gui.py"
+            print_warning "Found legacy Python GUI - consider using native Rust GUI"
         else
-            print_error "No GUI executable found. Check GUI_RPM_INSTALLATION.md for setup."
+            print_error "No GUI executable found. Build with: cargo build --release --bin fedora-pm-gui"
             exit 2
         fi
         

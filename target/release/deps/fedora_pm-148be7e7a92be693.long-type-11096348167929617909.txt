@@ -1,0 +1,1 @@
+From<iced::widget::PickList<'_, (&str, PackageAction), Vec<(&str, PackageAction)>, PackageAction, _, _, _>>

@@ -1,6 +1,6 @@
 # Fedora Package Manager
 
-A modern, user-friendly package manager for Fedora Linux. The CLI is rewritten in Rust for better performance and reliability, with a beautiful Qt (PySide6) GUI frontend.
+A modern, user-friendly package manager for Fedora Linux, completely rewritten in native Rust for optimal performance, security, and reliability. Features both CLI and native GUI interfaces.
 
 ## 🚀 Quick Start
 
@@ -22,7 +22,7 @@ sudo dnf copr enable uncodedchristiangamer/fedora-pm
 sudo dnf install fedora-pm-gui
 
 # Option 4: Direct GUI launch (if installed)
-fedora-pm-gui-launcher.py
+fedora-pm --gui
 ```
 
 **Choose your installation:**
@@ -31,6 +31,7 @@ fedora-pm-gui-launcher.py
 - `./install.sh --gui` - GUI only (user-friendly)
 - `./install.sh --user --both` - Install to user directory
 - `./install.sh --cli --build` - Auto-build CLI from source
+- `./install.sh --gui --build` - Build native GUI from source
 
 ## Features
 

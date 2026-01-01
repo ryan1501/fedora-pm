@@ -21,6 +21,7 @@ mod history;
 mod kernel;
 mod groups;
 
+
 #[derive(Parser, Debug)]
 #[command(name = "fedora-pm", about = "Fedora Package Manager (Rust)", version = "1.1.0")]
 pub struct Cli {
@@ -38,6 +39,9 @@ pub struct Cli {
     
     #[arg(long)]
     pub config_dir: Option<String>,
+    
+    #[arg(long, help = "Launch GUI instead of CLI")]
+    pub gui: bool,
 }
 
 #[derive(Subcommand, Debug)]
@@ -259,6 +263,14 @@ pub enum SelfUpdateAction {
 
 fn main() {
     let cli = Cli::parse();
+    
+    // GUI not yet implemented
+    if cli.gui {
+        eprintln!("GUI is not yet implemented in the native Rust version.");
+        eprintln!("Use the CLI interface instead:");
+        eprintln!("  fedora-pm --help");
+        std::process::exit(1);
+    }
     
     match cli.command {
         Commands::Install { packages, yes } => {

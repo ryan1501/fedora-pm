@@ -1,0 +1,12 @@
+/home/rblissett/fedora-pm/target/release/deps/drm_ffi-c670a27aaab0f3b8.d: /home/rblissett/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/drm-ffi-0.9.0/src/lib.rs /home/rblissett/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/drm-ffi-0.9.0/src/utils.rs /home/rblissett/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/drm-ffi-0.9.0/src/gem.rs /home/rblissett/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/drm-ffi-0.9.0/src/ioctl.rs /home/rblissett/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/drm-ffi-0.9.0/src/mode.rs /home/rblissett/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/drm-ffi-0.9.0/src/syncobj.rs
+
+/home/rblissett/fedora-pm/target/release/deps/libdrm_ffi-c670a27aaab0f3b8.rlib: /home/rblissett/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/drm-ffi-0.9.0/src/lib.rs /home/rblissett/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/drm-ffi-0.9.0/src/utils.rs /home/rblissett/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/drm-ffi-0.9.0/src/gem.rs /home/rblissett/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/drm-ffi-0.9.0/src/ioctl.rs /home/rblissett/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/drm-ffi-0.9.0/src/mode.rs /home/rblissett/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/drm-ffi-0.9.0/src/syncobj.rs
+
+/home/rblissett/fedora-pm/target/release/deps/libdrm_ffi-c670a27aaab0f3b8.rmeta: /home/rblissett/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/drm-ffi-0.9.0/src/lib.rs /home/rblissett/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/drm-ffi-0.9.0/src/utils.rs /home/rblissett/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/drm-ffi-0.9.0/src/gem.rs /home/rblissett/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/drm-ffi-0.9.0/src/ioctl.rs /home/rblissett/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/drm-ffi-0.9.0/src/mode.rs /home/rblissett/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/drm-ffi-0.9.0/src/syncobj.rs
+
+/home/rblissett/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/drm-ffi-0.9.0/src/lib.rs:
+/home/rblissett/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/drm-ffi-0.9.0/src/utils.rs:
+/home/rblissett/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/drm-ffi-0.9.0/src/gem.rs:
+/home/rblissett/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/drm-ffi-0.9.0/src/ioctl.rs:
+/home/rblissett/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/drm-ffi-0.9.0/src/mode.rs:
+/home/rblissett/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/drm-ffi-0.9.0/src/syncobj.rs:

@@ -1,0 +1,1 @@
+iced_core::element::Element<'_, _, _, _>: From<std::iter::Map<std::vec::IntoIter<(&str, gui::Tab)>, {closure@src/gui.rs:148:34: 148:48}>>
