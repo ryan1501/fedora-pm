@@ -16,9 +16,9 @@ if ! command -v fedora-pm &> /dev/null; then
     sudo chmod +x /usr/local/bin/fedora-pm
 fi
 
-# Install GUI RPM with --skip-broken to ignore missing subpackages
+# Install GUI RPM (now with correct dependencies)
 echo "Installing GUI RPM..."
-sudo dnf install --skip-broken -y rpmbuild/RPMS/noarch/fedora-pm-gui-1.0.0-1.fc43.noarch.rpm
+sudo dnf install -y rpmbuild/RPMS/noarch/fedora-pm-gui-1.0.0-1.fc43.noarch.rpm
 
 # Install desktop file if not already installed
 if [ ! -f /usr/share/applications/fedora-pm.desktop ]; then
