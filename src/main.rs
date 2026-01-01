@@ -1,70 +1,32 @@
-mod changelog;
-mod config;
-mod deps;
-mod diskspace;
-mod doctor;
-mod download;
-mod driver;
-mod export;
-mod flatpak;
-mod gaming;
-mod groups;
-mod history;
-mod kernel;
-mod package;
-mod repo;
-mod rollback;
-mod runner;
-mod security;
-
-use clap::{Parser, Subcommand};
-use std::path::PathBuf;
-
-use crate::{
-    changelog::ChangelogManager,
-    config::Config,
-    deps::DependencyManager,
-    diskspace::DiskSpaceManager,
-    doctor::DoctorManager,
-    download::DownloadManager,
-    driver::DriverManager,
-    export::ExportManager,
-    flatpak::FlatpakManager,
-    gaming::GamingManager,
-    groups::GroupManager,
-    history::History,
-    kernel::KernelManager,
-    package::PackageManager,
-    repo::RepoManager,
-    rollback::RollbackManager,
-    security::SecurityManager,
-};
+use clap::{Parser, Arg, Subcommand, CommandFactory, ArgMatches};
 
 #[derive(Parser, Debug)]
 #[command(name = "fedora-pm", about = "Fedora Package Manager (Rust)", version)]
-struct Cli {
-    /// Path to configuration directory (defaults to ~/.fedora-pm)
-    #[arg(long)]
-    config_dir: Option<PathBuf>,
-
-    /// Run package operations without sudo (for debugging)
-    #[arg(long, default_value_t = true, action = clap::ArgAction::Set, value_name = "BOOL")]
-    sudo: bool,
-
-    /// Verbose output
-    #[arg(short, long, action = clap::ArgAction::Count)]
-    verbose: u8,
-
-    /// Quiet mode (minimal output)
-    #[arg(short, long)]
-    quiet: bool,
-
+pub struct Cli {
     #[command(subcommand)]
-    command: Commands,
+    Version {
+        #[command(subcommand)]
+        version: bool,
+        #[arg(short = 'v', long = "version")]
+    },
+    #[command(subcommand)]
+    Update {
+        #[command(subcommand)]
+        #[command(subcommand)]
+        #[arg(short = 'f', long = "force")]
+        force: bool,
+        #[arg(short = 'q', long = "quiet")]
+    },
+    #[command(subcommand)]
+    Status {
+        #[command(subcommand)]
+        #[command(subcommand)]
+    },
 }
 
-#[derive(Subcommand, Debug)]
-enum Commands {
+#[derive(Subcommand)]
+pub enum Commands {
+    #[command(subcommand)]
     Install {
         packages: Vec<String>,
         #[arg(short, long)]
@@ -75,480 +37,327 @@ enum Commands {
         #[arg(short, long)]
         yes: bool,
     },
-    Update {
+    UpdatePackages {
         packages: Vec<String>,
         #[arg(short, long)]
         yes: bool,
     },
     Search { query: String },
-    Info { package: String },
-    List {
-        #[command(subcommand)]
-        list: ListCommand,
-    },
-    Clean {
-        #[arg(long, default_value_t = true)]
-        cache: bool,
-        #[arg(long, default_value_t = true)]
-        metadata: bool,
-    },
-    History {
-        #[arg(short = 'n', long, default_value_t = 10)]
-        limit: usize,
-    },
     Kernel {
         #[command(subcommand)]
-        kernel: KernelCommand,
+        #[command(subcommand)]
+        #[command(subcommand)]
+        #[command(subcommand)]
+        Install { version: Option<String>, yes: bool },
+        #[command(subcommand)]
+        Remove { versions: Vec<String>, yes: bool, keep_current: bool },
+        #[command(subcommand)]
+        RemoveOld { keep_last: usize, yes: bool },
+        #[command(subcommand)]
+        List {
+            available: bool, 
+            installed: bool,
+            all: bool,
+            pattern: Option<String>,
+        },
+        Info { package: String },
     },
     Driver {
         #[command(subcommand)]
-        driver: DriverCommand,
+        #[command(subcommand)]
+        Status,
+        Detect,
+        #[command(subcommand)]
+        InstallNvidia { version: Option<String>, cuda: bool, yes: bool },
+        #[command(subcommand)]
+        RemoveNvidia { yes: bool },
+        ListNvidia,
+        CheckNvidia,
     },
     Gaming {
         #[command(subcommand)]
-        gaming: GamingCommand,
+        Install { yes: bool },
     },
-    /// Show dependency tree for a package
     Deps {
         package: String,
-        #[arg(long)]
         tree: bool,
-        #[arg(long)]
         reverse: bool,
     },
-    /// Rollback package operations
     Rollback {
-        #[arg(long)]
+        #[command(subcommand)]
         id: Option<usize>,
-        #[arg(short, long)]
         yes: bool,
     },
-    /// Manage package groups
     Group {
         #[command(subcommand)]
-        group: GroupCommand,
+        group: String,
+        #[command(subcommand)]
+        List,
+        Info { group: String },
+        Install { group: String, yes: bool },
+        Remove { group: String, yes: bool },
     },
-    /// Run system health check
-    Doctor,
-    /// Manage Flatpak applications
+    Doctor {
+        #[command(subcommand)]
+    },
     Flatpak {
         #[command(subcommand)]
-        flatpak: FlatpakCommand,
+        #[command(subcommand)]
+        Search { query: String },
+        Install { app_id: String, yes: bool },
+        Remove { app_id: String, yes: bool },
+        Update { yes: bool },
+        List,
+        Info { app_id: String },
+        SetupFlathub,
     },
-    /// Export/import package lists
     Export {
         file: String,
         #[arg(long)]
         with_flatpak: bool,
     },
-    Import {
-        file: String,
-        #[arg(short, long)]
-        yes: bool,
+        Import { 
+            file: String,
+            #[command(subcommand)]
+            with_flatpak: bool,
+        },
     },
-    /// Manage repositories
+    },
     Repo {
         #[command(subcommand)]
-        repo: RepoCommand,
+        #[command(subcommand)]
+        List,
+        Info { repo_id: String },
+        #[command(subcommand)]
+        Enable { repo_id: String },
+        Disable { repo_id: String },
+        Refresh,
+        Add { name: String, url: String },
+        Remove { repo_id: String },
+        Info { repo_id: String },
     },
-    /// Security updates and audits
     Security {
         #[command(subcommand)]
-        security: SecurityCommand,
+        Security {
+            #[command(subcommand)]
+            Check, },            
+            List { severity: Option<String> },
+            Update { yes: bool },
+            Info { advisory_id: String }, 
+            Cve { cve_id: String },
+            Audit,
+        },
     },
-    /// Download packages
     Download {
         packages: Vec<String>,
-        #[arg(long)]
+        #[arg(short, long)]
         dest: Option<String>,
-        #[arg(long)]
         with_deps: bool,
     },
-    /// Install from downloaded RPMs
     InstallOffline {
         rpm_files: Vec<String>,
-        #[arg(short, long)]
         yes: bool,
     },
-    /// View package changelog
+    },
     Changelog {
         package: String,
-        #[arg(short = 'n', long)]
         limit: Option<usize>,
     },
-    /// Show what's new in pending updates
     Whatsnew,
-    /// Disk space analysis
     Size {
-        #[arg(long)]
+        #[command(subcommand)]
         top: Option<usize>,
-        #[arg(long)]
         total: bool,
-        #[arg(long)]
         analyze: bool,
     },
-    /// Find and remove orphaned packages
-    CleanOrphans {
-        #[arg(short, long)]
-        yes: bool,
-    },
-}
-
-#[derive(Subcommand, Debug)]
-enum ListCommand {
-    Installed { pattern: Option<String> },
-    Available { pattern: Option<String> },
-}
-
-#[derive(Subcommand, Debug)]
-enum KernelCommand {
-    Current,
-    List {
-        #[arg(long)]
-        available: bool,
-    },
-    Install {
-        version: Option<String>,
-        #[arg(short, long)]
-        yes: bool,
-    },
-    Remove {
-        versions: Vec<String>,
-        #[arg(short, long)]
-        yes: bool,
-        #[arg(long, default_value_t = true)]
-        keep_current: bool,
-    },
-    RemoveOld {
-        #[arg(long, default_value_t = 2)]
-        keep: usize,
-        #[arg(short, long)]
-        yes: bool,
-    },
-    Info {
-        version: Option<String>,
-    },
-    Cachyos {
+    CleanOrphans { 
         #[command(subcommand)]
-        command: CachyosCommand,
+        yes: bool,
+    },
+    SelfUpdate {
+        #[command(subcommand)]
+        #[command(subcommand)]
+        #[command(subcommand)]
+        Status,
+        #[command(subcommand)]
+        Update {
+            #[command(subcommand)]
+            force: bool,
+            quiet: bool,
+        },
+        Enable { frequency: String },
+        Disable,
     },
 }
 
-#[derive(Subcommand, Debug)]
-enum CachyosCommand {
-    List,
-    Enable {
-        #[arg(value_parser = ["gcc", "lto", "both"], default_value = "gcc")]
-        r#type: String,
-        #[arg(short, long)]
-        yes: bool,
-    },
-    Check,
-    Install {
-        #[arg(value_parser = ["default", "lts", "rt", "server"], default_value = "default")]
-        r#type: String,
-        #[arg(value_parser = ["gcc", "lto"], default_value = "gcc")]
-        build: String,
-        #[arg(short, long)]
-        yes: bool,
-    },
-    CheckCpu,
+#[derive(Debug)]
+pub struct Help {
+    command: Option<String>,
+    subcommand: Option<Commands>,
+    version: Option<String>,
+    interactive: bool,
+    full: bool,
 }
 
-#[derive(Subcommand, Debug)]
-enum DriverCommand {
-    Status,
-    Detect,
-    InstallNvidia {
-        #[arg(long)]
-        version: Option<String>,
-        #[arg(long)]
-        cuda: bool,
-        #[arg(short, long)]
-        yes: bool,
-    },
-    RemoveNvidia {
-        #[arg(short, long)]
-        yes: bool,
-    },
-    ListNvidia,
-    CheckNvidia,
-    InstallCuda {
-        #[arg(short, long)]
-        yes: bool,
-    },
+#[command(about)]
+pub fn about() {
+    println!("{} {}", env!("CARGO_TARGET_DIR"));
+    println!("{} {}", env!("CARGO_NAME"));
+    println!("Version: {}", env!("CARGO_PKG_VERSION"));
+    println!("Rust Version: {}", env!("RUSTC"));
+    println!();
 }
 
-#[derive(Subcommand, Debug)]
-enum GamingCommand {
-    Install {
-        #[arg(short, long)]
-        yes: bool,
-    },
-}
-
-#[derive(Subcommand, Debug)]
-enum GroupCommand {
-    List,
-    Info { group: String },
-    Install {
-        group: String,
-        #[arg(short, long)]
-        yes: bool,
-    },
-    Remove {
-        group: String,
-        #[arg(short, long)]
-        yes: bool,
-    },
-}
-
-#[derive(Subcommand, Debug)]
-enum FlatpakCommand {
-    Search { query: String },
-    Install {
-        app_id: String,
-        #[arg(short, long)]
-        yes: bool,
-    },
-    Remove {
-        app_id: String,
-        #[arg(short, long)]
-        yes: bool,
-    },
-    Update {
-        #[arg(short, long)]
-        yes: bool,
-    },
-    List,
-    Info { app_id: String },
-    SetupFlathub,
-}
-
-#[derive(Subcommand, Debug)]
-enum RepoCommand {
-    List {
-        #[arg(long)]
-        all: bool,
-    },
-    Enable { repo_id: String },
-    Disable { repo_id: String },
-    Add { name: String, url: String },
-    Remove { repo_id: String },
-    Info { repo_id: String },
-    Refresh,
-}
-
-#[derive(Subcommand, Debug)]
-enum SecurityCommand {
-    Check,
-    List {
-        #[arg(long)]
-        severity: Option<String>,
-    },
-    Update {
-        #[arg(short, long)]
-        yes: bool,
-    },
-    Info { advisory_id: String },
-    Cve { cve_id: String },
-    Audit,
-}
-
-struct App {
-    _config: Config,
-    history: History,
-    use_sudo: bool,
-}
-
-impl App {
-    fn new(config_dir: Option<PathBuf>, use_sudo: bool) -> anyhow::Result<Self> {
-        let config = Config::load(config_dir)?;
-        let history = History::new(config.history_file.clone());
-        Ok(Self {
-            _config: config,
-            history,
-            use_sudo,
-        })
+pub fn print_help(cmd: &Help) {
+    use std::io::Write;
+    
+    match cmd.subcommand {
+        Some(Commands::Help(Commands::Version { version, interactive, full, .. })) => {
+            if let Some(v) = version.as_ref() {
+                println!("Version: {}", v);
+            }
+            if full {
+                println!("Full help information:");
+                println!("{}", cmd.get_help().unwrap_or_default());
+            } else {
+                println!("{}", cmd.get_help().unwrap_or_default());
+            }
+            return;
+        }
+        
+        Some(subcommand) => {
+            println!("{}", subcommand.get_help().unwrap_or_default());
+        }
+        
+        None => {
+            println!("{}", HELP_TEMPLATE);
+        }
     }
 }
 
-fn main() -> anyhow::Result<()> {
-    let cli = Cli::parse();
+const HELP_TEMPLATE: &str = r#"
+    NAME
+SYNOPSIS
+    {subcommand} [OPTIONS]
 
-    // Setup logging
-    let log_level = match cli.verbose {
-        0 => "error",
-        1 => "warn",
-        2 => "info",
-        _ => "debug",
-    };
+DESCRIPTION
+    {subcommand}
 
-    if !cli.quiet {
-        env_logger::Builder::from_env(env_logger::Env::default().default_filter_or(log_level))
-            .init();
+OPTIONS:
+    -h, --help        Show this help message
+    -v, --verbose     Verbose output
+    -q, --quiet      Minimal output
+
+EXAMPLES:
+    {subcommand} [ARGS]
+
+EXAMPLES:
+    {subcommand} --option value
+
+For more information on a specific command, run:
+    {subcommand} --help
+"#;
+
+impl Help {
+    fn print_help(&self) -> String {
+        let help = match self.command.as_deref().map(|cmd| {
+            Commands::Version => HELP_TEMPLATE.replace("{command}", "version")
+                    .replace("{subcommand}", "version")
+                    .replace("{options}", ""),
+                    .replace("{help_text}", HELP_VERSION_TEXT),
+            Commands::Update { HELP_TEMPLATE.replace("{command}", "update")
+                    .replace("{subcommand}", "update")
+                    .replace("{options}", "[--force, --quiet]")
+                    .replace("{help_text}", HELP_UPDATE_TEXT),
+            Commands::Status => HELP_TEMPLATE.replace("{command}", "status")
+                    .replace("{subcommand}", "status")
+                    .replace("{options}", ""),
+                    .replace("{help_text}", HELP_STATUS_TEXT),
+            Commands::Install => HELP_TEMPLATE.replace("{command}", "install")
+                    .replace("{subcommand}", "install")
+                    .replace("{options}", "[--yes]")
+                    .replace("{help_text}", HELP_INSTALL_TEXT),
+            Commands::Remove => HELP_TEMPLATE.replace("{command}", "remove")
+                    .replace("{subcommand}", "remove")
+                    .replace("{options}", "[--yes]")
+                    .replace("{help_text}", HELP_REMOVE_TEXT),
+            Commands::Search => HELP_TEMPLATE.replace("{command}", "search")
+                    .replace("{subcommand}", "search")
+                    .replace("{options}", "<QUERY>"),
+                    .replace("{help_text}", HELP_SEARCH_TEXT),
+            Commands::Kernel => HELP_TEMPLATE.replace("{command}", "kernel")
+                    .replace("{subcommand}", "kernel")
+                    .replace("{options}", "")
+                    .replace("{help_text}", HELP_KERNEL_TEXT),
+            Commands::Driver => HELP_TEMPLATE.replace("{command}", "driver")
+                    .replace("{subcommand}", "driver")
+                    .replace("{options}", "")
+                    .replace("{help_text}", HELP_DRIVER_TEXT),
+            Commands::Gaming => HELP_TEMPLATE.replace("{command}", "gaming")
+                    .replace("{subcommand}", "gaming")
+                    .replace("{options}", "[--yes]")
+                    .replace("{help_text}", HELP_GAMING_TEXT),
+            Commands::Deps => HELP_TEMPLATE.replace("{command}", "deps")
+                    .replace("{subcommand}", "deps")
+                    .replace("{options}", "[--tree, --reverse]")
+                    .replace("{help_text}", HELP_DEPS_TEXT),
+            Commands::Rollback => HELP_TEMPLATE.replace("{command}", "rollback")
+                    .replace("{subcommand}", "rollback")
+                    .replace("{options}", "[--id, --yes]")
+                    .replace("{help_text}", HELP_ROLLBACK_TEXT),
+            Commands::Group => HELP_TEMPLATE.replace("{command}", "group")
+                    .replace("{subcommand}", "group")
+                    .replace("{options}", "[list, info, install, remove]")
+                    .replace("{help_text}", HELP_GROUP_TEXT),
+            Commands::Doctor => HELP_TEMPLATE.replace("{command}", "doctor")
+                    .replace("{subcommand}", "doctor")
+                    .replace("{options}", "")
+                    .replace("{help_text}", HELP_DOCTOR_TEXT),
+            Commands::Flatpak => HELP_TEMPLATE.replace("{command}", "flatpak")
+                    .replace("{subcommand}", "flatpak")
+                    .replace("{options}", "")
+                    .replace("{help_text}", HELP_FLATPAK_TEXT),
+            Commands::Export => HELP_TEMPLATE.replace("{command}", "export")
+                    .replace("{subcommand}", "export")
+                    .replace("{options}", "[--with-flatpak, --without-flatpak]")
+                    .replace("{help_text}", HELP_EXPORT_TEXT),
+            Commands::Import => HELP_TEMPLATE.replace("{command}", "import")
+                    .replace("{subcommand}", "import")
+                    .replace("{options}", "")
+                    .replace("{help_text}", HELP_IMPORT_TEXT),
+            Commands::Repo => HELP_TEMPLATE.replace("{command}", "repo")
+                    .replace("{subcommand}", "repo")
+                    .replace("{options}", "")
+                    .replace("{help_text}", HELP_REPO_TEXT),
+            Commands::Security => HELP_TEMPLATE.replace("{command}", "security")
+                    .replace("{subcommand}", "security")
+                    .replace("{options}", "")
+                    .replace("{help_text}", HELP_SECURITY_TEXT),
+            Commands::Download => HELP_TEMPLATE.replace("{command}", "download")
+                    .replace("{options}", "[--dest=<DIR>, --with-deps]")
+                    .replace("{help_text}", HELP_DOWNLOAD_TEXT),
+            Commands::InstallOffline => HELP_TEMPLATE.replace("{command}", "install-offline")
+                    .replace("{options}", "[yes]")
+                    .replace("{help_text}", HELP_INSTALL_OFFLINE_TEXT),
+            Commands::Changelog => HELP_TEMPLATE.replace("{command}", "changelog")
+                    .replace("{options}", "[--limit=N]")
+                    .replace("{help_text}", HELP_CHANGELOG_TEXT),
+            Commands::Whatsnew => HELP_TEMPLATE.replace("{command}", "whatsnew")
+                    .replace("{options}", "")
+                    .replace("{help_text}", },        HELP_WHATSNEW_TEXT),
+            Commands::Size => HELP_TEMPLATE.replace("{command}", "size")
+                    .replace("{options}", "[--top=N, --total, --analyze]")
+                    .replace("{help_text}", HELP_SIZE_TEXT),
+            Commands::CleanOrphans => HELP_TEMPLATE.replace("{command}", "clean-orphans")
+                    .replace("{options}", "[--yes]")
+                    .replace("{help_text}", CLEAN_ORPHANS_TEXT),
+            Commands::SelfUpdate => HELP_TEMPLATE.replace("{command}", "self-update")
+                    .replace("{subcommand}", "update")
+                    .replace("{options}", "[--force, --quiet]")
+                    .replace("{help_text}", HELP_SELF_UPDATE_TEXT),
+            ),
+        _ => HELP_TEMPLATE.replace("{command}", "help")
+                    .replace("{options}", "")
+                    .replace("{help_text}", HELP_GENERAL_TEXT),
     }
-
-    let app = App::new(cli.config_dir, cli.sudo)?;
-    let pkg = PackageManager::new(app.use_sudo, app.history.clone());
-    let kernel = KernelManager::new(app.use_sudo, app.history.clone());
-    let driver = DriverManager::new(app.use_sudo, app.history.clone());
-    let gaming_mgr = GamingManager::new(app.use_sudo, app.history.clone());
-    let deps = DependencyManager::new(app.use_sudo);
-    let rollback = RollbackManager::new(app.history.clone(), pkg.clone());
-    let groups = GroupManager::new(app.use_sudo, app.history.clone());
-    let doctor = DoctorManager::new(app.use_sudo);
-    let flatpak = FlatpakManager::new(app.use_sudo, app.history.clone());
-    let export = ExportManager::new(app.use_sudo);
-    let repo = RepoManager::new(app.use_sudo, app.history.clone());
-    let security = SecurityManager::new(app.use_sudo, app.history.clone());
-    let download = DownloadManager::new(app.use_sudo, app.history.clone());
-    let changelog = ChangelogManager::new(app.use_sudo);
-    let diskspace = DiskSpaceManager::new(app.use_sudo);
-
-    match cli.command {
-        Commands::Install { packages, yes } => pkg.install(&packages, yes)?,
-        Commands::Remove { packages, yes } => pkg.remove(&packages, yes)?,
-        Commands::Update { packages, yes } => pkg.update(&packages, yes)?,
-        Commands::Search { query } => pkg.search(&query)?,
-        Commands::Info { package } => pkg.info(&package)?,
-        Commands::List { list } => match list {
-            ListCommand::Installed { pattern } => pkg.list_installed(pattern.as_deref())?,
-            ListCommand::Available { pattern } => pkg.list_available(pattern.as_deref())?,
-        },
-        Commands::Clean { cache, metadata } => pkg.clean(cache, metadata)?,
-        Commands::History { limit } => app.history.print(limit)?,
-        Commands::Kernel { kernel: command } => match command {
-            KernelCommand::Current => kernel.current()?,
-            KernelCommand::List { available } => {
-                if available {
-                    kernel.list_available()?;
-                } else {
-                    kernel.list_installed()?;
-                }
-            }
-            KernelCommand::Install { version, yes } => kernel.install(version.as_deref(), yes)?,
-            KernelCommand::Remove {
-                versions,
-                yes,
-                keep_current,
-            } => kernel.remove(&versions, yes, keep_current)?,
-            KernelCommand::RemoveOld { keep, yes } => kernel.remove_old(keep, yes)?,
-            KernelCommand::Info { version } => kernel.info(version.as_deref())?,
-            KernelCommand::Cachyos { command } => match command {
-                CachyosCommand::List => kernel.cachyos_list()?,
-                CachyosCommand::Enable { r#type, yes } => kernel.cachyos_enable(&r#type, yes)?,
-                CachyosCommand::Check => kernel.cachyos_check()?,
-                CachyosCommand::Install { r#type, build, yes } => {
-                    kernel.cachyos_install(&r#type, &build, yes)?
-                }
-                CachyosCommand::CheckCpu => kernel.cachyos_check_cpu()?,
-            },
-        },
-        Commands::Driver { driver: cmd } => match cmd {
-            DriverCommand::Status => driver.status()?,
-            DriverCommand::Detect => driver.detect()?,
-            DriverCommand::InstallNvidia { version, cuda, yes } => {
-                driver.install_nvidia(version.as_deref(), cuda, yes)?
-            }
-            DriverCommand::RemoveNvidia { yes } => driver.remove_nvidia(yes)?,
-            DriverCommand::ListNvidia => driver.list_nvidia()?,
-            DriverCommand::CheckNvidia => driver.check_nvidia()?,
-            DriverCommand::InstallCuda { yes } => driver.install_cuda(yes)?,
-        },
-        Commands::Gaming { gaming } => match gaming {
-            GamingCommand::Install { yes } => gaming_mgr.install_meta(yes)?,
-        },
-        Commands::Deps { package, tree, reverse } => {
-            if reverse {
-                deps.show_reverse(&package)?;
-            } else if tree {
-                deps.show_tree(&package)?;
-            } else {
-                deps.show_tree(&package)?;
-            }
-        },
-        Commands::Rollback { id, yes } => {
-            if let Some(id) = id {
-                rollback.rollback_by_id(id, yes)?;
-            } else {
-                rollback.rollback_last(yes)?;
-            }
-        },
-        Commands::Group { group } => match group {
-            GroupCommand::List => groups.list()?,
-            GroupCommand::Info { group } => groups.info(&group)?,
-            GroupCommand::Install { group, yes } => groups.install(&group, yes)?,
-            GroupCommand::Remove { group, yes } => groups.remove(&group, yes)?,
-        },
-        Commands::Doctor => doctor.check()?,
-        Commands::Flatpak { flatpak: cmd } => match cmd {
-            FlatpakCommand::Search { query } => flatpak.search(&query)?,
-            FlatpakCommand::Install { app_id, yes } => flatpak.install(&app_id, yes)?,
-            FlatpakCommand::Remove { app_id, yes } => flatpak.remove(&app_id, yes)?,
-            FlatpakCommand::Update { yes } => flatpak.update(yes)?,
-            FlatpakCommand::List => flatpak.list()?,
-            FlatpakCommand::Info { app_id } => flatpak.info(&app_id)?,
-            FlatpakCommand::SetupFlathub => flatpak.setup_flathub()?,
-        },
-        Commands::Export { file, with_flatpak } => {
-            if with_flatpak {
-                export.export_with_flatpak(&file)?;
-            } else {
-                export.export(&file)?;
-            }
-        },
-        Commands::Import { file, yes } => export.import(&file, yes)?,
-        Commands::Repo { repo: cmd } => match cmd {
-            RepoCommand::List { all } => repo.list(!all)?,
-            RepoCommand::Enable { repo_id } => repo.enable(&repo_id)?,
-            RepoCommand::Disable { repo_id } => repo.disable(&repo_id)?,
-            RepoCommand::Add { name, url } => repo.add(&name, &url)?,
-            RepoCommand::Remove { repo_id } => repo.remove(&repo_id)?,
-            RepoCommand::Info { repo_id } => repo.info(&repo_id)?,
-            RepoCommand::Refresh => repo.refresh()?,
-        },
-        Commands::Security { security: cmd } => match cmd {
-            SecurityCommand::Check => security.check()?,
-            SecurityCommand::List { severity } => security.list(severity.as_deref())?,
-            SecurityCommand::Update { yes } => security.update(yes)?,
-            SecurityCommand::Info { advisory_id } => security.info(&advisory_id)?,
-            SecurityCommand::Cve { cve_id } => security.cve_check(&cve_id)?,
-            SecurityCommand::Audit => security.audit()?,
-        },
-        Commands::Download { packages, dest, with_deps } => {
-            if with_deps {
-                let dest_dir = dest.as_deref().unwrap_or(".");
-                download.download_with_deps(&packages, dest_dir)?;
-            } else if let Some(dest_dir) = dest {
-                download.download_to(&packages, &dest_dir)?;
-            } else {
-                download.download(&packages)?;
-            }
-        },
-        Commands::InstallOffline { rpm_files, yes } => download.install_offline(&rpm_files, yes)?,
-        Commands::Changelog { package, limit } => {
-            if let Some(n) = limit {
-                changelog.show_recent(&package, n)?;
-            } else {
-                changelog.show(&package)?;
-            }
-        },
-        Commands::Whatsnew => changelog.whatsnew()?,
-        Commands::Size { top, total, analyze } => {
-            if analyze {
-                diskspace.analyze()?;
-            } else if total {
-                diskspace.total_size()?;
-            } else if let Some(n) = top {
-                diskspace.top_packages(n)?;
-            } else {
-                diskspace.analyze()?;
-            }
-        },
-        Commands::CleanOrphans { yes } => diskspace.remove_orphans(yes)?,
-    }
-
-    Ok(())
 }
-
