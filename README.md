@@ -230,7 +230,7 @@ Configuration is stored in `~/.fedora-pm/config.json`:
 
 ## 📊 Version Information
 
-**Current Version:** 1.1.0
+**Current Version:** 2.0.0
 
 ### Recent Changes
 - ✅ **Native Rust GUI** - Migrated from Python to native Rust with `iced`
@@ -379,4 +379,4 @@ Fedora Package Manager provides:
 
 ---
 
-*Version 1.1.0 | Built with ❤️ in Rust*
+*Version 2.0.0 | Built with ❤️ in Rust*
