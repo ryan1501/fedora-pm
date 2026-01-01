@@ -9,7 +9,21 @@ A modern, user-friendly package manager for Fedora Linux. The CLI is rewritten i
 ./install.sh --both
 ```
 
-This single command installs the complete package management suite with automatic dependency handling.
+**GUI Installation (User-Friendly):**
+```bash
+# Option 1: Install with GUI (user-friendly)
+./install.sh --gui
+
+# Option 2: Install CLI with GUI included
+./install.sh --both
+
+# Option 3: Quick GUI-only install
+sudo dnf copr enable uncodedchristiangamer/fedora-pm
+sudo dnf install fedora-pm-gui
+
+# Option 4: Direct GUI launch (if installed)
+fedora-pm-gui-launcher.py
+```
 
 **Choose your installation:**
 - `./install.sh --both` - CLI + GUI (complete setup)
@@ -109,8 +123,68 @@ See [GUI_FEATURES.md](GUI_FEATURES.md) for complete GUI documentation.
 # Auto-build CLI if needed
 ./install.sh --cli --build
 
-# Install GUI from RPM (if available)
-./install.sh --gui --rpm-install
+# Install GUI from COPR (when available)
+```bash
+# Enable COPR repository first
+sudo dnf copr enable uncodedchristiangamer/fedora-pm
+
+# Install GUI package
+sudo dnf install fedora-pm-gui
+
+# Launch GUI
+fedora-pm-gui-launcher.py
+
+# Alternative: Desktop entry
+cp fedora-pm-gui.desktop ~/.local/share/applications/
+
+## 🖥️ GUI Installation from COPR
+
+Once fedora-pm is uploaded to COPR, you can install both CLI and GUI:
+
+```bash
+# 1. Enable COPR repository
+sudo dnf copr enable uncodedchristiangamer/fedora-pm
+
+# 2. Install CLI and GUI (recommended)
+sudo dnf install fedora-pm fedora-pm-gui
+
+# 3. Launch GUI
+fedora-pm-gui
+
+# Or use GUI launcher (more features)
+fedora-pm-gui-launcher.py
+```
+
+## 📋 Installation Methods
+
+### Method 1: Complete Setup (Recommended)
+```bash
+# Unified installer handles everything
+./install.sh --both
+```
+
+### Method 2: GUI Only
+```bash
+# User-friendly GUI installation
+./install.sh --gui
+```
+
+### Method 3: Manual from COPR
+```bash
+# Enable repository
+sudo dnf copr enable uncodedchristiangamer/fedora-pm
+
+# Install packages
+sudo dnf install fedora-pm fedora-pm-gui
+```
+
+### Method 4: System-Wide Installation
+```bash
+# Install for all users
+sudo dnf copr enable uncodedchristiangamer/fedora-pm
+sudo dnf install fedora-pm fedora-pm-gui
+```
+```
 
 # Preview what would be installed
 ./install.sh --dry-run --both
@@ -755,4 +829,254 @@ sudo dnf install rpmbuild/RPMS/noarch/fedora-pm-gui-*.noarch.rpm
 ## License
 
 This project is open source and available for use and modification.
+
+---
+
+## 🖥️ Complete GUI Installation Guide
+
+### 🚀 Quick GUI Installation (Recommended)
+
+#### Option 1: From COPR Repository (When Available)
+```bash
+# Enable COPR repository
+sudo dnf copr enable uncodedchristiangamer/fedora-pm
+
+# Install GUI package
+sudo dnf install fedora-pm-gui
+
+# Launch GUI
+fedora-pm-gui
+# or find "Fedora Package Manager" in applications menu
+```
+
+#### Option 2: Complete Setup with CLI
+```bash
+# Install both CLI and GUI (recommended)
+./install.sh --both
+
+# Launch GUI from command line
+fedora-pm-gui
+
+# Or use GUI launcher
+python3 fedora-pm-gui-launcher.py
+```
+
+#### Option 3: GUI Only Installation
+```bash
+# User-friendly GUI installation
+./install.sh --gui
+
+# Install GUI to user directory
+./install.sh --user --gui
+
+# System-wide GUI installation
+sudo dnf install fedora-pm-gui
+```
+
+#### Option 4: Manual Installation
+```bash
+# Install dependencies first
+sudo dnf install python3-pyside6 python3-pyside6-qtwidgets python3-pyside6-qtcore python3-pyside6-qtgui qt6-base-devel
+
+# Manual GUI installation
+python3 fedora_pm_gui/main.py
+
+# Create desktop entry
+cp fedora-pm.desktop ~/.local/share/applications/
+```
+
+### 📱 GUI Features Overview
+
+#### 🎮 Main Interface
+- **Package Management Tab**: Install, remove, update, search packages with visual feedback
+- **System Tab**: Health check, kernel management, driver setup, security updates
+- **Gaming Tab**: One-click Steam installation, driver management, gaming optimizations
+- **Settings Tab**: Customization, themes, notifications, preferences
+- **Flatpak Tab**: Sandbox app management alongside native packages
+- **Repo Tab**: Repository management with enabling/disabling
+- **Export/Import Tab**: Package backup and restoration
+- **History Tab**: Operation history with rollback capabilities
+- **Update Tab**: System and package updates with progress tracking
+- **Size Tab**: Disk space analysis and cache management
+- **Orphan Cleanup**: Find and remove unused packages
+- **Help Tab**: Built-in help system with examples
+
+#### 🎨 Gaming Center
+- **One-Click Steam Installation**: Automatically configures Steam and dependencies
+- **Driver Management**: Easy Nvidia driver installation and configuration
+- **Gaming Kernel Options**: CachyOS kernels with BORE scheduler
+- **Performance Tweaks**: System optimization for better gaming performance
+- **Compatibility Layers**: Proton, GE-Proton, wine-gecko configuration
+- **Emulator Support**: Retro gaming with RetroArch, PPSSPP
+- **Game Launch Integration**: Direct integration with Steam and other platforms
+
+#### 🎨 Customization
+- **Dark/Light Themes**: System-integrated color schemes
+- **Font Selection**: Customizable fonts and sizes
+- **Color Schemes**: Personalized interface colors
+- **Window Management**: Tabbed or single-window interface
+- **Keyboard Shortcuts**: Configurable hotkeys for all functions
+- **Language Support**: Multiple interface languages
+- **Panel Layouts**: Customizable sidebar and toolbar arrangements
+
+### 🔧 Installation Methods
+
+#### Method 1: Unified Installer (Recommended)
+```bash
+# Automated setup that handles everything
+./install.sh --both
+
+# Features:
+# - Automatically checks and installs dependencies
+# - Builds CLI from source if needed
+# - Installs GUI with proper desktop integration
+# - Sets correct permissions and paths
+# - Provides clear success/failure messages
+```
+
+#### Method 2: Manual Package Management
+```bash
+# Check if GUI is installed
+dnf list installed | grep fedora-pm-gui
+
+# Install GUI package
+sudo dnf install fedora-pm-gui
+
+# Verify installation
+which fedora-pm-gui
+```
+
+#### Method 3: Source Installation
+```bash
+# Clone repository
+git clone https://github.com/ryan1501/fedora-pm
+cd fedora-pm
+
+# Install GUI dependencies
+sudo dnf install python3-pyside6 python3-pyside6-qtwidgets python3-pyside6-qtcore python3-pyside6-qtgui qt6-base-devel
+
+# Build GUI
+python3 fedora_pm_gui/main.py
+
+# Create desktop entry
+sudo cp fedora-pm-gui.desktop /usr/share/applications/
+
+# Install Python dependencies
+sudo dnf install python3-pyside6 python3-pyside6-qtwidgets python3-pyside6-qtcore python3-pyside6-qtgui
+```
+
+### 🚀 GUI Usage Examples
+
+#### Basic Operations
+```bash
+# Launch GUI
+fedora-pm-gui
+
+# Install package from GUI
+# (Click "Install Packages" tab and search for "vim")
+
+# System health check from GUI
+# (Click "System" tab -> "Health Check")
+
+# Install gaming setup from GUI
+# (Click "Gaming" tab -> "Install Gaming Meta")
+```
+
+#### Advanced GUI Operations
+```bash
+# Custom launch arguments
+fedora-pm-gui --theme dark --debug
+
+# Launch specific module
+fedora-pm-gui --module package_manager
+
+# Check system integration
+fedora-pm-gui --diagnostics
+
+# Set custom configuration directory
+fedora-pm-gui --config ~/.config/fedora-pm
+```
+
+### 🎯 System Integration
+
+#### Desktop Integration
+```bash
+# The GUI automatically creates desktop entry
+# Available in:
+# - GNOME Applications menu
+# - KDE Application Launcher
+# - XFCE Applications Menu
+# - Cinnamon Applications Menu
+
+#### Command Line Integration
+```bash
+# CLI can launch GUI
+fedora-pm gui
+
+# GUI can control CLI operations
+fedora-pm-gui --cli-integration --install vim
+
+# Both work together seamlessly
+```
+
+### 📚 Troubleshooting GUI
+
+#### Installation Issues
+```bash
+# Check for missing Python dependencies
+python3 -c "import PySide6" && echo "PySide6 OK" || echo "PySide6 missing"
+
+# Check Qt installation
+python3 -c "from PySide6 import QtCore" && echo "Qt6 OK" || echo "Qt6 missing"
+
+# Check GUI permissions
+ls -la /usr/bin/fedora-pm-gui
+ls -la /usr/share/applications/fedora-pm-gui.desktop
+```
+
+#### Runtime Issues
+```bash
+# Run GUI with debug output
+QT_DEBUG_PLUGINS=1 fedora-pm-gui
+
+# Check for library conflicts
+export QT_LOGGING_RULES="*=true"
+export QT_DEBUG_PLUGINS=1
+fedora-pm-gui 2>&1 | tee gui-debug.log
+
+# Check for missing system libraries
+ldd /usr/bin/fedora-pm-gui
+```
+
+### 📱 GUI Documentation
+
+For complete GUI features and configuration options, see:
+- `GUI_FEATURES.md` - Complete feature documentation
+- `GUI_RPM_INSTALLATION.md` - Detailed RPM build instructions
+- `fedora_pm_gui/` directory - GUI source code documentation
+
+### 🚀 Getting Started with GUI
+
+1. **Start with the unified installer:**
+   ```bash
+   ./install.sh --both
+   ```
+
+2. **Launch the GUI:**
+   ```bash
+   fedora-pm-gui
+   ```
+
+3. **Explore the interface:**
+   - Click through tabs to discover features
+   - Use the search function to find packages
+   - Check system health from the System tab
+   - Customize appearance in Settings
+
+4. **Advanced usage:**
+   - Use CLI and GUI together for maximum productivity
+   - Access CLI functionality directly from GUI
+   - Automate tasks using CLI scripts and GUI visualization
+
+The fedora-pm GUI provides a comprehensive, modern package management experience with gaming center capabilities and full CLI integration. Enjoy the enhanced graphical interface! 🎮
 
