@@ -243,11 +243,19 @@ install_gui() {
     
     if [[ $RPM_INSTALL -eq 1 ]]; then
         print_info "Installing GUI from RPM package..."
+        # Check for GUI RPM in both x86_64 and noarch directories
+        local rpm_path=""
         if compgen -G "$SCRIPT_DIR/rpmbuild/RPMS/x86_64/fedora-pm-gui-*.rpm" > /dev/null 2>&1; then
+            rpm_path="$SCRIPT_DIR/rpmbuild/RPMS/x86_64/fedora-pm-gui-*.rpm"
+        elif compgen -G "$SCRIPT_DIR/rpmbuild/RPMS/noarch/fedora-pm-gui-*.rpm" > /dev/null 2>&1; then
+            rpm_path="$SCRIPT_DIR/rpmbuild/RPMS/noarch/fedora-pm-gui-*.rpm"
+        fi
+        
+        if [[ -n "$rpm_path" ]]; then
             if [[ $DRY_RUN -eq 1 ]]; then
-                print_info "[DRY RUN] Would install: sudo dnf install $SCRIPT_DIR/rpmbuild/RPMS/x86_64/fedora-pm-gui-*.rpm"
+                print_info "[DRY RUN] Would install: sudo dnf install $rpm_path"
             else
-                sudo dnf install "$SCRIPT_DIR"/rpmbuild/RPMS/x86_64/fedora-pm-gui-*.rpm
+                sudo dnf install "$rpm_path"
             fi
             GUI_TARGET="/usr/bin/fedora-pm-gui"
         else
