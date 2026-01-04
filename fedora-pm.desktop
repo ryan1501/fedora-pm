@@ -7,9 +7,6 @@ Comment=Modern package manager for Fedora Linux with GUI and CLI interfaces
 Exec=fedora-pm-gui
 Icon=system-software-install
 Terminal=false
-Categories=System;PackageManager;Settings;
+Categories=System;PackageManager;
 Keywords=package;manager;dnf;rpm;fedora;install;update;remove;
 StartupNotify=true
-MimeType=
-
-

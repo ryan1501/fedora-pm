@@ -1,28 +1,24 @@
 Name:           fedora-pm-gui
 Version:        1.0.0
 Release:        1%{?dist}
-Summary:        Qt-based GUI for Fedora Package Manager
+Summary:        Iced-based GUI for Fedora Package Manager
 License:        MIT
 URL:            https://github.com/yourusername/fedora-pm
-Source0:        %{name}-%{version}.tar.gz
-
-BuildArch:      noarch
+Source0:        fedora-pm-%{version}.tar.gz
 
 # Build requirements
-BuildRequires:  python3-devel
-BuildRequires:  python3-setuptools
+BuildRequires:  rust
+BuildRequires:  cargo
 BuildRequires:  desktop-file-utils
 BuildRequires:  libappstream-glib
 
 # Runtime requirements
-Requires:       python3 >= 3.8
-Requires:       python3-pyside6
 Requires:       fedora-pm >= 1.0.0
 Requires:       dnf
 Requires:       rpm
 
 %description
-A modern Qt-based graphical interface for the Fedora Package Manager.
+A modern Rust-based graphical interface using the Iced framework for the Fedora Package Manager.
 Provides an easy-to-use GUI for package management, system health checks,
 security audits, and system maintenance tasks.
 
@@ -37,10 +33,11 @@ Features:
 - Gaming meta package installation
 
 %prep
-%setup -q
+%setup -q -n fedora-pm-%{version}
 
 %build
-# No compilation needed - Python scripts
+# Build the Rust GUI binary
+cargo build --release --bin fedora-pm-gui
 
 %install
 mkdir -p %{buildroot}%{_bindir}
@@ -48,14 +45,11 @@ mkdir -p %{buildroot}%{_datadir}/applications
 mkdir -p %{buildroot}%{_datadir}/metainfo
 mkdir -p %{buildroot}%{_docdir}/%{name}
 
-# Install main GUI script
-install -m 0755 fedora-pm-gui.py %{buildroot}%{_bindir}/fedora-pm-gui
-
-# Install GUI launcher
-install -m 0755 fedora-pm-gui-launcher.py %{buildroot}%{_bindir}/fedora-pm-gui-launcher
+# Install the compiled GUI binary
+install -m 0755 target/release/fedora-pm-gui %{buildroot}%{_bindir}/fedora-pm-gui
 
 # Install desktop file
-install -m 0644 fedora-pm.desktop %{buildroot}%{_datadir}/applications/
+desktop-file-install --dir=%{buildroot}%{_datadir}/applications fedora-pm.desktop
 
 # Install appstream metadata
 cat > %{buildroot}%{_datadir}/metainfo/fedora-pm-gui.metainfo.xml << 'EOF'
@@ -83,17 +77,24 @@ EOF
 
 # Install documentation
 install -m 0644 README.md %{buildroot}%{_docdir}/%{name}/
-install -m 0644 requirements.txt %{buildroot}%{_docdir}/%{name}/
+
+%post
+# Update desktop database after installation
+/usr/bin/update-desktop-database &> /dev/null || :
+
+%postun
+# Update desktop database after uninstallation
+/usr/bin/update-desktop-database &> /dev/null || :
 
 %files
 %{_bindir}/fedora-pm-gui
-%{_bindir}/fedora-pm-gui-launcher
 %{_datadir}/applications/fedora-pm.desktop
 %{_datadir}/metainfo/fedora-pm-gui.metainfo.xml
 %doc %{_docdir}/%{name}/*
 
 %changelog
-* Wed Jan 01 2025 Fedora Package Manager <packager@example.com> - 1.0.0-1
-- Initial GUI release with Qt interface
+* Sat Jan 04 2026 Fedora Package Manager <packager@example.com> - 1.0.0-1
+- Initial GUI release with Iced/Rust interface
 - Package management and system tools
 - Desktop integration with appstream metadata
+- Fixed application menu entry with proper desktop database updates
