@@ -1,7 +1,7 @@
 /// Help module for fedora-pm
 /// This module contains help text and help-related functions
 
-pub const HELP_GENERAL_TEXT: &str = "
+ pub const HELP_GENERAL_TEXT: &str = "\"
 Fedora Package Manager - A comprehensive package management tool for Fedora
 
 Usage:

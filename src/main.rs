@@ -1,5 +1,6 @@
 use clap::{Parser, Subcommand};
 use std::process;
+use anyhow::Result;
 
 mod help;
 mod gaming;
@@ -20,6 +21,7 @@ mod package;
 mod history;
 mod kernel;
 mod groups;
+mod validation;
 
 
 #[derive(Parser, Debug)]
@@ -175,7 +177,7 @@ pub enum Commands {
     },
     Help {
         command: Option<String>,
-    },
+    }
 }
 
 #[derive(Subcommand, Debug)]
@@ -261,7 +263,7 @@ pub enum SelfUpdateAction {
     Disable,
 }
 
-fn main() {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli = Cli::parse();
     
     // GUI not yet implemented
@@ -272,55 +274,117 @@ fn main() {
         std::process::exit(1);
     }
     
-    match cli.command {
+    let result =     match cli.command {
         Commands::Install { packages, yes } => {
-            println!("Installing packages: {:?}", packages);
-            if !yes {
-                println!("Would install with confirmation");
-            }
+            validation::validate_package_list(&packages)?;
+            let config = config::Config::load(cli.config_dir.as_deref().map(|s| s.into()))?;
+            let history = history::History::new(config.history_file.clone());
+            let pkg_manager = package::PackageManager::new(cli.sudo, history);
+            pkg_manager.install(&packages, yes)?;
+            Ok(())
         },
         Commands::Remove { packages, yes } => {
-            println!("Removing packages: {:?}", packages);
+            validation::validate_package_list(&packages)?;
+            let config = config::Config::load(cli.config_dir.as_deref().map(|s| s.into()))?;
+            let history = history::History::new(config.history_file.clone());
+            let pkg_manager = package::PackageManager::new(cli.sudo, history);
+            pkg_manager.remove(&packages, yes)?;
+            Ok(())
         },
         Commands::Update { packages, yes } => {
-            if packages.is_empty() {
-                println!("Updating all packages");
-            } else {
-                println!("Updating packages: {:?}", packages);
-            }
+            let config = config::Config::load(cli.config_dir.as_deref().map(|s| s.into()))?;
+            let history = history::History::new(config.history_file.clone());
+            let pkg_manager = package::PackageManager::new(cli.sudo, history);
+            pkg_manager.update(&packages, yes)?;
+            Ok(())
         },
         Commands::Search { query } => {
-            println!("Searching for: {}", query);
+            validation::validate_search_query(&query)?;
+            let config = config::Config::load(cli.config_dir.as_deref().map(|s| s.into()))?;
+            let history = history::History::new(config.history_file.clone());
+            let pkg_manager = package::PackageManager::new(cli.sudo, history);
+            pkg_manager.search(&query)?;
+            Ok(())
         },
         Commands::Info { package } => {
-            println!("Getting info for: {}", package);
+            validation::validate_package_name(&package)?;
+            let config = config::Config::load(cli.config_dir.as_deref().map(|s| s.into()))?;
+            let history = history::History::new(config.history_file.clone());
+            let pkg_manager = package::PackageManager::new(cli.sudo, history);
+            pkg_manager.info(&package)?;
+            Ok(())
         },
         Commands::List { available, installed, all, pattern } => {
-            println!("Listing packages");
+            let config = config::Config::load(cli.config_dir.as_deref().map(|s| s.into()))?;
+            let history = history::History::new(config.history_file.clone());
+            let pkg_manager = package::PackageManager::new(cli.sudo, history);
+            
+            if all || installed {
+                pkg_manager.list_installed(pattern.as_deref())?;
+            }
+            if all || available {
+                pkg_manager.list_available(pattern.as_deref())?;
+            }
+            if !all && !installed && !available {
+                pkg_manager.list_installed(pattern.as_deref())?;
+            }
+            Ok(())
         },
         Commands::Clean => {
-            println!("Cleaning package cache");
+            let config = config::Config::load(cli.config_dir.as_deref().map(|s| s.into()))?;
+            let history = history::History::new(config.history_file.clone());
+            let pkg_manager = package::PackageManager::new(cli.sudo, history);
+            pkg_manager.clean(true, true)?; // Clean both cache and metadata
+            Ok(())
         },
         Commands::History => {
-            println!("Showing package history");
+            let config = config::Config::load(cli.config_dir.as_deref().map(|s| s.into()))?;
+            let history = history::History::new(config.history_file.clone());
+            history.print(10)?; // Show last 10 entries
+            Ok(())
         },
         Commands::Kernel { action } => {
             match action {
-                KernelAction::List => println!("Listing kernels"),
-                KernelAction::Install { version, yes } => println!("Installing kernel"),
-                KernelAction::Remove { versions, yes, keep_current } => println!("Removing kernels"),
-                KernelAction::RemoveOld { keep_last, yes } => println!("Removing old kernels"),
-                KernelAction::Info { package } => println!("Kernel info"),
+                KernelAction::List => {
+                    println!("Listing kernels");
+                    Ok(())
+                },
+                KernelAction::Install { version, yes } => {
+                    println!("Installing kernel: {}", version.as_ref().unwrap_or(&"latest".to_string()));
+                    Ok(())
+                },
+                KernelAction::Remove { versions, yes, keep_current } => {
+                    println!("Removing kernels: {:?}", versions);
+                    Ok(())
+                },
+                KernelAction::RemoveOld { keep_last, yes } => {
+                    println!("Removing old kernels, keeping last {}", keep_last);
+                    Ok(())
+                },
+                KernelAction::Info { package } => {
+                    println!("Kernel info: {}", package);
+                    Ok(())
+                },
             }
         },
         Commands::Driver { action } => {
             match action {
-                DriverAction::Status => println!("Driver status"),
-                DriverAction::Detect => println!("Detecting drivers"),
-                DriverAction::InstallNvidia { version, cuda, yes } => println!("Installing NVIDIA driver"),
-                DriverAction::RemoveNvidia { yes } => println!("Removing NVIDIA driver"),
-                DriverAction::ListNvidia => println!("Listing NVIDIA packages"),
-                DriverAction::CheckNvidia => println!("Checking NVIDIA"),
+                DriverAction::Status => {
+                    println!("Checking driver status...");
+                    Ok(())
+                },
+                DriverAction::Detect => {
+                    println!("Detecting GPU drivers...");
+                    Ok(())
+                },
+                DriverAction::InstallNvidia { version, cuda, yes } => {
+                    println!("Installing NVIDIA driver: version={:?}, cuda={}", version, cuda);
+                    Ok(())
+                },
+                DriverAction::RemoveNvidia { yes } => {
+                    println!("Removing NVIDIA driver...");
+                    Ok(())
+                },
             }
         },
         Commands::Gaming { action } => {
@@ -379,50 +443,99 @@ fn main() {
         },
         Commands::Security { action } => {
             match action {
-                SecurityAction::Check => println!("Checking security updates"),
-                SecurityAction::List { severity } => println!("Listing security updates"),
-                SecurityAction::Update { yes } => println!("Installing security updates"),
-                SecurityAction::Info { advisory_id } => println!("Security info: {}", advisory_id),
-                SecurityAction::Cve { cve_id } => println!("CVE info: {}", cve_id),
-                SecurityAction::Audit => println!("Running security audit"),
+                SecurityAction::Check => {
+                    println!("Checking for security updates...");
+                    Ok(())
+                },
+                SecurityAction::List { severity, advisory_id, cve_id } => {
+                    println!("Listing security updates: severity={:?}, advisory_id={:?}, cve_id={:?}", severity, advisory_id, cve_id);
+                    Ok(())
+                },
+                SecurityAction::Update => {
+                    println!("Installing security updates...");
+                    Ok(())
+                },
+                SecurityAction::Audit => {
+                    println!("Running security audit...");
+                    Ok(())
+                },
+                SecurityAction::Cve { cve_id } => {
+                    println!("Checking CVE: {}", cve_id);
+                    Ok(())
+                },
+                SecurityAction::Info { advisory_id } => {
+                    println!("Advisory info: {}", advisory_id);
+                    Ok(())
+                },
             }
         },
         Commands::Download { packages, dest, with_deps } => {
-            println!("Downloading packages: {:?}", packages);
+            validation::validate_package_list(&packages)?;
+            let config = config::Config::load(cli.config_dir.as_deref().map(|s| s.into()))?;
+            let history = history::History::new(config.history_file.clone());
+            let pkg_manager = package::PackageManager::new(cli.sudo, history);
+            pkg_manager.download(&packages, dest.as_deref().unwrap_or("."), with_deps)?;
+            Ok(())
         },
         Commands::InstallOffline { rpm_files, yes } => {
-            println!("Installing offline packages: {:?}", rpm_files);
+            validation::validate_package_list(&rpm_files)?;
+            let config = config::Config::load(cli.config_dir.as_deref().map(|s| s.into()))?;
+            let history = history::History::new(config.history_file.clone());
+            let pkg_manager = package::PackageManager::new(cli.sudo, history);
+            pkg_manager.install_offline(&rpm_files, yes)?;
+            Ok(())
         },
         Commands::Changelog { package, limit } => {
-            println!("Showing changelog for: {}", package);
+            validation::validate_package_name(&package)?;
+            let config = config::Config::load(cli.config_dir.as_deref().map(|s| s.into()))?;
+            let history = history::History::new(config.history_file.clone());
+            let pkg_manager = package::PackageManager::new(cli.sudo, history);
+            pkg_manager.changelog(&package, limit)?;
+            Ok(())
         },
         Commands::WhatsNew => {
-            println!("Showing what's new in updates");
+            let config = config::Config::load(cli.config_dir.as_deref().map(|s| s.into()))?;
+            let history = history::History::new(config.history_file.clone());
+            let pkg_manager = package::PackageManager::new(cli.sudo, history);
+            pkg_manager.whats_new()?;
+            Ok(())
         },
         Commands::Size { top, total, analyze } => {
-            println!("Analyzing package sizes");
+            let config = config::Config::load(cli.config_dir.as_deref().map(|s| s.into()))?;
+            let history = history::History::new(config.history_file.clone());
+            let pkg_manager = package::PackageManager::new(cli.sudo, history);
+            pkg_manager.size(top, total, analyze)?;
+            Ok(())
         },
         Commands::CleanOrphans { yes } => {
-            println!("Cleaning orphan packages");
+            let config = config::Config::load(cli.config_dir.as_deref().map(|s| s.into()))?;
+            let history = history::History::new(config.history_file.clone());
+            let pkg_manager = package::PackageManager::new(cli.sudo, history);
+            pkg_manager.clean_orphans(yes)?;
+            Ok(())
         },
         Commands::SelfUpdate { action } => {
             match action {
                 SelfUpdateAction::Status => {
                     println!("Checking self-update status");
-                    println!("Current version: 1.1.0");
+                    println!("Current version: {}", env!("CARGO_PKG_VERSION"));
                     println!("Update source: GitHub (not configured)");
+                    Ok(())
                 },
                 SelfUpdateAction::Update { force, quiet } => {
                     if !quiet {
                         println!("Checking for updates...");
                     }
                     println!("Self-update not configured - GitHub repository needed");
+                    Ok(())
                 },
                 SelfUpdateAction::Enable { frequency } => {
                     println!("Enabling automatic updates with frequency: {}", frequency);
+                    Ok(())
                 },
                 SelfUpdateAction::Disable => {
                     println!("Disabling automatic updates");
+                    Ok(())
                 },
             }
         },
