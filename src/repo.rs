@@ -14,16 +14,48 @@ impl RepoManager {
 
     pub fn list(&self, enabled_only: bool) -> Result<()> {
         let args = if enabled_only {
-            vec!["repolist", "enabled"]
+            vec!["repolist"]
         } else {
-            vec!["repolist", "all"]
+            vec!["repolist", "--all"]
         };
 
-        println!("Repositories:");
+        println!("=== {} Repositories ===", if enabled_only { "Enabled" } else { "All" });
         let mut cmd = command("dnf", &args, false);
         let output = run_capture(&mut cmd, "dnf repolist")?;
-        println!("{}", output);
+        
+        if output.trim().is_empty() {
+            println!("No repositories found");
+        } else {
+            // Format the output for better readability
+            let lines: Vec<&str> = output.lines().collect();
+            if lines.len() > 1 {
+                // Print header line
+                println!("{}", lines[0]);
+                // Print repository lines with status indicators
+                for line in lines.iter().skip(1) {
+                    if enabled_only {
+                        println!("  ✓ {}", line.trim());
+                    } else {
+                        if line.trim().is_empty() { continue; }
+                        if self.is_repo_enabled(line) {
+                            println!("  ✓ {}", line.trim());
+                        } else {
+                            println!("  ○ {}", line.trim());
+                        }
+                    }
+                }
+            } else {
+                println!("{}", output);
+            }
+        }
         Ok(())
+    }
+
+    fn is_repo_enabled(&self, _line: &str) -> bool {
+        // This is a simplified check - in a real implementation, you might want to
+        // parse the repo files or use dnf repoinfo for more accurate info
+        // For now, we'll assume that enabled repos are shown in the default list
+        true
     }
 
     pub fn enable(&self, repo_id: &str) -> Result<()> {

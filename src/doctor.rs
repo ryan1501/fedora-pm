@@ -99,7 +99,7 @@ impl DoctorManager {
 
         // Check /var/cache/dnf
         let cache_path = "/var/cache/dnf";
-        if let Ok(metadata) = fs::metadata(cache_path) {
+        if let Ok(_metadata) = fs::metadata(cache_path) {
             // Estimate cache size (simplified)
             let mut cmd = command("du", &["-sh", cache_path], false);
             if let Ok(output) = run_capture(&mut cmd, "du") {

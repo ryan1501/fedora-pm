@@ -1,11 +1,11 @@
 /// Help module for fedora-pm
 /// This module contains help text and help-related functions
 
- pub const HELP_GENERAL_TEXT: &str = "\"
-Fedora Package Manager - A comprehensive package management tool for Fedora
+pub const HELP_GENERAL_TEXT: &str = "\"
+The Modern Fedora Package Manager
 
 Usage:
-  fedora-pm [OPTIONS] <COMMAND>
+  fedorapm [OPTIONS] <COMMAND>
 
 Common Commands:
   install     Install packages
@@ -14,7 +14,12 @@ Common Commands:
   search      Search for packages
   info        Get package information
 
-Use 'fedora-pm help <command>' for detailed help on specific commands.
+Examples:
+  fedorapm install vim
+  fedorapm gaming install
+  fedorapm kernel list
+
+Use 'fedorapm help <command>' for detailed help on specific commands.
 ";
 
 pub const HELP_INSTALL_TEXT: &str = "Install packages from repositories";

@@ -196,12 +196,11 @@ impl PackageManager {
     }
 
     pub fn changelog(&self, package: &str, limit: Option<i32>) -> Result<()> {
-        let mut args = vec!["changelog", package];
+        let mut cmd = command("dnf", &["changelog", package], false);
         if let Some(l) = limit {
-            args.push(&format!("--count={}", l));
+            cmd.arg(&format!("--count={}", l));
         }
         
-        let mut cmd = command("dnf", &args, false);
         let output = run_capture(&mut cmd, "dnf changelog")?;
         println!("{output}");
         Ok(())

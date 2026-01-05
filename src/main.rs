@@ -22,10 +22,12 @@ mod history;
 mod kernel;
 mod groups;
 mod validation;
+mod cachyos;
+mod nvidia;
 
 
 #[derive(Parser, Debug)]
-#[command(name = "fedora-pm", about = "Fedora Package Manager (Rust)", version = "1.1.0")]
+#[command(name = "fedorapm", about = "Fedora Package Manager (Rust)", version = "2.0.0")]
 pub struct Cli {
     #[command(subcommand)]
     pub command: Commands,
@@ -95,6 +97,10 @@ pub enum Commands {
     Gaming {
         #[command(subcommand)]
         action: GamingAction,
+    },
+    CachyOS {
+        #[command(subcommand)]
+        action: CachyOSAction,
     },
     Deps {
         package: String,
@@ -195,18 +201,29 @@ pub enum DriverAction {
     Status,
     Detect,
     #[command(name = "install-nvidia")]
-    InstallNvidia { version: Option<String>, #[arg(long)] cuda: bool, #[arg(short, long)] yes: bool },
+    InstallNvidia { 
+        version: Option<String>, 
+        #[arg(long)] cuda: bool, 
+        #[arg(long)] toolkit: bool,
+        #[arg(short, long)] yes: bool 
+    },
     #[command(name = "remove-nvidia")]
     RemoveNvidia { #[arg(short, long)] yes: bool },
     #[command(name = "list-nvidia")]
     ListNvidia,
     #[command(name = "check-nvidia")]
     CheckNvidia,
+    #[command(name = "cuda-status")]
+    CudaStatus,
+    #[command(name = "setup-dev")]
+    SetupDev { #[arg(short, long)] yes: bool },
 }
 
 #[derive(Subcommand, Debug)]
 pub enum GamingAction {
     Install { #[arg(short, long)] yes: bool },
+    #[command(name = "install-cachyos")]
+    InstallCachyOS { kernel: Option<String>, variant: Option<String>, #[arg(short, long)] yes: bool },
 }
 
 #[derive(Subcommand, Debug)]
@@ -263,6 +280,31 @@ pub enum SelfUpdateAction {
     Disable,
 }
 
+#[derive(Subcommand, Debug)]
+pub enum CachyOSAction {
+    Status,
+    #[command(name = "list-kernels")]
+    ListKernels,
+    #[command(name = "install-kernel")]
+    InstallKernel { 
+        kernel: String, 
+        variant: Option<String>,
+        #[arg(short, long)] yes: bool 
+    },
+    #[command(name = "enable-repo")]
+    EnableRepo { 
+        repo_type: String, 
+        #[arg(short, long)] yes: bool 
+    },
+    #[command(name = "disable-repo")]
+    DisableRepo { 
+        repo_type: String, 
+        #[arg(short, long)] yes: bool 
+    },
+    #[command(name = "check-cpu")]
+    CheckCpu,
+}
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli = Cli::parse();
     
@@ -274,7 +316,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         std::process::exit(1);
     }
     
-    let result =     match cli.command {
+    let result: Result<(), Box<dyn std::error::Error>> = match cli.command {
         Commands::Install { packages, yes } => {
             validation::validate_package_list(&packages)?;
             let config = config::Config::load(cli.config_dir.as_deref().map(|s| s.into()))?;
@@ -344,127 +386,245 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             Ok(())
         },
         Commands::Kernel { action } => {
+            let config = config::Config::load(cli.config_dir.as_deref().map(|s| s.into()))?;
+            let history = history::History::new(config.history_file.clone());
+            let kernel_manager = kernel::KernelManager::new(cli.sudo, history);
+            
             match action {
                 KernelAction::List => {
-                    println!("Listing kernels");
+                    kernel_manager.current()?;
+                    kernel_manager.list_installed()?;
+                    kernel_manager.list_available()?;
                     Ok(())
                 },
                 KernelAction::Install { version, yes } => {
-                    println!("Installing kernel: {}", version.as_ref().unwrap_or(&"latest".to_string()));
+                    kernel_manager.install(version.as_deref(), yes)?;
                     Ok(())
                 },
                 KernelAction::Remove { versions, yes, keep_current } => {
-                    println!("Removing kernels: {:?}", versions);
+                    kernel_manager.remove(&versions, yes, keep_current)?;
                     Ok(())
                 },
                 KernelAction::RemoveOld { keep_last, yes } => {
-                    println!("Removing old kernels, keeping last {}", keep_last);
+                    kernel_manager.remove_old(keep_last, yes)?;
                     Ok(())
                 },
                 KernelAction::Info { package } => {
-                    println!("Kernel info: {}", package);
+                    kernel_manager.info(Some(&package))?;
                     Ok(())
                 },
             }
         },
         Commands::Driver { action } => {
+            let config = config::Config::load(cli.config_dir.as_deref().map(|s| s.into()))?;
+            let history = history::History::new(config.history_file.clone());
+            let nvidia_manager = nvidia::NvidiaManager::new(cli.sudo, history.clone());
+            let driver_manager = driver::DriverManager::new(cli.sudo, history);
+            
             match action {
                 DriverAction::Status => {
-                    println!("Checking driver status...");
+                    driver_manager.status()?;
                     Ok(())
                 },
                 DriverAction::Detect => {
-                    println!("Detecting GPU drivers...");
+                    nvidia_manager.detect_hardware()?;
                     Ok(())
                 },
-                DriverAction::InstallNvidia { version, cuda, yes } => {
-                    println!("Installing NVIDIA driver: version={:?}, cuda={}", version, cuda);
+                DriverAction::InstallNvidia { version, cuda, toolkit, yes } => {
+                    nvidia_manager.install_driver(version.as_deref(), cuda, toolkit, yes)?;
                     Ok(())
                 },
                 DriverAction::RemoveNvidia { yes } => {
-                    println!("Removing NVIDIA driver...");
+                    nvidia_manager.remove_driver(yes)?;
+                    Ok(())
+                },
+                DriverAction::ListNvidia => {
+                    nvidia_manager.list_available_drivers()?;
+                    Ok(())
+                },
+                DriverAction::CheckNvidia => {
+                    nvidia_manager.check_driver_status()?;
+                    Ok(())
+                },
+                DriverAction::CudaStatus => {
+                    nvidia_manager.check_cuda_support()?;
+                    Ok(())
+                },
+                DriverAction::SetupDev { yes } => {
+                    nvidia_manager.setup_development(yes)?;
                     Ok(())
                 },
             }
         },
         Commands::Gaming { action } => {
+            let config = config::Config::load(cli.config_dir.as_deref().map(|s| s.into()))?;
+            let history = history::History::new(config.history_file.clone());
+            let cachyos_manager = cachyos::CachyOSManager::new(cli.sudo, history.clone());
+            
             match action {
-                GamingAction::Install { yes } => println!("Installing gaming packages"),
+                GamingAction::Install { yes } => {
+                    let gaming = gaming::GamingManager::new(cli.sudo, history);
+                    gaming.install_meta(yes)?;
+                    Ok(())
+                },
+                GamingAction::InstallCachyOS { kernel, variant, yes } => {
+                    let kernel_type = kernel.as_deref().unwrap_or("default");
+                    cachyos_manager.install_kernel(kernel_type, variant.as_deref(), yes)?;
+                    Ok(())
+                },
             }
         },
         Commands::Deps { package, tree, reverse } => {
-            println!("Showing dependencies for: {}", package);
+            let dep_manager = deps::DependencyManager::new(cli.sudo);
+            
+            if tree {
+                dep_manager.show_tree(&package)?;
+            } else if reverse {
+                dep_manager.show_reverse(&package)?;
+            } else {
+                // Show both by default
+                dep_manager.show_tree(&package)?;
+                println!();
+                dep_manager.show_reverse(&package)?;
+            }
+            Ok(())
         },
-        Commands::Rollback { id, yes } => {
+        Commands::Rollback { id, yes: _ } => {
             if let Some(id) = id {
                 println!("Rolling back to transaction {}", id);
             } else {
                 println!("Listing rollback options");
             }
+            Ok(())
         },
         Commands::Group { action } => {
             match action {
-                GroupAction::List => println!("Listing groups"),
-                GroupAction::Info { group } => println!("Group info for: {}", group),
-                GroupAction::Install { group, yes } => println!("Installing group: {}", group),
-                GroupAction::Remove { group, yes } => println!("Removing group: {}", group),
+                GroupAction::List => {
+                    println!("Listing groups");
+                    Ok(())
+                },
+                GroupAction::Info { group } => {
+                    println!("Group info for: {}", group);
+                    Ok(())
+                },
+                GroupAction::Install { group, yes: _ } => {
+                    println!("Installing group: {}", group);
+                    Ok(())
+                },
+                GroupAction::Remove { group, yes: _ } => {
+                    println!("Removing group: {}", group);
+                    Ok(())
+                },
             }
         },
         Commands::Doctor => {
             println!("Running system health check");
+            Ok(())
         },
         Commands::Flatpak { action } => {
             match action {
-                FlatpakAction::Search { query } => println!("Searching Flatpaks: {}", query),
-                FlatpakAction::Install { app_id, yes } => println!("Installing Flatpak: {}", app_id),
-                FlatpakAction::Remove { app_id, yes } => println!("Removing Flatpak: {}", app_id),
-                FlatpakAction::Update { yes } => println!("Updating Flatpaks"),
-                FlatpakAction::List => println!("Listing Flatpaks"),
-                FlatpakAction::Info { app_id } => println!("Flatpak info: {}", app_id),
-                FlatpakAction::SetupFlathub => println!("Setting up Flathub"),
+                FlatpakAction::Search { query } => {
+                    println!("Searching Flatpaks: {}", query);
+                    Ok(())
+                },
+                FlatpakAction::Install { app_id, yes: _ } => {
+                    println!("Installing Flatpak: {}", app_id);
+                    Ok(())
+                },
+                FlatpakAction::Remove { app_id, yes: _ } => {
+                    println!("Removing Flatpak: {}", app_id);
+                    Ok(())
+                },
+                FlatpakAction::Update { yes: _ } => {
+                    println!("Updating Flatpaks");
+                    Ok(())
+                },
+                FlatpakAction::List => {
+                    println!("Listing Flatpaks");
+                    Ok(())
+                },
+                FlatpakAction::Info { app_id } => {
+                    println!("Flatpak info: {}", app_id);
+                    Ok(())
+                },
+                FlatpakAction::SetupFlathub => {
+                    println!("Setting up Flathub");
+                    Ok(())
+                },
             }
         },
-        Commands::Export { file, with_flatpak } => {
+        Commands::Export { file, with_flatpak: _ } => {
             println!("Exporting packages to: {}", file);
+            Ok(())
         },
-        Commands::Import { file, with_flatpak } => {
+        Commands::Import { file, with_flatpak: _ } => {
             println!("Importing packages from: {}", file);
+            Ok(())
         },
         Commands::Repo { action } => {
+            let config = config::Config::load(cli.config_dir.as_deref().map(|s| s.into()))?;
+            let history = history::History::new(config.history_file.clone());
+            let repo_manager = repo::RepoManager::new(cli.sudo, history);
+            
             match action {
-                RepoAction::List => println!("Listing repositories"),
-                RepoAction::Info { repo_id } => println!("Repo info: {}", repo_id),
-                RepoAction::Enable { repo_id } => println!("Enabling repo: {}", repo_id),
-                RepoAction::Disable { repo_id } => println!("Disabling repo: {}", repo_id),
-                RepoAction::Refresh => println!("Refreshing repositories"),
-                RepoAction::Add { name, url } => println!("Adding repo: {} -> {}", name, url),
-                RepoAction::Remove { repo_id } => println!("Removing repo: {}", repo_id),
+                RepoAction::List => {
+                    repo_manager.list(false)?;
+                    Ok(())
+                },
+                RepoAction::Info { repo_id } => {
+                    repo_manager.info(&repo_id)?;
+                    Ok(())
+                },
+                RepoAction::Enable { repo_id } => {
+                    repo_manager.enable(&repo_id)?;
+                    Ok(())
+                },
+                RepoAction::Disable { repo_id } => {
+                    repo_manager.disable(&repo_id)?;
+                    Ok(())
+                },
+                RepoAction::Refresh => {
+                    repo_manager.refresh()?;
+                    Ok(())
+                },
+                RepoAction::Add { name, url } => {
+                    repo_manager.add(&name, &url)?;
+                    Ok(())
+                },
+                RepoAction::Remove { repo_id } => {
+                    repo_manager.remove(&repo_id)?;
+                    Ok(())
+                },
             }
         },
         Commands::Security { action } => {
+            let config = config::Config::load(cli.config_dir.as_deref().map(|s| s.into()))?;
+            let history = history::History::new(config.history_file.clone());
+            let security = security::SecurityManager::new(cli.sudo, history);
+            
             match action {
                 SecurityAction::Check => {
-                    println!("Checking for security updates...");
+                    security.check()?;
                     Ok(())
                 },
-                SecurityAction::List { severity, advisory_id, cve_id } => {
-                    println!("Listing security updates: severity={:?}, advisory_id={:?}, cve_id={:?}", severity, advisory_id, cve_id);
+                SecurityAction::List { severity } => {
+                    security.list(severity.as_deref())?;
                     Ok(())
                 },
-                SecurityAction::Update => {
-                    println!("Installing security updates...");
+                SecurityAction::Update { yes } => {
+                    security.update(yes)?;
                     Ok(())
                 },
                 SecurityAction::Audit => {
-                    println!("Running security audit...");
+                    security.audit()?;
                     Ok(())
                 },
                 SecurityAction::Cve { cve_id } => {
-                    println!("Checking CVE: {}", cve_id);
+                    security.cve_check(&cve_id)?;
                     Ok(())
                 },
                 SecurityAction::Info { advisory_id } => {
-                    println!("Advisory info: {}", advisory_id);
+                    security.info(&advisory_id)?;
                     Ok(())
                 },
             }
@@ -474,7 +634,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let config = config::Config::load(cli.config_dir.as_deref().map(|s| s.into()))?;
             let history = history::History::new(config.history_file.clone());
             let pkg_manager = package::PackageManager::new(cli.sudo, history);
-            pkg_manager.download(&packages, dest.as_deref().unwrap_or("."), with_deps)?;
+            pkg_manager.download(&packages, Some(dest.as_deref().unwrap_or(".")), with_deps)?;
             Ok(())
         },
         Commands::InstallOffline { rpm_files, yes } => {
@@ -490,7 +650,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let config = config::Config::load(cli.config_dir.as_deref().map(|s| s.into()))?;
             let history = history::History::new(config.history_file.clone());
             let pkg_manager = package::PackageManager::new(cli.sudo, history);
-            pkg_manager.changelog(&package, limit)?;
+            pkg_manager.changelog(&package, limit.map(|l| l as i32))?;
             Ok(())
         },
         Commands::WhatsNew => {
@@ -522,7 +682,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     println!("Update source: GitHub (not configured)");
                     Ok(())
                 },
-                SelfUpdateAction::Update { force, quiet } => {
+                SelfUpdateAction::Update { force: _, quiet } => {
                     if !quiet {
                         println!("Checking for updates...");
                     }
@@ -539,14 +699,60 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 },
             }
         },
+        Commands::CachyOS { action } => {
+            let config = config::Config::load(cli.config_dir.as_deref().map(|s| s.into()))?;
+            let history = history::History::new(config.history_file.clone());
+            let cachyos_manager = cachyos::CachyOSManager::new(cli.sudo, history);
+            
+            match action {
+                CachyOSAction::Status => {
+                    cachyos_manager.get_status()?;
+                    Ok(())
+                },
+                CachyOSAction::ListKernels => {
+                    cachyos_manager.list_kernels()?;
+                    Ok(())
+                },
+                CachyOSAction::InstallKernel { kernel, variant, yes } => {
+                    cachyos_manager.install_kernel(&kernel, variant.as_deref(), yes)?;
+                    Ok(())
+                },
+                CachyOSAction::EnableRepo { repo_type, yes } => {
+                    cachyos_manager.enable_repository(&repo_type, yes)?;
+                    Ok(())
+                },
+                CachyOSAction::DisableRepo { repo_type, yes } => {
+                    cachyos_manager.disable_repository(&repo_type, yes)?;
+                    Ok(())
+                },
+                CachyOSAction::CheckCpu => {
+                    cachyos_manager.check_cpu_features()?;
+                    Ok(())
+                },
+            }
+        },
         Commands::Help { command } => {
             if let Some(cmd) = command {
                 println!("Help for command: {}", cmd);
             } else {
                 // Print general help
-                println!("{}", help::HELP_GENERAL_TEXT);
+                println!("The Modern Fedora Package Manager");
+                println!("");
+                println!("Usage:");
+                println!("  fedorapm [OPTIONS] <COMMAND>");
+                println!("");
+                println!("Get help for a specific command:");
+                println!("  fedorapm <COMMAND> --help");
+                println!("");
+                println!("Examples:");
+                println!("  fedorapm install vim");
+                println!("  fedorapm gaming install");
+                println!("  fedorapm kernel list");
+                println!("");
                 process::exit(0);
             }
         },
-    }
+    };
+    
+    result
 }

@@ -1,4 +1,4 @@
-# Fedora Package Manager
+# FedoraAPM
 
 A modern, high-performance package manager for Fedora Linux, completely rewritten in native Rust with both CLI and native GUI interfaces. Built for speed, security, and reliability.
 
@@ -59,18 +59,29 @@ A modern, high-performance package manager for Fedora Linux, completely rewritte
 - Fedora Linux with `dnf` and `rpm`
 - sudo access for package operations
 
+## 🚀 Quick Start
+
+**Install both CLI and GUI (recommended):**
+```bash
+./install.sh --both
+```
+
 ### Quick Installation
 
 #### Method 1: Unified Installer (Recommended)
 ```bash
 # Install both CLI and GUI
-./install.sh --both
+fedorapm --both
 
 # Install CLI only
-./install.sh --cli
+fedorapm --cli
 
 # Install GUI only
-./install.sh --gui
+fedorapm --gui
+
+# Install both to user directory
+fedorapm --user --both
+
 ```
 
 #### Method 2: From COPR Repository

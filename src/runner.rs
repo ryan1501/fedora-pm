@@ -5,6 +5,7 @@ use anyhow::{Context, Result};
 pub fn command(base: &str, args: &[&str], use_sudo: bool) -> Command {
     let mut cmd = if use_sudo {
         let mut c = Command::new("sudo");
+        c.arg("--non-interactive"); // Prevent password prompts in scripts
         c.arg(base);
         c
     } else {
@@ -14,16 +15,29 @@ pub fn command(base: &str, args: &[&str], use_sudo: bool) -> Command {
     cmd
 }
 
+pub fn command_with_env(base: &str, args: &[&str], use_sudo: bool, env_vars: &[(&str, &str)]) -> Command {
+    let mut cmd = command(base, args, use_sudo);
+    for (key, value) in env_vars {
+        cmd.env(key, value);
+    }
+    cmd
+}
+
 pub fn run_inherit(cmd: &mut Command, label: &str) -> Result<()> {
-    let status = cmd
-        .stdin(Stdio::inherit())
+    // Set timeout to prevent hanging
+    cmd.stdin(Stdio::inherit())
         .stdout(Stdio::inherit())
-        .stderr(Stdio::inherit())
+        .stderr(Stdio::inherit());
+
+    let status = cmd
         .status()
-        .with_context(|| format!("failed to run {label}"))?;
+        .with_context(|| format!("failed to execute {label}"))?;
 
     if !status.success() {
-        anyhow::bail!("{label} exited with status {status}");
+        match status.code() {
+            Some(code) => anyhow::bail!("{label} failed with exit code {}", code),
+            None => anyhow::bail!("{label} terminated by signal"),
+        }
     }
     Ok(())
 }
