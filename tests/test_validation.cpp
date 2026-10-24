@@ -169,6 +169,7 @@ int main() {
     assert(unicode_history.output.find("rocket 🚀") != std::string::npos);
     for (const std::string malformed_history : {
              R"json([garbage])json",
+             R"json([1])json",
              R"json([{"action":"install","items":[],"timestamp":"t",}])json",
              R"json([{"action":"install","items":[],"timestamp":"t"} trailing])json",
              R"json([{"action":"install","items":["bad\q"],"timestamp":"t"}])json"}) {
