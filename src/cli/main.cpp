@@ -228,14 +228,14 @@ int main(int argc, char** argv) {
             if (arg == "--available") { available = true; installed = false; }
             else if (arg == "--installed") { installed = true; available = false; }
             else if (arg == "--all") { all = true; installed = true; available = true; }
-            else if (arg.starts_with("--")) { std::cerr << "Unknown list option: " << arg << '\\n'; return 2; }
+            else if (arg.starts_with("--")) { std::cerr << "Unknown list option: " << arg << '\n'; return 2; }
             else if (pattern.empty()) pattern = arg;
-            else { std::cerr << "Usage: fedora-pm list [--available|--installed|--all] [PATTERN]\\n"; return 2; }
+            else { std::cerr << "Usage: fedora-pm list [--available|--installed|--all] [PATTERN]\n"; return 2; }
         }
         if (all) {
             const auto first = pm.list_installed(pattern);
             const auto second = pm.list_available(pattern);
-            return print_result({first.success && second.success, first.output + "\\n" + second.output, first.error + second.error});
+            return print_result({first.success && second.success, first.output + "\n" + second.output, first.error + second.error});
         }
         if (available) return print_result(pm.list_available(pattern));
         return print_result(pm.list_installed(pattern));
@@ -244,12 +244,12 @@ int main(int argc, char** argv) {
     if (command == "group-info" && argc == 3) return print_result(pm.group_info(argv[2]));
     if (command == "group-install" && (argc == 3 || argc == 4)) {
         const bool yes = argc == 4 && std::string(argv[3]) == "--yes";
-        if (argc == 4 && !yes) { std::cerr << "Usage: fedora-pm group-install NAME [--yes]\\n"; return 2; }
+        if (argc == 4 && !yes) { std::cerr << "Usage: fedora-pm group-install NAME [--yes]\n"; return 2; }
         return print_mutation_result(pm.install_group(argv[2], yes), "group-install", {argv[2]});
     }
     if (command == "group-remove" && (argc == 3 || argc == 4)) {
         const bool yes = argc == 4 && std::string(argv[3]) == "--yes";
-        if (argc == 4 && !yes) { std::cerr << "Usage: fedora-pm group-remove NAME [--yes]\\n"; return 2; }
+        if (argc == 4 && !yes) { std::cerr << "Usage: fedora-pm group-remove NAME [--yes]\n"; return 2; }
         return print_mutation_result(pm.remove_group(argv[2], yes), "group-remove", {argv[2]});
     }
     if (command == "deps" && argc == 3) return print_result(pm.dependencies(argv[2]));
@@ -276,7 +276,7 @@ int main(int argc, char** argv) {
             const std::string value = argv[2];
             const auto [ptr, ec] = std::from_chars(value.data(), value.data() + value.size(), count);
             if (ec != std::errc{} || ptr != value.data() + value.size() || count == 0 || count > 100) {
-                std::cerr << "COUNT must be between 1 and 100\\n"; return 2;
+                std::cerr << "COUNT must be between 1 and 100\n"; return 2;
             }
         }
         return print_result(changelogs.whats_new(count));
