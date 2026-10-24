@@ -1,4 +1,5 @@
 #include "core/validation.hpp"
+#include "package_manager/package_manager.hpp"
 #include "package_manager/download_manager.hpp"
 #include "package_manager/changelog_manager.hpp"
 #include "package_manager/flatpak_manager.hpp"
@@ -80,4 +81,11 @@ int main() {
     assert(!cachyos.disable_repository("unknown").success);
     assert(!cachyos.install_kernel("unknown").success);
     assert(!cachyos.install_kernel("default", "unknown").success);
+
+    const fedora_pm::packages::PackageManager packages;
+    assert(!packages.list_available("bad;pattern").success);
+    assert(!packages.list_installed("bad;pattern").success);
+    assert(!packages.group_info("").success);
+    assert(!packages.install_group("\n").success);
+    assert(!packages.remove_group(" \r ").success);
 }
