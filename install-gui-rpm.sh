@@ -1,31 +1,12 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
+cat >&2 <<'EOF'
+This script belongs to the legacy Rust/Cargo or Python/PySide6 packaging flow.
+It is disabled on the C++20/Qt 6 migration branch to prevent accidentally
+building or publishing the obsolete implementation. No action was taken.
 
-# Install GUI RPM with dependency fixes
-
-echo "Installing fedora-pm-gui RPM..."
-
-# First, install available dependencies
-echo "Installing available dependencies..."
-sudo dnf install -y python3-pyside6
-
-# Check if fedora-pm CLI exists, install from source if needed
-if ! command -v fedora-pm &> /dev/null; then
-    echo "fedora-pm CLI not found, building from source..."
-    cargo build --release
-    sudo cp target/release/fedora-pm /usr/local/bin/
-    sudo chmod +x /usr/local/bin/fedora-pm
-fi
-
-# Install GUI RPM (now with correct dependencies)
-echo "Installing GUI RPM..."
-sudo dnf install -y rpmbuild/RPMS/noarch/fedora-pm-gui-1.0.0-1.fc43.noarch.rpm
-
-# Install desktop file if not already installed
-if [ ! -f /usr/share/applications/fedora-pm.desktop ]; then
-    echo "Installing desktop entry..."
-    sudo cp fedora-pm.desktop /usr/share/applications/
-    sudo update-desktop-database /usr/share/applications/
-fi
-
-echo "Installation complete!"
-echo "Launch with: fedora-pm-gui"
+For this branch, use the CMake-based installer (./install.sh --help) and the
+current fedora-pm-rpm.spec / fedora-pm-gui-rpm.spec only after the packaging
+validation checklist in docs/CPP_MIGRATION_PLAN.md is complete.
+EOF
+exit 2
