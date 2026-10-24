@@ -20,8 +20,10 @@ void close_fd(int& fd) {
 }
 
 void close_pipes(int out_pipe[2], int err_pipe[2]) {
-    for (int& fd : out_pipe) close_fd(fd);
-    for (int& fd : err_pipe) close_fd(fd);
+    close_fd(out_pipe[0]);
+    close_fd(out_pipe[1]);
+    close_fd(err_pipe[0]);
+    close_fd(err_pipe[1]);
 }
 
 void set_nonblocking(int fd) {
@@ -97,7 +99,8 @@ ProcessResult run_process(const std::string& program, const std::vector<std::str
         if (::dup2(out_pipe[1], STDOUT_FILENO) < 0 ||
             ::dup2(err_pipe[1], STDERR_FILENO) < 0) {
             const char message[] = "failed to redirect child process output\n";
-            (void)::write(STDERR_FILENO, message, sizeof(message) - 1);
+            const auto written = ::write(STDERR_FILENO, message, sizeof(message) - 1);
+            (void)written;
             _exit(126);
         }
         close_pipes(out_pipe, err_pipe);
@@ -108,7 +111,8 @@ ProcessResult run_process(const std::string& program, const std::vector<std::str
         argv.push_back(nullptr);
         ::execvp(program.c_str(), argv.data());
         const std::string message = "exec failed: " + std::string(std::strerror(errno)) + "\n";
-        (void)::write(STDERR_FILENO, message.data(), message.size());
+        const auto written = ::write(STDERR_FILENO, message.data(), message.size());
+        (void)written;
         _exit(127);
     }
 
