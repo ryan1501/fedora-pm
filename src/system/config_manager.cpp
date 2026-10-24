@@ -111,7 +111,8 @@ std::string parse_string(const std::string& data, const std::string& key, const 
                     break;
                 }
             }
-            append_utf8(cp);
+            if (cp >= 0xd800 && cp <= 0xdfff) result += "\\xef\\xbf\\xbd";
+            else append_utf8(cp);
             break;
         }
         default: result.push_back(escaped); break;
