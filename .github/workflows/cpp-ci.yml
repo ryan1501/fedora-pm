@@ -99,6 +99,12 @@ jobs:
           desktop-file-validate fedora-pm.desktop
           python3 -c "import xml.etree.ElementTree as ET; ET.parse('fedora-pm.metainfo.xml')"
 
+      - name: Validate C++ installer script
+        run: |
+          bash -n install.sh
+          bash install.sh --help
+          bash install.sh --dry-run --cli
+
   fedora-build-and-test:
     runs-on: ubuntu-24.04
     container: fedora:latest
