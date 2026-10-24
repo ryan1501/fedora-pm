@@ -13,6 +13,7 @@ The Rust implementation remains authoritative until this checklist is complete a
 - [x] Flatpak search/list/install/remove/update/info/Flathub setup
 - [x] Repository list/info/enable/disable/add/refresh
 - [x] Kernel current/list/available/install/remove/remove-old/info
+- [x] CachyOS status, kernel list/install, repository enable/disable, CPU feature checks
 - [x] Disk space, package sizes, cache size, orphan listing/autoremove
 - [x] Package downloads, dependency downloads, offline RPM installation
 - [x] RPM changelog and recent changelog entries
@@ -26,7 +27,6 @@ The Rust implementation remains authoritative until this checklist is complete a
 
 ## Feature parity still required
 - [ ] Persistent JSON operation history and logging for successful operations
-- [ ] CachyOS status, kernel, repository, and CPU workflows
 - [ ] Flatpak-aware export/import parity
 - [ ] Package group info/install/remove
 - [ ] Changelog update summary/comparison and package cache cleaning
