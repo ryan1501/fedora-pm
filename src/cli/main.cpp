@@ -214,13 +214,12 @@ int main(int argc, char** argv) {
             else { std::cerr << "Usage: fedora-pm list [--available|--installed|--all] [PATTERN]\\n"; return 2; }
         }
         if (all) {
-            const auto first = pm.list_installed();
+            const auto first = pm.list_installed(pattern);
             const auto second = pm.list_available(pattern);
             return print_result({first.success && second.success, first.output + "\\n" + second.output, first.error + second.error});
         }
         if (available) return print_result(pm.list_available(pattern));
-        if (!pattern.empty()) return print_result(pm.list_installed());
-        return print_result(pm.list_installed());
+        return print_result(pm.list_installed(pattern));
     }
     if (command == "clean" && argc == 2) return print_result(pm.clean_cache());
     if (command == "group-info" && argc == 3) return print_result(pm.group_info(argv[2]));
