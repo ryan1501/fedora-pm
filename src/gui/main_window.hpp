@@ -48,6 +48,7 @@ private:
     void run_dnf(QStringList args, bool mutating = false);
     void run_flatpak(QStringList args);
     bool valid_package_input(const QString& value) const;
+    bool valid_group_input(const QString& value) const;
     bool valid_flatpak_app_id(const QString& value) const;
     void set_busy(bool busy);
 };
