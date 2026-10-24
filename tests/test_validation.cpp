@@ -1,13 +1,16 @@
 #include "core/validation.hpp"
 #include "package_manager/download_manager.hpp"
 #include "package_manager/changelog_manager.hpp"
+#include "package_manager/flatpak_manager.hpp"
 #include "system/disk_space_manager.hpp"
 #include "system/security_manager.hpp"
 #include "system/config_manager.hpp"
 #include "system/driver_manager.hpp"
 #include "system/rollback_manager.hpp"
+#include "system/repository_manager.hpp"
 #include <cassert>
 #include <filesystem>
+#include <string>
 
 int main() {
     using fedora_pm::core::is_valid_package_name;
@@ -57,4 +60,11 @@ int main() {
     assert(!rollback.rollback("1;rm").success);
     const fedora_pm::system::DriverManager drivers;
     assert(!drivers.install_nvidia(std::string("bad;version")).success);
+
+    const fedora_pm::packages::FlatpakManager flatpak;
+    assert(!flatpak.install("bad/name").success);
+    assert(!flatpak.info("org..example.App").success);
+    const fedora_pm::system::RepositoryManager repos;
+    assert(!repos.add("file:///etc/passwd").success);
+    assert(!repos.add("https://example.org/repo repo").success);
 }
