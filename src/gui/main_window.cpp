@@ -140,7 +140,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), process_(new QPro
     });
     connect(groupInfo_, &QPushButton::clicked, this, [this] {
         const auto group = query_->text().trimmed();
-        if (!valid_package_input(group)) {
+        if (!valid_group_input(group)) {
             QMessageBox::warning(this, "Invalid group", "Enter one valid DNF group ID or name first.");
             return;
         }
@@ -148,7 +148,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), process_(new QPro
     });
     connect(groupInstall_, &QPushButton::clicked, this, [this] {
         const auto group = query_->text().trimmed();
-        if (!valid_package_input(group)) {
+        if (!valid_group_input(group)) {
             QMessageBox::warning(this, "Invalid group", "Enter one valid DNF group ID or name to install.");
             return;
         }
@@ -156,7 +156,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), process_(new QPro
     });
     connect(groupRemove_, &QPushButton::clicked, this, [this] {
         const auto group = query_->text().trimmed();
-        if (!valid_package_input(group)) {
+        if (!valid_group_input(group)) {
             QMessageBox::warning(this, "Invalid group", "Enter one valid DNF group ID or name to remove.");
             return;
         }
@@ -334,6 +334,12 @@ bool MainWindow::valid_package_input(const QString& value) const {
     static const QRegularExpression packagePattern(
         "^[A-Za-z0-9][A-Za-z0-9._+:-]{0,199}$");
     return packagePattern.match(value).hasMatch();
+}
+
+bool MainWindow::valid_group_input(const QString& value) const {
+    static const QRegularExpression groupPattern(
+        "^[A-Za-z0-9][A-Za-z0-9._+:-]*(?: [A-Za-z0-9][A-Za-z0-9._+:-]*){0,7}$");
+    return groupPattern.match(value).hasMatch();
 }
 
 bool MainWindow::valid_flatpak_app_id(const QString& value) const {
