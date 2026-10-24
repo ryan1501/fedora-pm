@@ -23,8 +23,9 @@ bool valid_pattern(const std::string& value) {
     });
 }
 bool valid_group(const std::string& group) {
-    return !fedora_pm::core::trim(group).empty() &&
-           group.find_first_of("\r\n") == std::string::npos;
+    const std::string trimmed = fedora_pm::core::trim(group);
+    return !trimmed.empty() && trimmed.front() != '-' &&
+           group.find_first_of("\\r\\n") == std::string::npos;
 }
 }
 PackageResult PackageManager::search(const std::string& query) const {
