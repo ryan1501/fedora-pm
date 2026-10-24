@@ -4,7 +4,8 @@
 
 namespace fedora_pm::core {
 bool is_valid_package_name(std::string_view name) {
-    if (name.empty() || name.size() > 256) return false;
+    if (name.empty() || name.size() > 256 ||
+        !std::isalnum(static_cast<unsigned char>(name.front()))) return false;
     return std::all_of(name.begin(), name.end(), [](unsigned char c) {
         return std::isalnum(c) || c == '-' || c == '_' || c == '.' || c == '+' || c == ':';
     });
