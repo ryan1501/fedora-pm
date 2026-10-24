@@ -49,8 +49,9 @@ int main() {
     assert(!changelog.compare("bad/name", "1", "2").success);
     assert(!changelog.compare("firefox", "", "2").success);
 
+    std::error_code cleanup_error;
     const auto invalid_backup = std::filesystem::temp_directory_path() / "fedora-pm-invalid-backup.txt";
-    { std::ofstream backup(invalid_backup); backup << "# flatpak:\\nflatpak:org..invalid\\n"; }
+    { std::ofstream backup(invalid_backup); backup << "# flatpak:\nflatpak:org..invalid\n"; }
     assert(!fedora_pm::packages::ExportManager{}.import_from_file(invalid_backup.string(), true).success);
     std::filesystem::remove(invalid_backup, cleanup_error);
 
@@ -60,7 +61,6 @@ int main() {
     assert(!security.cve_check("CVE-2026-1;rm").success);
 
     const auto test_config_dir = std::filesystem::temp_directory_path() / "fedora-pm-cpp-config-test";
-    std::error_code cleanup_error;
     std::filesystem::remove_all(test_config_dir, cleanup_error);
     fedora_pm::system::ConfigManager config(test_config_dir);
     assert(config.load().success);
