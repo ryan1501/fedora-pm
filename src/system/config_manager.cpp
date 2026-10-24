@@ -158,8 +158,8 @@ bool has_valid_config_types(const std::string& data) {
             const std::size_t len = data.compare(value_pos, 4, "true") == 0 ? 4 : 5;
             if (value_pos + len < data.size() &&
                 data[value_pos + len] != ',' && data[value_pos + len] != '}' &&
-                data[value_pos + len] != ' ' && data[value_pos + len] != '\\t' &&
-                data[value_pos + len] != '\\r' && data[value_pos + len] != '\\n') return false;
+                data[value_pos + len] != ' ' && data[value_pos + len] != '\t' &&
+                data[value_pos + len] != '\r' && data[value_pos + len] != '\n') return false;
         } else {
             return false;
         }
