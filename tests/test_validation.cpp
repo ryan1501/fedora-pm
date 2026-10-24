@@ -2,6 +2,7 @@
 #include "package_manager/download_manager.hpp"
 #include "package_manager/changelog_manager.hpp"
 #include "system/disk_space_manager.hpp"
+#include "system/security_manager.hpp"
 #include <cassert>
 
 int main() {
@@ -30,4 +31,9 @@ int main() {
     assert(!changelog.show("bad/name").success);
     assert(!changelog.show_recent("firefox", 0).success);
     assert(!changelog.show_recent("firefox", 501).success);
+
+    const fedora_pm::system::SecurityManager security;
+    assert(!security.list("arbitrary-command").success);
+    assert(!security.advisory_info("bad;command").success);
+    assert(!security.cve_check("CVE-2026-1;rm").success);
 }
