@@ -113,11 +113,10 @@ private:
         skip_space();
         if (pos_ < input_.size() && input_[pos_] == ']') { ++pos_; return true; }
         while (true) {
-            if (!parse_value() || !consume(',')) {
-                skip_space();
-                if (pos_ < input_.size() && input_[pos_] == ']') { ++pos_; return true; }
-                return false;
-            }
+            if (!parse_value()) return false;
+            skip_space();
+            if (pos_ < input_.size() && input_[pos_] == ']') { ++pos_; return true; }
+            if (!consume(',')) return false;
         }
     }
     bool parse_object() {
