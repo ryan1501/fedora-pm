@@ -59,6 +59,25 @@ jobs:
             echo "Unknown self-update option unexpectedly succeeded" >&2
             exit 1
           fi
+          expect_usage_error() {
+            set +e
+            "$@" >/dev/null 2>&1
+            status=$?
+            set -e
+            if [ "$status" -ne 2 ]; then
+              echo "Expected usage error (exit 2): $*" >&2
+              exit 1
+            fi
+          }
+          # Invalid flags must never be silently ignored by system-mutating commands.
+          expect_usage_error ./build/fedora-pm nvidia-remove --bogus
+          expect_usage_error ./build/fedora-pm cuda-install --bogus
+          expect_usage_error ./build/fedora-pm gaming-install --bogus
+          expect_usage_error ./build/fedora-pm rollback-last --bogus
+          expect_usage_error ./build/fedora-pm clean-orphans --bogus
+          expect_usage_error ./build/fedora-pm flatpak-update --bogus
+          expect_usage_error ./build/fedora-pm flatpak-install org.example.App --bogus
+          expect_usage_error ./build/fedora-pm flatpak-remove org.example.App --bogus
 
       - name: Validate Fedora GUI packaging metadata
         run: |
