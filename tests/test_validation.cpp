@@ -4,6 +4,8 @@
 #include "system/disk_space_manager.hpp"
 #include "system/security_manager.hpp"
 #include "system/config_manager.hpp"
+#include "system/driver_manager.hpp"
+#include "system/rollback_manager.hpp"
 #include <cassert>
 #include <filesystem>
 
@@ -49,4 +51,10 @@ int main() {
     assert(!config.set("auto_clean", "yes").success);
     assert(!config.set("unknown_key", "true").success);
     std::filesystem::remove_all(test_config_dir, cleanup_error);
+
+    const fedora_pm::system::RollbackManager rollback;
+    assert(!rollback.rollback("0").success);
+    assert(!rollback.rollback("1;rm").success);
+    const fedora_pm::system::DriverManager drivers;
+    assert(!drivers.install_nvidia(std::string("bad;version")).success);
 }
