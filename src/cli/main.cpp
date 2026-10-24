@@ -11,6 +11,8 @@
 #include "system/security_manager.hpp"
 #include "system/config_manager.hpp"
 #include "system/doctor.hpp"
+#include "system/driver_manager.hpp"
+#include "system/gaming_manager.hpp"
 #include <charconv>
 #include <iostream>
 #include <string>
@@ -42,6 +44,13 @@ void usage() {
               << "  security-audit                    Summarize security/critical/important updates\n"
               << "  security-update [--yes]            Install security updates\n"
               << "  config show | get KEY | set KEY VALUE\n"
+              << "  gpu-detect                        Detect display controllers\n"
+              << "  driver-status                     Show GPU and NVIDIA status\n"
+              << "  nvidia-list                       List available NVIDIA driver packages\n"
+              << "  nvidia-install [--version V] [--cuda] [--yes]\n"
+              << "  nvidia-remove [--yes]             Remove installed NVIDIA packages\n"
+              << "  cuda-install [--yes]              Install CUDA packages\n"
+              << "  gaming-install [--yes]            Install fedora-gaming-meta\n"
               << "  export FILE                       Export user-installed RPM package list\n"
               << "  import [--yes] FILE               Import and install a package list\n"
               << "  size [--top N]                    Show largest installed packages\n"
@@ -79,6 +88,29 @@ int main(int argc, char** argv) {
         return 0;
     }
     if (command == "doctor" && argc == 2) return print_result(fedora_pm::system::Doctor{}.run_checks());
+
+    fedora_pm::system::DriverManager drivers;
+    if (command == "gpu-detect" && argc == 2) return print_result(drivers.detect());
+    if (command == "driver-status" && argc == 2) return print_result(drivers.status());
+    if (command == "nvidia-list" && argc == 2) return print_result(drivers.list_nvidia());
+    if (command == "nvidia-remove" && (argc == 2 || argc == 3))
+        return print_result(drivers.remove_nvidia(has_yes(argc, argv, 2)));
+    if (command == "cuda-install" && (argc == 2 || argc == 3))
+        return print_result(drivers.install_cuda(has_yes(argc, argv, 2)));
+    if (command == "nvidia-install") {
+        bool yes = false, cuda = false;
+        std::optional<std::string> version;
+        for (int i = 2; i < argc; ++i) {
+            const std::string arg = argv[i];
+            if (arg == "--yes") yes = true;
+            else if (arg == "--cuda") cuda = true;
+            else if (arg == "--version" && i + 1 < argc) version = argv[++i];
+            else { std::cerr << "Usage: fedora-pm nvidia-install [--version V] [--cuda] [--yes]\n"; return 2; }
+        }
+        return print_result(drivers.install_nvidia(version, cuda, yes));
+    }
+    if (command == "gaming-install" && (argc == 2 || argc == 3))
+        return print_result(fedora_pm::system::GamingManager{}.install_meta(has_yes(argc, argv, 2)));
 
     fedora_pm::packages::PackageManager pm;
     if (command == "history") return print_result(pm.history());
