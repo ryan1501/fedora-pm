@@ -15,6 +15,7 @@ public:
     PackageResult search(const std::string& query) const;
     PackageResult info(const std::string& package) const;
     PackageResult list_installed() const;
+    PackageResult history() const;
     PackageResult install(const std::vector<std::string>& packages, bool assume_yes = false) const;
     PackageResult remove(const std::vector<std::string>& packages, bool assume_yes = false) const;
     PackageResult update(bool assume_yes = false) const;
