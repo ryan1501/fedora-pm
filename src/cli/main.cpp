@@ -8,6 +8,7 @@
 #include "system/repository_manager.hpp"
 #include "system/kernel_manager.hpp"
 #include "system/disk_space_manager.hpp"
+#include "system/security_manager.hpp"
 #include <charconv>
 #include <iostream>
 #include <string>
@@ -31,6 +32,12 @@ void usage() {
               << "  groups                            List installed DNF package groups\n"
               << "  changelog NAME                    Show package changelog\n"
               << "  changelog-recent NAME [COUNT]     Show recent installed-package changelog entries\n"
+              << "  security-check                    List available security updates\n"
+              << "  security-list [SEVERITY]           List security/advisory updates\n"
+              << "  security-info ADVISORY             Show advisory details\n"
+              << "  cve-check CVE-YYYY-NNNN            Check updates for a CVE\n"
+              << "  security-audit                    Summarize security/critical/important updates\n"
+              << "  security-update [--yes]            Install security updates\n"
               << "  export FILE                       Export user-installed RPM package list\n"
               << "  import [--yes] FILE               Import and install a package list\n"
               << "  size [--top N]                    Show largest installed packages\n"
@@ -76,6 +83,7 @@ int main(int argc, char** argv) {
     if (command == "deps" && argc == 3) return print_result(pm.dependencies(argv[2]));
     if (command == "reverse-deps" && argc == 3) return print_result(pm.reverse_dependencies(argv[2]));
     if (command == "groups") return print_result(pm.installed_groups());
+
     fedora_pm::packages::ChangelogManager changelogs;
     if (command == "changelog" && argc == 3) return print_result(changelogs.show(argv[2]));
     if (command == "changelog-recent" && (argc == 3 || argc == 4)) {
@@ -90,6 +98,22 @@ int main(int argc, char** argv) {
         }
         return print_result(changelogs.show_recent(argv[2], count));
     }
+
+    fedora_pm::system::SecurityManager security;
+    if (command == "security-check" && argc == 2) return print_result(security.check());
+    if (command == "security-list" && (argc == 2 || argc == 3))
+        return print_result(security.list(argc == 3 ? argv[2] : "security"));
+    if (command == "security-info" && argc == 3) return print_result(security.advisory_info(argv[2]));
+    if (command == "cve-check" && argc == 3) return print_result(security.cve_check(argv[2]));
+    if (command == "security-audit" && argc == 2) return print_result(security.audit());
+    if (command == "security-update") {
+        if (argc > 3 || (argc == 3 && std::string(argv[2]) != "--yes")) {
+            std::cerr << "Usage: fedora-pm security-update [--yes]\n";
+            return 2;
+        }
+        return print_result(security.update(has_yes(argc, argv, 2)));
+    }
+
     if (command == "export" && argc == 3)
         return print_result(fedora_pm::packages::ExportManager{}.export_to_file(argv[2]));
     if (command == "import") {
