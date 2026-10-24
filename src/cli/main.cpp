@@ -22,6 +22,9 @@ void usage() {
               << "  remove [--yes] NAME...            Remove RPM packages\n"
               << "  update [--yes]                    Update installed packages\n"
               << "  history                           Show DNF transaction history\n"
+              << "  deps NAME                         Show resolved package dependencies\n"
+              << "  reverse-deps NAME                 Show installed packages requiring NAME\n"
+              << "  groups                            List installed DNF package groups\n"
               << "  export FILE                       Export user-installed RPM package list\n"
               << "  import [--yes] FILE               Import and install a package list\n"
               << "  repo-list                         List DNF repositories\n"
@@ -57,6 +60,9 @@ int main(int argc, char** argv) {
     if (command == "search" && argc >= 3) return print_result(pm.search(argv[2]));
     if (command == "package-info" && argc >= 3) return print_result(pm.info(argv[2]));
     if (command == "list") return print_result(pm.list_installed());
+    if (command == "deps" && argc == 3) return print_result(pm.dependencies(argv[2]));
+    if (command == "reverse-deps" && argc == 3) return print_result(pm.reverse_dependencies(argv[2]));
+    if (command == "groups") return print_result(pm.installed_groups());
     if (command == "export" && argc == 3)
         return print_result(fedora_pm::packages::ExportManager{}.export_to_file(argv[2]));
     if (command == "import") {
