@@ -134,11 +134,10 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), process_(new QPro
                 confirm.setWindowTitle("Review DNF transaction");
                 confirm.setText("Review the proposed package changes below. Continue only if the transaction looks correct.");
                 confirm.setDetailedText(processOutput_);
-                confirm.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
-                confirm.setDefaultButton(QMessageBox::No);
-                confirm.setButtonText(QMessageBox::Yes, "Apply transaction");
-                confirm.setButtonText(QMessageBox::No, "Cancel");
-                if (confirm.exec() == QMessageBox::Yes) {
+                auto* applyButton = confirm.addButton("Apply transaction", QMessageBox::AcceptRole);
+                confirm.addButton("Cancel", QMessageBox::RejectRole);
+                confirm.exec();
+                if (confirm.clickedButton() == applyButton) {
                     QStringList privilegedArgs{"dnf"};
                     privilegedArgs.append(pendingMutationArgs_);
                     privilegedArgs.append("-y");
