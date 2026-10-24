@@ -166,13 +166,15 @@ PackageResult ConfigManager::save() const {
            << "}\n";
     output.close();
     if (!output) return {false, {}, "Failed writing configuration data."};
+    // Fedora/Linux rename replaces an existing destination atomically. Do not
+    // remove the old config as a fallback: if the second rename then fails,
+    // that would destroy the user's last valid configuration.
     std::filesystem::rename(temp, path, ec);
     if (ec) {
-        std::filesystem::remove(path, ec);
-        ec.clear();
-        std::filesystem::rename(temp, path, ec);
+        std::error_code cleanup_ec;
+        std::filesystem::remove(temp, cleanup_ec);
+        return {false, {}, "Could not atomically replace config file: " + ec.message()};
     }
-    if (ec) return {false, {}, "Could not atomically replace config file: " + ec.message()};
     return {true, "Saved configuration to " + path.string() + "\n", {}};
 }
 PackageResult ConfigManager::show() {
