@@ -121,7 +121,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), process_(new QPro
     });
     connect(flatpakInfo_, &QPushButton::clicked, this, [this] {
         const auto appId = query_->text().trimmed();
-        if (!valid_package_input(appId) || !appId.contains('.')) {
+        if (!valid_flatpak_app_id(appId)) {
             QMessageBox::warning(this, "Invalid Flatpak ID", "Enter a dotted Flatpak application ID, such as org.example.App.");
             return;
         }
@@ -211,6 +211,12 @@ bool MainWindow::valid_package_input(const QString& value) const {
     static const QRegularExpression packagePattern(
         "^[A-Za-z0-9][A-Za-z0-9._+:-]{0,199}$");
     return packagePattern.match(value).hasMatch();
+}
+
+bool MainWindow::valid_flatpak_app_id(const QString& value) const {
+    static const QRegularExpression appIdPattern(
+        "^[A-Za-z][A-Za-z0-9_-]*(\\\\.[A-Za-z][A-Za-z0-9_-]*)+$");
+    return appIdPattern.match(value).hasMatch();
 }
 
 void MainWindow::set_busy(bool busy) {
