@@ -457,7 +457,7 @@ int main(int argc, char** argv) {
     if (command == "repo-add" && (argc == 3 || argc == 4)) {
         if (argc == 3)
             return print_mutation_result(repos.add(argv[2]), "repo-add", {argv[2]});
-        return print_mutation_result(repos.add(argv[3], argv[2]), "repo-add", {argv[2], argv[3]});
+        return print_mutation_result(repos.add(argv[2], argv[3]), "repo-add", {argv[2], argv[3]});
     }
     if (command == "repo-refresh" && argc == 2) return print_mutation_result(repos.refresh(), "repo-refresh", {});
     if ((command == "repo-enable" || command == "repo-disable") && argc == 3)
