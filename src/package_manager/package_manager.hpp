@@ -15,10 +15,15 @@ public:
     PackageResult search(const std::string& query) const;
     PackageResult info(const std::string& package) const;
     PackageResult list_installed() const;
+    PackageResult list_available(const std::string& pattern = {}) const;
     PackageResult history() const;
     PackageResult dependencies(const std::string& package) const;
     PackageResult reverse_dependencies(const std::string& package) const;
     PackageResult installed_groups() const;
+    PackageResult group_info(const std::string& group) const;
+    PackageResult install_group(const std::string& group, bool assume_yes = false) const;
+    PackageResult remove_group(const std::string& group, bool assume_yes = false) const;
+    PackageResult clean_cache() const;
     PackageResult install(const std::vector<std::string>& packages, bool assume_yes = false) const;
     PackageResult remove(const std::vector<std::string>& packages, bool assume_yes = false) const;
     PackageResult update(bool assume_yes = false) const;
