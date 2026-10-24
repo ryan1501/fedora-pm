@@ -14,7 +14,10 @@ add_library(fedorapm_core
     src/core/process_runner.cpp
     src/core/validation.cpp
     src/system/system_info.cpp
+    src/system/repository_manager.cpp
+    src/system/kernel_manager.cpp
     src/package_manager/package_manager.cpp
+    src/package_manager/flatpak_manager.cpp
 )
 target_include_directories(fedorapm_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_link_libraries(fedorapm_core PUBLIC Threads::Threads)
