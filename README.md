@@ -105,6 +105,10 @@ See the checklist in [`docs/CPP_MIGRATION_PLAN.md`](docs/CPP_MIGRATION_PLAN.md).
 
 The repository `install.sh` now builds and installs the C++ implementation with CMake. Run `./install.sh --help` for `--cli`, `--gui`, `--both`, `--user`, `--prefix`, and `--dry-run` options. For development or manual control, use the CMake commands above.
 
+## Legacy repository files
+
+The repository still retains the Rust source and several older completion summaries, release notes, GUI guides, and packaging helpers as migration reference material. Those documents describe earlier Rust/Python behavior and are not authoritative for the C++ build. Use this README, `MIGRATION_STATUS.md`, `BUILD_RPM_QUICKSTART.md`, `RPM_BUILD_GUIDE.md`, and `docs/CPP_MIGRATION_PLAN.md` for current status. Legacy COPR upload scripts and `fedora-pm-copr.spec` are intentionally disabled on this branch so they cannot accidentally publish the old Rust application.
+
 ## Contributing and reporting issues
 
 Work on the migration branch, add or update tests for behavior changes, and keep the migration checklist accurate. Do not use the draft migration as a replacement for the established implementation until the checklist is complete and the required Fedora testing has been performed.
