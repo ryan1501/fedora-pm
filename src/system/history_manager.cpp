@@ -40,10 +40,40 @@ std::string escape_json(const std::string& value) {
 }
 std::string unescape_json(const std::string& value) {
     std::string out;
+    const auto append_utf8 = [&out](unsigned int cp) {
+        if (cp <= 0x7f) out.push_back(static_cast<char>(cp));
+        else if (cp <= 0x7ff) {
+            out.push_back(static_cast<char>(0xc0 | (cp >> 6)));
+            out.push_back(static_cast<char>(0x80 | (cp & 0x3f)));
+        } else if (cp <= 0xffff) {
+            out.push_back(static_cast<char>(0xe0 | (cp >> 12)));
+            out.push_back(static_cast<char>(0x80 | ((cp >> 6) & 0x3f)));
+            out.push_back(static_cast<char>(0x80 | (cp & 0x3f)));
+        } else if (cp <= 0x10ffff) {
+            out.push_back(static_cast<char>(0xf0 | (cp >> 18)));
+            out.push_back(static_cast<char>(0x80 | ((cp >> 12) & 0x3f)));
+            out.push_back(static_cast<char>(0x80 | ((cp >> 6) & 0x3f)));
+            out.push_back(static_cast<char>(0x80 | (cp & 0x3f)));
+        } else out += "\xef\xbf\xbd";
+    };
+    const auto hex4 = [&value](std::size_t pos, unsigned int& cp) {
+        if (pos + 4 > value.size()) return false;
+        cp = 0;
+        for (std::size_t j = pos; j < pos + 4; ++j) {
+            const char c = value[j];
+            unsigned int digit;
+            if (c >= '0' && c <= '9') digit = static_cast<unsigned int>(c - '0');
+            else if (c >= 'a' && c <= 'f') digit = static_cast<unsigned int>(c - 'a' + 10);
+            else if (c >= 'A' && c <= 'F') digit = static_cast<unsigned int>(c - 'A' + 10);
+            else return false;
+            cp = (cp << 4) | digit;
+        }
+        return true;
+    };
     for (std::size_t i = 0; i < value.size(); ++i) {
-        if (value[i] != '\\' || i + 1 >= value.size()) { out.push_back(value[i]); continue; }
-        const char c = value[++i];
-        switch (c) {
+        if (value[i] != '\\') { out.push_back(value[i]); continue; }
+        if (++i >= value.size()) { out += "\xef\xbf\xbd"; break; }
+        switch (value[i]) {
             case '"': out.push_back('"'); break;
             case '\\': out.push_back('\\'); break;
             case '/': out.push_back('/'); break;
@@ -52,7 +82,22 @@ std::string unescape_json(const std::string& value) {
             case 't': out.push_back('\t'); break;
             case 'b': out.push_back('\b'); break;
             case 'f': out.push_back('\f'); break;
-            default: out.push_back(c); break;
+            case 'u': {
+                unsigned int cp = 0;
+                if (!hex4(i + 1, cp)) { out += "\xef\xbf\xbd"; break; }
+                i += 4;
+                if (cp >= 0xd800 && cp <= 0xdbff && i + 6 < value.size() &&
+                    value[i + 1] == '\\' && value[i + 2] == 'u') {
+                    unsigned int low = 0;
+                    if (hex4(i + 3, low) && low >= 0xdc00 && low <= 0xdfff) {
+                        cp = 0x10000 + ((cp - 0xd800) << 10) + (low - 0xdc00);
+                        i += 6;
+                    } else cp = 0xfffd;
+                } else if (cp >= 0xd800 && cp <= 0xdfff) cp = 0xfffd;
+                append_utf8(cp);
+                break;
+            }
+            default: out += "\xef\xbf\xbd"; break;
         }
     }
     return out;
