@@ -164,4 +164,14 @@ int main() {
     assert(unicode_history.output.find("café") != std::string::npos);
     assert(unicode_history.output.find("rocket 🚀") != std::string::npos);
     std::filesystem::remove(history_path, cleanup_error);
+
+    // A configured history path must never cause an existing directory to be
+    // removed or replaced by a history file.
+    const auto history_directory_path = std::filesystem::temp_directory_path() / "fedora-pm-history-directory-test";
+    std::filesystem::remove_all(history_directory_path, cleanup_error);
+    assert(std::filesystem::create_directory(history_directory_path, cleanup_error));
+    const fedora_pm::system::HistoryManager invalid_history_path(history_directory_path);
+    assert(!invalid_history_path.log("install", {"firefox"}).success);
+    assert(std::filesystem::is_directory(history_directory_path));
+    std::filesystem::remove_all(history_directory_path, cleanup_error);
 }
