@@ -40,9 +40,18 @@ jobs:
         run: |
           ./build/fedora-pm help
           ./build/fedora-pm self-update status
-          ./build/fedora-pm self-update update --force --quiet
-          ./build/fedora-pm self-update enable daily
-          ./build/fedora-pm self-update disable
+          if ./build/fedora-pm self-update update --force --quiet; then
+            echo "Unconfigured self-update unexpectedly reported success" >&2
+            exit 1
+          fi
+          if ./build/fedora-pm self-update enable daily; then
+            echo "Unimplemented automatic self-update unexpectedly reported success" >&2
+            exit 1
+          fi
+          if ./build/fedora-pm self-update disable; then
+            echo "Unimplemented automatic self-update unexpectedly reported success" >&2
+            exit 1
+          fi
           if ./build/fedora-pm self-update update --unknown; then
             echo "Unknown self-update option unexpectedly succeeded" >&2
             exit 1
@@ -76,9 +85,18 @@ jobs:
         run: |
           ./build/fedora-pm help
           ./build/fedora-pm self-update status
-          ./build/fedora-pm self-update update --force --quiet
-          ./build/fedora-pm self-update enable daily
-          ./build/fedora-pm self-update disable
+          if ./build/fedora-pm self-update update --force --quiet; then
+            echo "Unconfigured self-update unexpectedly reported success" >&2
+            exit 1
+          fi
+          if ./build/fedora-pm self-update enable daily; then
+            echo "Unimplemented automatic self-update unexpectedly reported success" >&2
+            exit 1
+          fi
+          if ./build/fedora-pm self-update disable; then
+            echo "Unimplemented automatic self-update unexpectedly reported success" >&2
+            exit 1
+          fi
           if ./build/fedora-pm self-update update --unknown; then
             echo "Unknown self-update option unexpectedly succeeded" >&2
             exit 1
