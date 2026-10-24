@@ -13,8 +13,10 @@
 #include "system/doctor.hpp"
 #include "system/driver_manager.hpp"
 #include "system/gaming_manager.hpp"
+#include "system/rollback_manager.hpp"
 #include <charconv>
 #include <iostream>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -32,6 +34,8 @@ void usage() {
               << "  remove [--yes] NAME...            Remove RPM packages\n"
               << "  update [--yes]                    Update installed packages\n"
               << "  history                           Show DNF transaction history\n"
+              << "  rollback ID [--yes]               Undo a DNF transaction\n"
+              << "  rollback-last [--yes]             Undo the newest DNF transaction\n"
               << "  deps NAME                         Show resolved package dependencies\n"
               << "  reverse-deps NAME                 Show installed packages requiring NAME\n"
               << "  groups                            List installed DNF package groups\n"
@@ -111,6 +115,16 @@ int main(int argc, char** argv) {
     }
     if (command == "gaming-install" && (argc == 2 || argc == 3))
         return print_result(fedora_pm::system::GamingManager{}.install_meta(has_yes(argc, argv, 2)));
+
+    fedora_pm::system::RollbackManager rollback;
+    if (command == "rollback-history" && argc == 2) return print_result(rollback.list_history());
+    if (command == "rollback-last" && (argc == 2 || argc == 3))
+        return print_result(rollback.rollback_last(has_yes(argc, argv, 2)));
+    if (command == "rollback" && (argc == 3 || argc == 4)) {
+        const bool yes = argc == 4 && std::string(argv[3]) == "--yes";
+        if (argc == 4 && !yes) { std::cerr << "Usage: fedora-pm rollback ID [--yes]\n"; return 2; }
+        return print_result(rollback.rollback(argv[2], yes));
+    }
 
     fedora_pm::packages::PackageManager pm;
     if (command == "history") return print_result(pm.history());
