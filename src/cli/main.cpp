@@ -9,6 +9,7 @@
 #include "system/kernel_manager.hpp"
 #include "system/disk_space_manager.hpp"
 #include "system/security_manager.hpp"
+#include "system/config_manager.hpp"
 #include <charconv>
 #include <iostream>
 #include <string>
@@ -38,6 +39,7 @@ void usage() {
               << "  cve-check CVE-YYYY-NNNN            Check updates for a CVE\n"
               << "  security-audit                    Summarize security/critical/important updates\n"
               << "  security-update [--yes]            Install security updates\n"
+              << "  config show | get KEY | set KEY VALUE\n"
               << "  export FILE                       Export user-installed RPM package list\n"
               << "  import [--yes] FILE               Import and install a package list\n"
               << "  size [--top N]                    Show largest installed packages\n"
@@ -112,6 +114,15 @@ int main(int argc, char** argv) {
             return 2;
         }
         return print_result(security.update(has_yes(argc, argv, 2)));
+    }
+
+    if (command == "config") {
+        fedora_pm::system::ConfigManager config;
+        if (argc == 3 && std::string(argv[2]) == "show") return print_result(config.show());
+        if (argc == 4 && std::string(argv[2]) == "get") return print_result(config.get(argv[3]));
+        if (argc == 5 && std::string(argv[2]) == "set") return print_result(config.set(argv[3], argv[4]));
+        std::cerr << "Usage: fedora-pm config show | get KEY | set KEY VALUE\n";
+        return 2;
     }
 
     if (command == "export" && argc == 3)
