@@ -123,7 +123,6 @@ int main() {
     const fedora_pm::system::DriverManager drivers;
     assert(!drivers.install_nvidia(std::string("bad;version")).success);
 
-    const fedora_pm::packages::FlatpakManager flatpak_manager_for_invalid_ids;
     assert(!flatpak.install("bad/name").success);
     assert(!flatpak.info("org..example.App").success);
     const fedora_pm::system::RepositoryManager repos;
