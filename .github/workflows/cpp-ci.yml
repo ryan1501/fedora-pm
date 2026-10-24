@@ -78,6 +78,16 @@ jobs:
           expect_usage_error ./build/fedora-pm flatpak-update --bogus
           expect_usage_error ./build/fedora-pm flatpak-install org.example.App --bogus
           expect_usage_error ./build/fedora-pm flatpak-remove org.example.App --bogus
+          # Usage errors should emit actual line breaks, not the literal \\n sequence.
+          set +e
+          ./build/fedora-pm flatpak-update --bogus 2>usage-error.txt
+          usage_status=$?
+          set -e
+          test "$usage_status" -eq 2
+          if grep -F '\\n' usage-error.txt; then
+            echo "Usage error contains a literal \\n instead of a line break" >&2
+            exit 1
+          fi
 
       - name: Validate Fedora GUI packaging metadata
         run: |
