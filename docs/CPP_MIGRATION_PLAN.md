@@ -3,30 +3,29 @@
 The Rust implementation remains authoritative until this checklist is complete and verified on Fedora.
 
 ## Foundation and first feature ports
-- [x] C++20 / CMake project setup and optional Qt 6 Widgets target
+- [x] C++20 / CMake project and optional Qt 6 Widgets target
 - [x] Shell-free process runner and initial CLI
-- [x] Initial Qt 6 Widgets search window with asynchronous DNF
+- [x] Qt 6 search window with asynchronous DNF
 - [x] Basic validation and system information
 - [x] DNF search/info/list/install/remove/upgrade/history
 - [x] Dependency/reverse-dependency queries and installed groups
 - [x] RPM package-list export/import (Flatpak parity still required)
 - [x] Flatpak search/list/install/remove/update/info/Flathub setup
 - [x] Repository list/info/enable/disable/add/refresh
-- [x] Kernel inventory
+- [x] Kernel current/list/available/install/remove/remove-old/info
 - [x] Disk space, package sizes, cache size, orphan listing/autoremove
 - [x] Package downloads, dependency downloads, offline RPM installation
 - [x] RPM changelog and recent changelog entries
 - [x] Security update listing, advisory info, CVE query, audit, security upgrade
-- [x] Config load/show/get/set for existing known fields
+- [x] Config load/show/get/set for known fields
 - [x] Read-only system doctor checks
 - [x] GPU detection, NVIDIA operations, CUDA package install, gaming meta install
 - [x] DNF history undo by transaction ID/newest transaction
 - [x] Unit tests for validation and safe rejection paths
-- [x] CI workflow defined; successful run on the latest branch state still required
+- [x] CI defined for Ubuntu and Fedora; successful run on the latest branch state still required
 
 ## Feature parity still required
 - [ ] Persistent JSON operation history and logging for successful operations
-- [ ] Kernel install/remove/remove-old/info workflows
 - [ ] CachyOS status, kernel, repository, and CPU workflows
 - [ ] Flatpak-aware export/import parity
 - [ ] Package group info/install/remove
