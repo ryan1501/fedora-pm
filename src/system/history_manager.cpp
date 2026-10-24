@@ -222,6 +222,47 @@ bool valid_json_document(const std::string& input) {
     return Parser(input).parse();
 }
 
+bool json_array_objects_only(const std::string& input) {
+    if (input.size() < 2 || input.front() != '[' || input.back() != ']') return false;
+    std::size_t pos = 1;
+    const std::size_t end = input.size() - 1;
+    const auto skip_space = [&]() {
+        while (pos < end && (input[pos] == ' ' || input[pos] == '\t' ||
+                             input[pos] == '\r' || input[pos] == '\n')) ++pos;
+    };
+    skip_space();
+    if (pos == end) return true;
+    while (pos < end) {
+        if (input[pos] != '{') return false;
+        int nesting = 0;
+        bool in_string = false;
+        bool escaped = false;
+        for (; pos < end; ++pos) {
+            const char c = input[pos];
+            if (in_string) {
+                if (escaped) escaped = false;
+                else if (c == '\\') escaped = true;
+                else if (c == '"') in_string = false;
+                continue;
+            }
+            if (c == '"') { in_string = true; continue; }
+            if (c == '{' || c == '[') ++nesting;
+            else if (c == '}' || c == ']') {
+                --nesting;
+                if (nesting == 0) { ++pos; break; }
+            }
+        }
+        if (nesting != 0 || in_string) return false;
+        skip_space();
+        if (pos == end) return true;
+        if (input[pos] != ',') return false;
+        ++pos;
+        skip_space();
+        if (pos == end) return false;
+    }
+    return false;
+}
+
 std::string timestamp_now() {
     const std::time_t now = std::time(nullptr);
     std::tm local{};
@@ -267,8 +308,9 @@ std::pair<bool, std::vector<OperationHistoryEntry>> HistoryManager::read_all(std
     buffer << input.rdbuf();
     const std::string data = buffer.str();
     if (fedora_pm::core::trim(data).empty()) return {true, {}};
-    if (!valid_json_document(data) || data.front() != '[' || data.back() != ']') {
-        error = "History file is not a valid JSON array: " + path_.string();
+    const std::string trimmed_data = fedora_pm::core::trim(data);
+    if (!valid_json_document(trimmed_data) || !json_array_objects_only(trimmed_data)) {
+        error = "History file is not a valid JSON array of operation entries: " + path_.string();
         return {false, {}};
     }
     const std::regex object_pattern(R"re(\{[\s\S]*?\})re");
