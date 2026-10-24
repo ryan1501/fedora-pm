@@ -1,4 +1,5 @@
 #include "system/history_manager.hpp"
+#include "system/config_manager.hpp"
 #include "core/validation.hpp"
 
 #include <cstdlib>
@@ -71,8 +72,16 @@ std::string timestamp_now() {
     return out.str();
 }
 }
-HistoryManager::HistoryManager(std::filesystem::path path)
-    : path_(path.empty() ? default_history_path() : std::move(path)) {}
+HistoryManager::HistoryManager(std::filesystem::path path) {
+    if (!path.empty()) {
+        path_ = std::move(path);
+        return;
+    }
+    ConfigManager config;
+    const auto loaded = config.load();
+    path_ = loaded.success ? config.config().history_file : default_history_path();
+    if (path_.empty()) path_ = default_history_path();
+}
 std::pair<bool, std::vector<OperationHistoryEntry>> HistoryManager::read_all(std::string& error) const {
     std::error_code ec;
     if (!std::filesystem::exists(path_, ec)) return {true, {}};
