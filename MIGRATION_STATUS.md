@@ -12,6 +12,7 @@ The C++ implementation is being built in parallel with the Rust application. It 
 - Flatpak search/list/install/remove/update/info and idempotent Flathub setup.
 - Repository list/info/enable/disable/add/metadata refresh.
 - Kernel current/list/available/install/remove/remove-old/info operations; removal protects the running kernel by default.
+- CachyOS repository status, kernel listing/install, COPR enable/disable, and x86-64 CPU feature-level checks.
 - Disk-space analysis, largest package listing, package-size details, cache size, orphan candidates, and DNF autoremove.
 - Package downloads, optional dependency downloads, and offline RPM installation.
 - RPM changelog lookup with DNF fallback and recent-entry display.
@@ -20,11 +21,10 @@ The C++ implementation is being built in parallel with the Rust application. It 
 - GPU detection, NVIDIA status/list/install/remove, CUDA package install, and gaming meta-package install.
 - DNF transaction history listing and DNF history undo by transaction ID or newest transaction.
 - Unit tests for validation, config persistence, and invalid-input safety paths.
-- GitHub Actions workflow now includes Ubuntu and Fedora builds of CLI, Qt GUI, CTest, and CLI help.
+- GitHub Actions workflow includes Ubuntu and Fedora builds of CLI, Qt GUI, CTest, and CLI help.
 
 ## Remaining work before replacing Rust
 - Implement persistent JSON operation history and connect it to successful package/repository/Flatpak/driver actions.
-- Complete CachyOS kernel/repository/CPU workflows.
 - Complete Flatpak-aware export/import and group info/install/remove workflows.
 - Add changelog update summary/comparison, package cache cleaning, self-update, and remaining CLI flags/options.
 - Preserve Rust CLI command names, subcommands, flags, output, and exit codes; add parity tests against Rust behavior.
@@ -35,5 +35,5 @@ The C++ implementation is being built in parallel with the Rust application. It 
 ## Safety notes
 - Repository addition accepts HTTP(S) URLs only; repository removal remains unimplemented rather than guessing a .repo filename that could delete the wrong configuration.
 - Package mutations may require privileges; automatic elevation is not assumed.
-- DNF transaction rollback can alter installed packages and should be reviewed carefully before confirmation.
+- DNF transaction rollback and kernel removal can alter the system and should be reviewed carefully before confirmation.
 - This remains an incomplete development branch and is not ready to merge as the replacement.
