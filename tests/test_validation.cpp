@@ -109,6 +109,15 @@ int main() {
     assert(reloaded_config.load().success);
     assert(reloaded_config.get("history_file").output == special_history_path + "\n");
 
+    // A lone UTF-16 surrogate is replaced with the Unicode replacement character.
+    {
+        std::ofstream surrogate_config(test_config_dir / "config.json", std::ios::trunc);
+        surrogate_config << R"json({"history_file":"\\uD800"})json";
+    }
+    fedora_pm::system::ConfigManager surrogate_config(test_config_dir);
+    assert(surrogate_config.load().success);
+    assert(surrogate_config.get("history_file").output == "\xef\xbf\xbd\n");
+
     // Malformed JSON must fail closed instead of silently resetting settings.
     const auto config_file = test_config_dir / "config.json";
     for (const std::string malformed : {
