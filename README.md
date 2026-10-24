@@ -2,7 +2,7 @@
 
 Fedora Package Manager (FedoraAPM) is being migrated from the original Rust implementation to **C++20 with CMake and an optional Qt 6 Widgets GUI**. The migration is tracked on the `migration/cpp20-qt6` branch and in [`docs/CPP_MIGRATION_PLAN.md`](docs/CPP_MIGRATION_PLAN.md).
 
-> **Migration status:** in progress. The C++ CLI and GUI build in CI on Ubuntu and Fedora, and the current unit tests and CLI smoke tests pass on both CI targets. This does not mean feature parity is complete or that Fedora Workstation and Fedora Everything have been tested on real installations. Keep the original Rust implementation as the reference until the migration checklist is complete and verified.
+> **Migration status:** in progress. GitHub Actions is configured to build the C++ CLI, GUI, and tests on Ubuntu and Fedora containers and run unit tests and CLI smoke tests. Check the linked workflow for the latest result. Even a passing container job does not mean feature parity is complete or that Fedora Workstation and Fedora Everything have been tested on real installations. Keep the original Rust implementation as the reference until the migration checklist is complete and verified.
 
 ## Current C++ implementation
 

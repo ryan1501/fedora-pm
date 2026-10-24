@@ -23,7 +23,7 @@ The C++ implementation is being built in parallel with the Rust application. It 
 - Persistent JSON operation history with timestamps, recent-history display, and CLI logging for many successful mutation commands.
 - Qt 6 Widgets GUI for package search/info/listing, install/remove/update, captured output, busy state, cancellation, and DNF transaction preview before user approval.
 - Unit tests for validation, config persistence, history JSON round-trip, and invalid-input safety paths.
-- GitHub Actions builds the CLI, Qt GUI, and tests, runs CTest and CLI smoke tests, and validates RPM/desktop metadata. The latest verified run passed both Ubuntu and Fedora jobs (run [40135825707](https://github.com/ryan1501/fedora-pm/actions/runs/40135825707)). This is CI evidence only; it is not a substitute for real Fedora Workstation/Everything runtime tests.
+- GitHub Actions is configured to build the CLI, Qt GUI, and tests, run CTest and CLI smoke tests, build/install/uninstall RPMs in a disposable Fedora container, and validate desktop metadata and the CMake installer. Check the latest [Actions runs](https://github.com/ryan1501/fedora-pm/actions) for current results; container CI is not a substitute for real Fedora Workstation/Everything runtime tests.
 
 ## Remaining work before replacing Rust
 - Audit remaining mutation paths for operation-history logging and continue validating behavior against existing Rust history files.
