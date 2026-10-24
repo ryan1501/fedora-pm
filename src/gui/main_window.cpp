@@ -7,6 +7,7 @@
 #include <QProcess>
 #include <QProgressBar>
 #include <QPushButton>
+#include <QTimer>
 #include <QRegularExpression>
 #include <QVBoxLayout>
 #include <QWidget>
@@ -87,7 +88,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), process_(new QPro
         if (QMessageBox::question(this, "Confirm installation",
             "Install package '" + package + "'? DNF may also install dependencies.",
             QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::Yes)
-            run_dnf({"install", package}, true);
+            run_dnf({"install", "-y", package}, true);
     });
     connect(remove_, &QPushButton::clicked, this, [this] {
         const auto package = query_->text().trimmed();
@@ -98,13 +99,13 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), process_(new QPro
         if (QMessageBox::warning(this, "Confirm removal",
             "Remove package '" + package + "'? Review DNF's proposed transaction carefully.",
             QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::Yes)
-            run_dnf({"remove", package}, true);
+            run_dnf({"remove", "-y", package}, true);
     });
     connect(update_, &QPushButton::clicked, this, [this] {
         if (QMessageBox::warning(this, "Confirm system update",
             "Check and apply available package updates? Review DNF's proposed transaction before accepting it.",
             QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::Yes)
-            run_dnf({"upgrade"}, true);
+            run_dnf({"upgrade", "-y"}, true);
     });
     connect(cancel_, &QPushButton::clicked, this, [this] {
         if (process_->state() != QProcess::NotRunning) {
