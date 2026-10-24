@@ -132,7 +132,8 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), process_(new QPro
                 QMessageBox confirm(this);
                 confirm.setIcon(QMessageBox::Warning);
                 confirm.setWindowTitle("Review DNF transaction");
-                confirm.setText("Review the proposed package changes below. Continue only if the transaction looks correct.");
+                confirm.setText("Review the proposed package changes before applying them.");
+                confirm.setInformativeText(processOutput_.left(1800));
                 confirm.setDetailedText(processOutput_);
                 auto* applyButton = confirm.addButton("Apply transaction", QMessageBox::AcceptRole);
                 confirm.addButton("Cancel", QMessageBox::RejectRole);
