@@ -201,7 +201,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), process_(new QPro
     });
     connect(process_, &QProcess::errorOccurred, this, [this](QProcess::ProcessError error) {
         if (error == QProcess::FailedToStart) {
-            output_->appendPlainText("Could not start the command. Check that dnf and, for privileged actions, pkexec are installed.");
+            output_->appendPlainText("Could not start the requested command. Check that the required executable is installed and available in PATH.");
             set_busy(false);
         }
     });
