@@ -145,7 +145,9 @@ jobs:
       - name: Build CLI and GUI RPMs from this checkout
         run: |
           set -euxo pipefail
-          topdir="$PWD/rpmbuild"
+          # Use a fresh temporary build tree so old checked-in RPMs can never be selected by find.
+          topdir="$RUNNER_TEMP/rpmbuild"
+          rm -rf "$topdir"
           mkdir -p "$topdir"/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS}
           git -c safe.directory="$PWD" archive --format=tar.gz --prefix=fedora-pm-2.0.0/ HEAD > "$topdir/SOURCES/fedora-pm-2.0.0.tar.gz"
           cp fedora-pm-rpm.spec fedora-pm-gui-rpm.spec "$topdir/SPECS/"
