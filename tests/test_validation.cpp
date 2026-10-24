@@ -113,5 +113,13 @@ int main() {
     assert(recent.output.find("remove: vim") != std::string::npos);
     assert(recent.output.find("café") != std::string::npos);
     assert(recent.output.find("quoted\\\"package") != std::string::npos);
+    {
+        std::ofstream legacy(history_path, std::ios::trunc);
+        legacy << R"json([{"action":"install","items":["caf\\u00e9","rocket \\uD83D\\uDE80"],"timestamp":"2026-10-24T12:00:00-05:00"}])json";
+    }
+    const auto unicode_history = history.print_recent(1);
+    assert(unicode_history.success);
+    assert(unicode_history.output.find("café") != std::string::npos);
+    assert(unicode_history.output.find("rocket 🚀") != std::string::npos);
     std::filesystem::remove(history_path, cleanup_error);
 }
