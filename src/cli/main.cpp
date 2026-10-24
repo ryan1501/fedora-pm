@@ -22,6 +22,10 @@
 #include <string>
 #include <vector>
 
+#ifndef FEDORAPM_VERSION
+#define FEDORAPM_VERSION "unknown"
+#endif
+
 namespace {
 void usage() {
     std::cout << "fedora-pm (C++20 migration in progress)\n"
@@ -305,7 +309,7 @@ int main(int argc, char** argv) {
     if (command == "self-update") {
         if (argc == 3 && std::string(argv[2]) == "status") {
             std::cout << "Checking self-update status\n"
-                      << "Current version: 2.0.0\n"
+                      << "Current version: " << FEDORAPM_VERSION << "\n"
                       << "Update source: GitHub (not configured)\n";
             return 0;
         }
