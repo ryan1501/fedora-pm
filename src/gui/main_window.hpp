@@ -1,11 +1,13 @@
 #pragma once
 
 #include <QMainWindow>
+#include <QStringList>
 
 class QLineEdit;
 class QPlainTextEdit;
 class QPushButton;
 class QProcess;
+class QProgressBar;
 
 namespace fedora_pm::gui {
 class MainWindow final : public QMainWindow {
@@ -16,7 +18,18 @@ private:
     QLineEdit* query_;
     QPlainTextEdit* output_;
     QPushButton* search_;
+    QPushButton* info_;
+    QPushButton* installed_;
+    QPushButton* available_;
+    QPushButton* install_;
+    QPushButton* remove_;
+    QPushButton* update_;
+    QPushButton* cancel_;
+    QProgressBar* progress_;
     QProcess* process_;
     void run_search();
+    void run_dnf(QStringList args, bool mutating = false);
+    bool valid_package_input(const QString& value) const;
+    void set_busy(bool busy);
 };
 }
