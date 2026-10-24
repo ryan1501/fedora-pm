@@ -14,12 +14,26 @@ std::filesystem::path home_directory() {
     return std::filesystem::current_path();
 }
 std::string json_escape(const std::string& value) {
+    static constexpr char hex[] = "0123456789abcdef";
     std::string out;
-    for (char c : value) {
-        if (c == '\\' || c == '"') out.push_back('\\');
-        if (c == '\n') { out += "\\n"; continue; }
-        if (c == '\r') { out += "\\r"; continue; }
-        out.push_back(c);
+    for (unsigned char c : value) {
+        switch (c) {
+        case '"': out += "\\\""; break;
+        case '\\': out += "\\\\"; break;
+        case '\b': out += "\\b"; break;
+        case '\f': out += "\\f"; break;
+        case '\n': out += "\\n"; break;
+        case '\r': out += "\\r"; break;
+        case '\t': out += "\\t"; break;
+        default:
+            if (c < 0x20) {
+                out += "\\u00";
+                out.push_back(hex[(c >> 4) & 0x0f]);
+                out.push_back(hex[c & 0x0f]);
+            } else {
+                out.push_back(static_cast<char>(c));
+            }
+        }
     }
     return out;
 }
@@ -33,14 +47,75 @@ std::string parse_string(const std::string& data, const std::string& key, const 
     const std::regex pattern(std::string("\"") + key + R"re("\s*:\s*"((?:[^"\\]|\\.)*)")re");
     std::smatch match;
     if (!std::regex_search(data, match, pattern)) return fallback;
-    std::string value = match[1].str(), result;
+    const std::string value = match[1].str();
+    std::string result;
+    const auto append_utf8 = [&result](unsigned int cp) {
+        if (cp <= 0x7f) result.push_back(static_cast<char>(cp));
+        else if (cp <= 0x7ff) {
+            result.push_back(static_cast<char>(0xc0 | (cp >> 6)));
+            result.push_back(static_cast<char>(0x80 | (cp & 0x3f)));
+        } else {
+            result.push_back(static_cast<char>(0xe0 | (cp >> 12)));
+            result.push_back(static_cast<char>(0x80 | ((cp >> 6) & 0x3f)));
+            result.push_back(static_cast<char>(0x80 | (cp & 0x3f)));
+        }
+    };
+    const auto hex_value = [](char c) -> int {
+        if (c >= '0' && c <= '9') return c - '0';
+        if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+        if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+        return -1;
+    };
     for (std::size_t i = 0; i < value.size(); ++i) {
-        if (value[i] == '\\' && i + 1 < value.size()) {
-            const char next = value[++i];
-            if (next == 'n') result.push_back('\n');
-            else if (next == 'r') result.push_back('\r');
-            else result.push_back(next);
-        } else result.push_back(value[i]);
+        if (value[i] != '\\' || i + 1 >= value.size()) {
+            result.push_back(value[i]);
+            continue;
+        }
+        const char escaped = value[++i];
+        switch (escaped) {
+        case '"': result.push_back('"'); break;
+        case '\\': result.push_back('\\'); break;
+        case '/': result.push_back('/'); break;
+        case 'b': result.push_back('\b'); break;
+        case 'f': result.push_back('\f'); break;
+        case 'n': result.push_back('\n'); break;
+        case 'r': result.push_back('\r'); break;
+        case 't': result.push_back('\t'); break;
+        case 'u': {
+            if (i + 4 >= value.size()) { result += "\xef\xbf\xbd"; i = value.size(); break; }
+            unsigned int cp = 0;
+            bool valid = true;
+            for (int digit = 0; digit < 4; ++digit) {
+                const int hex = hex_value(value[i + 1 + digit]);
+                if (hex < 0) { valid = false; break; }
+                cp = (cp << 4) | static_cast<unsigned int>(hex);
+            }
+            if (!valid) { result += "\xef\xbf\xbd"; break; }
+            i += 4;
+            if (cp >= 0xd800 && cp <= 0xdbff && i + 6 < value.size() &&
+                value[i + 1] == '\\' && value[i + 2] == 'u') {
+                unsigned int low = 0;
+                bool valid_low = true;
+                for (int digit = 0; digit < 4; ++digit) {
+                    const int hex = hex_value(value[i + 3 + digit]);
+                    if (hex < 0) { valid_low = false; break; }
+                    low = (low << 4) | static_cast<unsigned int>(hex);
+                }
+                if (valid_low && low >= 0xdc00 && low <= 0xdfff) {
+                    const unsigned int combined = 0x10000 + ((cp - 0xd800) << 10) + (low - 0xdc00);
+                    result.push_back(static_cast<char>(0xf0 | (combined >> 18)));
+                    result.push_back(static_cast<char>(0x80 | ((combined >> 12) & 0x3f)));
+                    result.push_back(static_cast<char>(0x80 | ((combined >> 6) & 0x3f)));
+                    result.push_back(static_cast<char>(0x80 | (combined & 0x3f)));
+                    i += 6;
+                    break;
+                }
+            }
+            append_utf8(cp);
+            break;
+        }
+        default: result.push_back(escaped); break;
+        }
     }
     return result;
 }
