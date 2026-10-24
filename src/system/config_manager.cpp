@@ -3,7 +3,8 @@
 
 #include <cstdlib>
 #include <fstream>
-#include <regex>
+#include <map>
+#include <set>
 #include <sstream>
 
 namespace fedora_pm::system {
@@ -42,13 +43,17 @@ public:
     explicit JsonValidator(const std::string& input) : input_(input) {}
     bool valid_object() {
         skip_space();
-        if (!parse_object()) return false;
+        if (!parse_object(true)) return false;
         skip_space();
         return pos_ == input_.size();
     }
+    const std::map<std::string, char>& top_level_types() const { return top_level_types_; }
+    const std::map<std::string, std::string>& top_level_values() const { return top_level_values_; }
 private:
     const std::string& input_;
     std::size_t pos_{0};
+    std::map<std::string, char> top_level_types_;
+    std::map<std::string, std::string> top_level_values_;
 
     void skip_space() {
         while (pos_ < input_.size() &&
@@ -61,11 +66,15 @@ private:
         ++pos_;
         return true;
     }
-    bool parse_string() {
+    bool parse_string(std::string* raw_content = nullptr) {
         if (pos_ >= input_.size() || input_[pos_++] != '"') return false;
+        const std::size_t content_start = pos_;
         while (pos_ < input_.size()) {
             const unsigned char c = static_cast<unsigned char>(input_[pos_++]);
-            if (c == '"') return true;
+            if (c == '"') {
+                if (raw_content) *raw_content = input_.substr(content_start, pos_ - content_start - 1);
+                return true;
+            }
             if (c < 0x20) return false;
             if (c != '\\') continue;
             if (pos_ >= input_.size()) return false;
@@ -119,13 +128,24 @@ private:
             if (!consume(',')) return false;
         }
     }
-    bool parse_object() {
+    bool parse_object(bool top_level = false) {
         if (!consume('{')) return false;
+        std::set<std::string> keys;
         skip_space();
         if (pos_ < input_.size() && input_[pos_] == '}') { ++pos_; return true; }
         while (true) {
             skip_space();
-            if (!parse_string() || !consume(':') || !parse_value()) return false;
+            std::string key;
+            if (!parse_string(&key) || !keys.insert(key).second || !consume(':')) return false;
+            skip_space();
+            if (pos_ >= input_.size()) return false;
+            const char type = input_[pos_];
+            const std::size_t value_start = pos_;
+            if (!parse_value()) return false;
+            if (top_level) {
+                top_level_types_[key] = type;
+                top_level_values_[key] = input_.substr(value_start, pos_ - value_start);
+            }
             skip_space();
             if (pos_ < input_.size() && input_[pos_] == '}') { ++pos_; return true; }
             if (!consume(',')) return false;
@@ -135,7 +155,7 @@ private:
         skip_space();
         if (pos_ >= input_.size()) return false;
         if (input_[pos_] == '"') return parse_string();
-        if (input_[pos_] == '{') return parse_object();
+        if (input_[pos_] == '{') return parse_object(false);
         if (input_[pos_] == '[') return parse_array();
         if (input_[pos_] == '-' || (input_[pos_] >= '0' && input_[pos_] <= '9')) return parse_number();
         for (const char* literal : {"true", "false", "null"}) {
@@ -149,40 +169,33 @@ bool is_valid_json_object(const std::string& data) {
     return JsonValidator(data).valid_object();
 }
 bool has_valid_config_types(const std::string& data) {
+    JsonValidator validator(data);
+    if (!validator.valid_object()) return false;
+    const auto& fields = validator.top_level_types();
     for (const std::string key : {"auto_clean", "parallel_downloads", "fastest_mirror", "color_output"}) {
-        const std::regex field(std::string("\"") + key + R"re("\s*:\s*)re");
-        std::smatch match;
-        if (!std::regex_search(data, match, field)) continue;
-        const std::size_t value_pos = static_cast<std::size_t>(match.position() + match.length());
-        if (data.compare(value_pos, 4, "true") == 0 || data.compare(value_pos, 5, "false") == 0) {
-            const std::size_t len = data.compare(value_pos, 4, "true") == 0 ? 4 : 5;
-            if (value_pos + len < data.size() &&
-                data[value_pos + len] != ',' && data[value_pos + len] != '}' &&
-                data[value_pos + len] != ' ' && data[value_pos + len] != '\t' &&
-                data[value_pos + len] != '\r' && data[value_pos + len] != '\n') return false;
-        } else {
-            return false;
-        }
+        const auto it = fields.find(key);
+        if (it != fields.end() && it->second != 't' && it->second != 'f') return false;
     }
-    const std::regex history_field(R"re("history_file"\s*:\s*)re");
-    std::smatch history_match;
-    if (std::regex_search(data, history_match, history_field)) {
-        const std::size_t value_pos = static_cast<std::size_t>(history_match.position() + history_match.length());
-        if (value_pos >= data.size() || data[value_pos] != '"') return false;
-    }
+    const auto history = fields.find("history_file");
+    if (history != fields.end() && history->second != '"') return false;
     return true;
 }
 bool parse_bool(const std::string& data, const std::string& key, bool fallback) {
-    const std::regex pattern(std::string("\"") + key + R"re("\s*:\s*(true|false))re");
-    std::smatch match;
-    if (!std::regex_search(data, match, pattern)) return fallback;
-    return match[1].str() == "true";
+    JsonValidator validator(data);
+    if (!validator.valid_object()) return fallback;
+    const auto it = validator.top_level_values().find(key);
+    if (it == validator.top_level_values().end()) return fallback;
+    if (it->second == "true") return true;
+    if (it->second == "false") return false;
+    return fallback;
 }
 std::string parse_string(const std::string& data, const std::string& key, const std::string& fallback) {
-    const std::regex pattern(std::string("\"") + key + R"re("\s*:\s*"((?:[^"\\]|\\.)*)")re");
-    std::smatch match;
-    if (!std::regex_search(data, match, pattern)) return fallback;
-    const std::string value = match[1].str();
+    JsonValidator validator(data);
+    if (!validator.valid_object()) return fallback;
+    const auto it = validator.top_level_values().find(key);
+    if (it == validator.top_level_values().end() || it->second.size() < 2 ||
+        it->second.front() != '"' || it->second.back() != '"') return fallback;
+    const std::string value = it->second.substr(1, it->second.size() - 2);
     std::string result;
     const auto append_utf8 = [&result](unsigned int cp) {
         if (cp <= 0x7f) result.push_back(static_cast<char>(cp));
