@@ -15,6 +15,7 @@
 #include "system/driver_manager.hpp"
 #include "system/gaming_manager.hpp"
 #include "system/rollback_manager.hpp"
+#include "system/history_manager.hpp"
 #include <charconv>
 #include <iostream>
 #include <optional>
@@ -40,7 +41,8 @@ void usage() {
               << "  install [--yes] NAME...           Install RPM packages\n"
               << "  remove [--yes] NAME...            Remove RPM packages\n"
               << "  update [--yes]                    Update installed packages\n"
-              << "  history                           Show DNF transaction history\n"
+              << "  history                           Show recent local operation history\n"
+              << "  rollback-history                  Show DNF transaction history\n"
               << "  rollback ID [--yes]               Undo a DNF transaction\n"
               << "  rollback-last [--yes]             Undo the newest DNF transaction\n"
               << "  deps NAME                         Show resolved package dependencies\n"
@@ -103,6 +105,15 @@ int print_result(const fedora_pm::packages::PackageResult& result) {
     if (!result.error.empty()) std::cerr << result.error << (result.error.back() == '\n' ? "" : "\n");
     return result.success ? 0 : 1;
 }
+int print_mutation_result(const fedora_pm::packages::PackageResult& result,
+                          const std::string& action, const std::vector<std::string>& items) {
+    const int code = print_result(result);
+    if (result.success) {
+        const auto logged = fedora_pm::system::HistoryManager{}.log(action, items);
+        if (!logged.success) std::cerr << "Warning: operation succeeded but history logging failed: " << logged.error << '\n';
+    }
+    return code;
+}
 bool has_yes(int argc, char** argv, int index) {
     return index < argc && std::string(argv[index]) == "--yes";
 }
@@ -124,9 +135,9 @@ int main(int argc, char** argv) {
     if (command == "driver-status" && argc == 2) return print_result(drivers.status());
     if (command == "nvidia-list" && argc == 2) return print_result(drivers.list_nvidia());
     if (command == "nvidia-remove" && (argc == 2 || argc == 3))
-        return print_result(drivers.remove_nvidia(has_yes(argc, argv, 2)));
+        return print_mutation_result(drivers.remove_nvidia(has_yes(argc, argv, 2)), "driver_remove_nvidia", {});
     if (command == "cuda-install" && (argc == 2 || argc == 3))
-        return print_result(drivers.install_cuda(has_yes(argc, argv, 2)));
+        return print_mutation_result(drivers.install_cuda(has_yes(argc, argv, 2)), "driver_install_cuda", {});
     if (command == "nvidia-install") {
         bool yes = false, cuda = false;
         std::optional<std::string> version;
@@ -137,10 +148,10 @@ int main(int argc, char** argv) {
             else if (arg == "--version" && i + 1 < argc) version = argv[++i];
             else { std::cerr << "Usage: fedora-pm nvidia-install [--version V] [--cuda] [--yes]\n"; return 2; }
         }
-        return print_result(drivers.install_nvidia(version, cuda, yes));
+        return print_mutation_result(drivers.install_nvidia(version, cuda, yes), "driver_install_nvidia", version ? std::vector<std::string>{*version} : std::vector<std::string>{"default"});
     }
     if (command == "gaming-install" && (argc == 2 || argc == 3))
-        return print_result(fedora_pm::system::GamingManager{}.install_meta(has_yes(argc, argv, 2)));
+        return print_mutation_result(fedora_pm::system::GamingManager{}.install_meta(has_yes(argc, argv, 2)), "gaming_install", {"fedora-gaming-meta"});
 
     fedora_pm::system::KernelManager kernels;
     if (command == "kernel-current" && argc == 2) return print_result(kernels.current());
@@ -156,7 +167,7 @@ int main(int argc, char** argv) {
             else if (!version) version = argv[i];
             else { std::cerr << "Usage: fedora-pm kernel-install [VERSION] [--yes]\n"; return 2; }
         }
-        return print_result(kernels.install(version, yes));
+        return print_mutation_result(kernels.install(version, yes), "kernel_install", {version.value_or("kernel")});
     }
     if (command == "kernel-remove") {
         bool yes = false;
@@ -165,7 +176,7 @@ int main(int argc, char** argv) {
             if (std::string(argv[i]) == "--yes") yes = true;
             else versions.emplace_back(argv[i]);
         }
-        return print_result(kernels.remove(versions, yes, true));
+        return print_mutation_result(kernels.remove(versions, yes, true), "kernel_remove", versions);
     }
     if (command == "kernel-remove-old") {
         bool yes = false;
@@ -182,21 +193,22 @@ int main(int argc, char** argv) {
                 }
             } else { std::cerr << "Usage: fedora-pm kernel-remove-old [--keep-last N] [--yes]\n"; return 2; }
         }
-        return print_result(kernels.remove_old(keep, yes));
+        return print_mutation_result(kernels.remove_old(keep, yes), "kernel_remove_old", {std::to_string(keep)});
     }
 
     fedora_pm::system::RollbackManager rollback;
     if (command == "rollback-history" && argc == 2) return print_result(rollback.list_history());
     if (command == "rollback-last" && (argc == 2 || argc == 3))
-        return print_result(rollback.rollback_last(has_yes(argc, argv, 2)));
+        return print_mutation_result(rollback.rollback_last(has_yes(argc, argv, 2)), "rollback_last", {});
     if (command == "rollback" && (argc == 3 || argc == 4)) {
         const bool yes = argc == 4 && std::string(argv[3]) == "--yes";
         if (argc == 4 && !yes) { std::cerr << "Usage: fedora-pm rollback ID [--yes]\n"; return 2; }
-        return print_result(rollback.rollback(argv[2], yes));
+        return print_mutation_result(rollback.rollback(argv[2], yes), "rollback", {argv[2]});
     }
 
     fedora_pm::packages::PackageManager pm;
-    if (command == "history") return print_result(pm.history());
+    if (command == "history") return print_result(fedora_pm::system::HistoryManager{}.print_recent(10));
+    if (command == "rollback-history") return print_result(pm.history());
     if (command == "search" && argc >= 3) return print_result(pm.search(argv[2]));
     if (command == "package-info" && argc >= 3) return print_result(pm.info(argv[2]));
     if (command == "list" || command == "list-available") {
@@ -221,17 +233,17 @@ int main(int argc, char** argv) {
         if (available) return print_result(pm.list_available(pattern));
         return print_result(pm.list_installed(pattern));
     }
-    if (command == "clean" && argc == 2) return print_result(pm.clean_cache());
+    if (command == "clean" && argc == 2) return print_mutation_result(pm.clean_cache(), "clean", {"dnf"});
     if (command == "group-info" && argc == 3) return print_result(pm.group_info(argv[2]));
     if (command == "group-install" && (argc == 3 || argc == 4)) {
         const bool yes = argc == 4 && std::string(argv[3]) == "--yes";
         if (argc == 4 && !yes) { std::cerr << "Usage: fedora-pm group-install NAME [--yes]\\n"; return 2; }
-        return print_result(pm.install_group(argv[2], yes));
+        return print_mutation_result(pm.install_group(argv[2], yes), "group-install", {argv[2]});
     }
     if (command == "group-remove" && (argc == 3 || argc == 4)) {
         const bool yes = argc == 4 && std::string(argv[3]) == "--yes";
         if (argc == 4 && !yes) { std::cerr << "Usage: fedora-pm group-remove NAME [--yes]\\n"; return 2; }
-        return print_result(pm.remove_group(argv[2], yes));
+        return print_mutation_result(pm.remove_group(argv[2], yes), "group-remove", {argv[2]});
     }
     if (command == "deps" && argc == 3) return print_result(pm.dependencies(argv[2]));
     if (command == "reverse-deps" && argc == 3) return print_result(pm.reverse_dependencies(argv[2]));
@@ -264,7 +276,7 @@ int main(int argc, char** argv) {
             std::cerr << "Usage: fedora-pm security-update [--yes]\n";
             return 2;
         }
-        return print_result(security.update(has_yes(argc, argv, 2)));
+        return print_mutation_result(security.update(has_yes(argc, argv, 2)), "security_update", {"security"});
     }
 
     if (command == "config") {
@@ -285,13 +297,13 @@ int main(int argc, char** argv) {
             std::cerr << "Usage: fedora-pm import [--yes] FILE\n";
             return 2;
         }
-        return print_result(fedora_pm::packages::ExportManager{}.import_from_file(argv[path_index], yes));
+        return print_mutation_result(fedora_pm::packages::ExportManager{}.import_from_file(argv[path_index], yes), "import", {argv[path_index]});
     }
 
     fedora_pm::system::DiskSpaceManager disk;
     if (command == "diskspace") return print_result(disk.analyze());
     if (command == "orphans") return print_result(disk.orphaned_packages());
-    if (command == "clean-orphans") return print_result(disk.remove_orphans(has_yes(argc, argv, 2)));
+    if (command == "clean-orphans") return print_mutation_result(disk.remove_orphans(has_yes(argc, argv, 2)), "clean-orphans", {"autoremove"});
     if (command == "package-size" && argc == 3) return print_result(disk.package_size(argv[2]));
     if (command == "size") {
         std::size_t limit = 20;
@@ -323,9 +335,9 @@ int main(int argc, char** argv) {
         }
         std::vector<std::string> packages;
         for (; i < argc; ++i) packages.emplace_back(argv[i]);
-        if (with_deps) return print_result(downloads.download_with_dependencies(packages, destination));
-        if (destination != ".") return print_result(downloads.download_to(packages, destination));
-        return print_result(downloads.download(packages));
+        if (with_deps) return print_mutation_result(downloads.download_with_dependencies(packages, destination), "download-with-deps", packages);
+        if (destination != ".") return print_mutation_result(downloads.download_to(packages, destination), "download", packages);
+        return print_mutation_result(downloads.download(packages), "download", packages);
     }
     if (command == "install-offline") {
         int i = 2;
@@ -333,29 +345,29 @@ int main(int argc, char** argv) {
         if (i < argc && std::string(argv[i]) == "--yes") { yes = true; ++i; }
         std::vector<std::string> files;
         for (; i < argc; ++i) files.emplace_back(argv[i]);
-        return print_result(downloads.install_offline(files, yes));
+        return print_mutation_result(downloads.install_offline(files, yes), "install-offline", files);
     }
 
     fedora_pm::system::RepositoryManager repos;
     if (command == "repo-list") return print_result(repos.list());
     if (command == "repo-info" && argc == 3) return print_result(repos.info(argv[2]));
-    if (command == "repo-add" && argc == 3) return print_result(repos.add(argv[2]));
-    if (command == "repo-refresh" && argc == 2) return print_result(repos.refresh());
+    if (command == "repo-add" && argc == 3) return print_mutation_result(repos.add(argv[2]), "repo-add", {argv[2]});
+    if (command == "repo-refresh" && argc == 2) return print_mutation_result(repos.refresh(), "repo-refresh", {});
     if ((command == "repo-enable" || command == "repo-disable") && argc == 3)
-        return print_result(command == "repo-enable" ? repos.enable(argv[2]) : repos.disable(argv[2]));
+        return print_mutation_result(command == "repo-enable" ? repos.enable(argv[2]) : repos.disable(argv[2]), command, {argv[2]});
 
     fedora_pm::packages::FlatpakManager flatpak;
     if (command == "flatpak-search" && argc >= 3) return print_result(flatpak.search(argv[2]));
     if (command == "flatpak-list") return print_result(flatpak.list_installed());
     if (command == "flatpak-info" && argc == 3) return print_result(flatpak.info(argv[2]));
     if (command == "flatpak-update" && (argc == 2 || argc == 3))
-        return print_result(flatpak.update(has_yes(argc, argv, 2)));
-    if (command == "flatpak-setup-flathub" && argc == 2) return print_result(flatpak.setup_flathub());
+        return print_mutation_result(flatpak.update(has_yes(argc, argv, 2)), "flatpak-update", {"all"});
+    if (command == "flatpak-setup-flathub" && argc == 2) return print_mutation_result(flatpak.setup_flathub(), "flatpak-setup-flathub", {"flathub"});
     if ((command == "flatpak-install" || command == "flatpak-remove") && argc >= 3) {
         const bool yes = has_yes(argc, argv, 3);
-        return print_result(command == "flatpak-install"
+        return print_mutation_result(command == "flatpak-install"
             ? flatpak.install(argv[2], yes)
-            : flatpak.remove(argv[2], yes));
+            : flatpak.remove(argv[2], yes), command, {argv[2]});
     }
 
     if (command == "install" || command == "remove" || command == "update") {
@@ -363,10 +375,10 @@ int main(int argc, char** argv) {
         if (i < argc && std::string(argv[i]) == "--yes") { yes = true; ++i; }
         std::vector<std::string> packages;
         for (; i < argc; ++i) packages.emplace_back(argv[i]);
-        if (command == "install") return print_result(pm.install(packages, yes));
-        if (command == "remove") return print_result(pm.remove(packages, yes));
+        if (command == "install") return print_mutation_result(pm.install(packages, yes), "install", packages);
+        if (command == "remove") return print_mutation_result(pm.remove(packages, yes), "remove", packages);
         if (!packages.empty()) { std::cerr << "update takes no package arguments\n"; return 2; }
-        return print_result(pm.update(yes));
+        return print_mutation_result(pm.update(yes), "update", packages.empty() ? std::vector<std::string>{"system"} : packages);
     }
     usage();
     return 2;
