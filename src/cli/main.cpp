@@ -10,6 +10,7 @@
 #include "system/disk_space_manager.hpp"
 #include "system/security_manager.hpp"
 #include "system/config_manager.hpp"
+#include "system/doctor.hpp"
 #include <charconv>
 #include <iostream>
 #include <string>
@@ -21,6 +22,7 @@ void usage() {
               << "Usage: fedora-pm <command> [arguments]\n"
               << "Commands:\n"
               << "  info                              Show OS and architecture\n"
+              << "  doctor                            Run read-only system diagnostics\n"
               << "  search QUERY                      Search DNF packages\n"
               << "  package-info NAME                 Show package metadata\n"
               << "  list                              List installed RPM packages\n"
@@ -76,6 +78,7 @@ int main(int argc, char** argv) {
                   << "\nArchitecture: " << s.architecture << "\nPackage manager: " << s.package_manager << "\n";
         return 0;
     }
+    if (command == "doctor" && argc == 2) return print_result(fedora_pm::system::Doctor{}.run_checks());
 
     fedora_pm::packages::PackageManager pm;
     if (command == "history") return print_result(pm.history());
