@@ -23,9 +23,9 @@ The Rust implementation remains authoritative until this checklist is complete a
 - [x] Read-only system doctor checks
 - [x] GPU detection, NVIDIA operations, CUDA package install, gaming meta install
 - [x] DNF history undo by transaction ID/newest transaction
-- [x] Persistent JSON operation history and logging for common CLI mutation paths
+- [x] Persistent JSON operation history and logging for common CLI mutation paths and confirmed GUI DNF transactions
 - [x] Unit tests for validation, config persistence, history round-trip, and safe rejection paths
-- [x] CI defined for Ubuntu and Fedora; latest migration branch commit builds and passes unit tests and CLI smoke tests on both CI targets (GitHub Actions run 40132315931)
+- [x] CI defined for Ubuntu and Fedora; most recent fully successful run before the latest GUI history-logging change passed build, unit-test, and CLI smoke-test steps on both targets
 
 ## Feature parity still required
 - [ ] Finish logging all mutation paths and validate reading Rust-generated history files
