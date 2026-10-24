@@ -150,7 +150,7 @@ bool is_valid_json_object(const std::string& data) {
 }
 bool has_valid_config_types(const std::string& data) {
     for (const std::string key : {"auto_clean", "parallel_downloads", "fastest_mirror", "color_output"}) {
-        const std::regex field(std::string("\\\"") + key + R"re("\s*:\s*)re");
+        const std::regex field(std::string("\"") + key + R"re("\s*:\s*)re");
         std::smatch match;
         if (!std::regex_search(data, match, field)) continue;
         const std::size_t value_pos = static_cast<std::size_t>(match.position() + match.length());
