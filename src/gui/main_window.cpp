@@ -252,11 +252,23 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), process_(new QPro
         if (applyingMutation_) {
             if (status == QProcess::NormalExit && exitCode == 0) {
                 QString action = pendingMutationArgs_.value(0);
-                if (action == "upgrade") action = "update";
+                const bool flatpakAction = action.startsWith("flatpak-");
+                if (flatpakAction) {
+                    const QString operation = action.mid(QString("flatpak-").size());
+                    if (operation == "install") action = "flatpak_install";
+                    else if (operation == "uninstall") action = "flatpak_remove";
+                    else if (operation == "update") action = "flatpak_update";
+                } else if (action == "upgrade") {
+                    action = "update";
+                }
                 std::vector<std::string> items;
-                for (qsizetype i = 1; i < pendingMutationArgs_.size(); ++i)
-                    items.push_back(pendingMutationArgs_.at(i).toStdString());
-                if (items.empty()) items.push_back(action == "update" ? "system" : "dnf");
+                for (qsizetype i = 1; i < pendingMutationArgs_.size(); ++i) {
+                    const auto item = pendingMutationArgs_.at(i);
+                    if (!item.startsWith("--")) items.push_back(item.toStdString());
+                }
+                if (items.empty())
+                    items.push_back(action == "update" || action == "flatpak_update"
+                        ? "system" : flatpakAction ? "flatpak" : "dnf");
                 const auto logged = fedora_pm::system::HistoryManager{}.log(action.toStdString(), items);
                 if (!logged.success)
                     output_->appendPlainText(QString("\nWarning: transaction succeeded but local history logging failed: %1").arg(QString::fromStdString(logged.error)));
@@ -310,7 +322,13 @@ void MainWindow::run_flatpak(QStringList args) {
     pendingMutationArgs_.clear();
     previewingMutation_ = false;
     cancellationRequested_ = false;
-    output_->appendPlainText("Running flatpak…\n");
+    const QString operation = args.value(0);
+    applyingMutation_ = operation == "install" || operation == "uninstall" || operation == "update";
+    if (applyingMutation_) {
+        pendingMutationArgs_ = args;
+        pendingMutationArgs_[0] = "flatpak-" + operation;
+    }
+    output_->appendPlainText("Running flatpak…\\n");
     set_busy(true);
     process_->start("flatpak", args);
 }
@@ -329,6 +347,7 @@ void MainWindow::run_dnf(QStringList args, bool mutating) {
     output_->clear();
     processOutput_.clear();
     pendingMutationArgs_.clear();
+    applyingMutation_ = false;
     previewingMutation_ = mutating;
     cancellationRequested_ = false;
     output_->appendPlainText((mutating ? "Resolving proposed DNF transaction (no changes will be made)…\n" : "Running dnf…\n"));
