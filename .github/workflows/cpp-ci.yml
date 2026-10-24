@@ -1,0 +1,37 @@
+name: C++ migration CI
+
+on:
+  push:
+    branches:
+      - main
+      - migration/cpp20-qt6
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Install C++ and Qt 6 build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes cmake g++ qt6-base-dev
+
+      - name: Configure
+        run: cmake -S . -B build -DFEDORAPM_BUILD_GUI=ON -DFEDORAPM_BUILD_TESTS=ON -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build CLI, GUI, and tests
+        run: cmake --build build --parallel 2
+
+      - name: Run unit tests
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Smoke-test CLI help
+        run: ./build/fedora-pm help
