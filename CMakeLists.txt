@@ -21,6 +21,7 @@ add_library(fedorapm_core
     src/package_manager/flatpak_manager.cpp
     src/package_manager/export_manager.cpp
     src/package_manager/download_manager.cpp
+    src/package_manager/changelog_manager.cpp
 )
 target_include_directories(fedorapm_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_link_libraries(fedorapm_core PUBLIC Threads::Threads)
