@@ -36,8 +36,17 @@ jobs:
       - name: Run unit tests
         run: ctest --test-dir build --output-on-failure
 
-      - name: Smoke-test CLI help
-        run: ./build/fedora-pm help
+      - name: Smoke-test CLI help and self-update compatibility
+        run: |
+          ./build/fedora-pm help
+          ./build/fedora-pm self-update status
+          ./build/fedora-pm self-update update --force --quiet
+          ./build/fedora-pm self-update enable daily
+          ./build/fedora-pm self-update disable
+          if ./build/fedora-pm self-update update --unknown; then
+            echo "Unknown self-update option unexpectedly succeeded" >&2
+            exit 1
+          fi
 
   fedora-build-and-test:
     runs-on: ubuntu-24.04
@@ -58,5 +67,14 @@ jobs:
       - name: Run unit tests
         run: ctest --test-dir build --output-on-failure
 
-      - name: Smoke-test CLI help
-        run: ./build/fedora-pm help
+      - name: Smoke-test CLI help and self-update compatibility
+        run: |
+          ./build/fedora-pm help
+          ./build/fedora-pm self-update status
+          ./build/fedora-pm self-update update --force --quiet
+          ./build/fedora-pm self-update enable daily
+          ./build/fedora-pm self-update disable
+          if ./build/fedora-pm self-update update --unknown; then
+            echo "Unknown self-update option unexpectedly succeeded" >&2
+            exit 1
+          fi
