@@ -2,9 +2,12 @@
 #include "package_manager/package_manager.hpp"
 #include "package_manager/flatpak_manager.hpp"
 #include "package_manager/export_manager.hpp"
+#include "package_manager/download_manager.hpp"
 #include "system/system_info.hpp"
 #include "system/repository_manager.hpp"
 #include "system/kernel_manager.hpp"
+#include "system/disk_space_manager.hpp"
+#include <charconv>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -27,6 +30,13 @@ void usage() {
               << "  groups                            List installed DNF package groups\n"
               << "  export FILE                       Export user-installed RPM package list\n"
               << "  import [--yes] FILE               Import and install a package list\n"
+              << "  size [--top N]                    Show largest installed packages\n"
+              << "  package-size NAME                 Show package size and metadata\n"
+              << "  diskspace                         Analyze package/cache/filesystem usage\n"
+              << "  orphans                           List DNF extra-package candidates\n"
+              << "  clean-orphans [--yes]             Run DNF autoremove\n"
+              << "  download [--to DIR] [--with-deps] PACKAGE...\n"
+              << "  install-offline [--yes] FILE.rpm... Install local RPM files\n"
               << "  repo-list                         List DNF repositories\n"
               << "  repo-enable ID | repo-disable ID  Change repository state\n"
               << "  kernel-list                       Show running and installed kernels\n"
@@ -73,6 +83,54 @@ int main(int argc, char** argv) {
             return 2;
         }
         return print_result(fedora_pm::packages::ExportManager{}.import_from_file(argv[path_index], yes));
+    }
+
+    fedora_pm::system::DiskSpaceManager disk;
+    if (command == "diskspace") return print_result(disk.analyze());
+    if (command == "orphans") return print_result(disk.orphaned_packages());
+    if (command == "clean-orphans") return print_result(disk.remove_orphans(has_yes(argc, argv, 2)));
+    if (command == "package-size" && argc == 3) return print_result(disk.package_size(argv[2]));
+    if (command == "size") {
+        std::size_t limit = 20;
+        if (argc == 4 && std::string(argv[2]) == "--top") {
+            const std::string value = argv[3];
+            const auto [ptr, ec] = std::from_chars(value.data(), value.data() + value.size(), limit);
+            if (ec != std::errc{} || ptr != value.data() + value.size()) {
+                std::cerr << "--top requires a positive integer\n";
+                return 2;
+            }
+        } else if (argc != 2) {
+            std::cerr << "Usage: fedora-pm size [--top N]\n";
+            return 2;
+        }
+        return print_result(disk.top_packages(limit));
+    }
+
+    fedora_pm::packages::DownloadManager downloads;
+    if (command == "download") {
+        int i = 2;
+        bool with_deps = false;
+        std::string destination = ".";
+        while (i < argc) {
+            const std::string arg = argv[i];
+            if (arg == "--with-deps") { with_deps = true; ++i; }
+            else if (arg == "--to" && i + 1 < argc) { destination = argv[i + 1]; i += 2; }
+            else if (arg.starts_with("--")) { std::cerr << "Unknown download option: " << arg << '\n'; return 2; }
+            else break;
+        }
+        std::vector<std::string> packages;
+        for (; i < argc; ++i) packages.emplace_back(argv[i]);
+        if (with_deps || destination != ".")
+            return print_result(downloads.download_with_dependencies(packages, destination == "." ? "." : destination));
+        return print_result(downloads.download(packages));
+    }
+    if (command == "install-offline") {
+        int i = 2;
+        bool yes = false;
+        if (i < argc && std::string(argv[i]) == "--yes") { yes = true; ++i; }
+        std::vector<std::string> files;
+        for (; i < argc; ++i) files.emplace_back(argv[i]);
+        return print_result(downloads.install_offline(files, yes));
     }
 
     if (command == "repo-list") return print_result(fedora_pm::system::RepositoryManager{}.list());
