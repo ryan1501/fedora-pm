@@ -18,6 +18,7 @@ add_library(fedorapm_core
     src/system/kernel_manager.cpp
     src/system/disk_space_manager.cpp
     src/system/security_manager.cpp
+    src/system/config_manager.cpp
     src/package_manager/package_manager.cpp
     src/package_manager/flatpak_manager.cpp
     src/package_manager/export_manager.cpp
