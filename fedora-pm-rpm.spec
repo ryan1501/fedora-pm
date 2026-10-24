@@ -5,7 +5,7 @@ Summary:        Fedora package management CLI
 License:        MIT OR Apache-2.0
 %global forgeurl https://github.com/ryan1501/fedora-pm
 URL:            %{forgeurl}
-Source0:        %{forgeurl}/archive/refs/tags/v%{version}.tar.gz
+Source0:        fedora-pm-%{version}.tar.gz
 
 BuildRequires:  cmake
 BuildRequires:  gcc-c++
