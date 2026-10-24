@@ -30,6 +30,9 @@ private:
     QPushButton* flatpakSearch_;
     QPushButton* flatpakInstalled_;
     QPushButton* flatpakInfo_;
+    QPushButton* flatpakInstall_;
+    QPushButton* flatpakRemove_;
+    QPushButton* flatpakUpdate_;
     QPushButton* cancel_;
     QProgressBar* progress_;
     QProcess* process_;
