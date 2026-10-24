@@ -103,7 +103,7 @@ See the checklist in [`docs/CPP_MIGRATION_PLAN.md`](docs/CPP_MIGRATION_PLAN.md).
 - RPM spec files and desktop/metainfo assets exist; RPM build/install/uninstall validation and DNF plugin checks remain
 - Behavior comparison against the Rust version, plus final documentation and license review
 
-The existing `install.sh` contains assumptions from the older Rust/Python GUI packaging flow; do not treat it as the supported installer for this C++ migration yet. Use the CMake build steps above for development and testing.
+The repository `install.sh` now builds and installs the C++ implementation with CMake. Run `./install.sh --help` for `--cli`, `--gui`, `--both`, `--user`, `--prefix`, and `--dry-run` options. For development or manual control, use the CMake commands above.
 
 ## Contributing and reporting issues
 
