@@ -39,6 +39,9 @@ jobs:
       - name: Smoke-test CLI help and self-update compatibility
         run: |
           ./build/fedora-pm help
+          test "$(./build/fedora-pm --version)" = "fedora-pm 2.0.0"
+          test "$(./build/fedora-pm -V)" = "fedora-pm 2.0.0"
+          test "$(./build/fedora-pm version)" = "fedora-pm 2.0.0"
           ./build/fedora-pm self-update status
           if ./build/fedora-pm self-update update --force --quiet; then
             echo "Unconfigured self-update unexpectedly reported success" >&2
@@ -84,6 +87,9 @@ jobs:
       - name: Smoke-test CLI help and self-update compatibility
         run: |
           ./build/fedora-pm help
+          test "$(./build/fedora-pm --version)" = "fedora-pm 2.0.0"
+          test "$(./build/fedora-pm -V)" = "fedora-pm 2.0.0"
+          test "$(./build/fedora-pm version)" = "fedora-pm 2.0.0"
           ./build/fedora-pm self-update status
           if ./build/fedora-pm self-update update --force --quiet; then
             echo "Unconfigured self-update unexpectedly reported success" >&2
