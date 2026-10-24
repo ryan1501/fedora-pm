@@ -22,6 +22,7 @@ add_library(fedorapm_core
     src/system/doctor.cpp
     src/system/driver_manager.cpp
     src/system/gaming_manager.cpp
+    src/system/rollback_manager.cpp
     src/package_manager/package_manager.cpp
     src/package_manager/flatpak_manager.cpp
     src/package_manager/export_manager.cpp
