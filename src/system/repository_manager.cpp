@@ -32,6 +32,11 @@ PackageResult RepositoryManager::add(const std::string& url) const {
         return {false, {}, "Repository URL must be an HTTP(S) URL without whitespace."};
     return run({"config-manager", "--add-repo", url});
 }
+PackageResult RepositoryManager::add(const std::string& name, const std::string& url) const {
+    if (!fedora_pm::core::is_valid_package_name(name))
+        return {false, {}, "Invalid repository name."};
+    return add(url);
+}
 PackageResult RepositoryManager::refresh() const {
     auto clean = run({"clean", "metadata"});
     if (!clean.success) return clean;
