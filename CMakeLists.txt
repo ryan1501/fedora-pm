@@ -37,6 +37,7 @@ target_compile_options(fedorapm_core PRIVATE -Wall -Wextra -Wpedantic)
 
 add_executable(fedora-pm src/cli/main.cpp src/cli/cachyos_commands.cpp)
 target_link_libraries(fedora-pm PRIVATE fedorapm_core)
+target_compile_definitions(fedora-pm PRIVATE FEDORAPM_VERSION="${PROJECT_VERSION}")
 
 if(FEDORAPM_BUILD_GUI)
     find_package(Qt6 COMPONENTS Widgets QUIET)
