@@ -101,6 +101,27 @@ int main() {
     assert(!security.cve_check("CVE-2026-1;rm").success);
 
     const auto test_config_dir = std::filesystem::temp_directory_path() / "fedora-pm-cpp-config-test";
+    // Known settings must be read only from top-level fields, not text nested in
+    // unrelated objects. Duplicate object keys are rejected as ambiguous JSON.
+    {
+        std::ofstream nested_config(config_file, std::ios::trunc);
+        nested_config << R"json({"metadata":{"auto_clean":"not-a-bool","history_file":false},"auto_clean":true,"history_file":"top-level-history.json"})json";
+    }
+    fedora_pm::system::ConfigManager nested_config(test_config_dir);
+    assert(nested_config.load().success);
+    assert(nested_config.get("auto_clean").output == "true\n");
+    assert(nested_config.get("history_file").output == "top-level-history.json\n");
+    for (const std::string duplicate_config : {
+             R"json({"auto_clean":true,"auto_clean":false})json",
+             R"json({"metadata":{"value":1,"value":2}})json"}) {
+        {
+            std::ofstream broken_config(config_file, std::ios::trunc);
+            broken_config << duplicate_config;
+        }
+        fedora_pm::system::ConfigManager invalid_duplicate_config(test_config_dir);
+        assert(!invalid_duplicate_config.load().success);
+    }
+
     std::filesystem::remove_all(test_config_dir, cleanup_error);
     fedora_pm::system::ConfigManager config(test_config_dir);
     assert(config.load().success);
