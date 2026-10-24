@@ -128,7 +128,14 @@ int main(int argc, char** argv) {
         return 0;
     }
     if (command == "doctor" && argc == 2) return print_result(fedora_pm::system::Doctor{}.run_checks());
-    if (auto cachyos_result = fedora_pm::cli::handle_cachyos_command(argc, argv); cachyos_result.has_value()) return print_result(*cachyos_result);
+    if (auto cachyos_result = fedora_pm::cli::handle_cachyos_command(argc, argv); cachyos_result.has_value()) {
+        if (command == "cachyos-enable-repo" || command == "cachyos-disable-repo" || command == "cachyos-install-kernel") {
+            std::vector<std::string> items;
+            for (int i = 2; i < argc; ++i) items.emplace_back(argv[i]);
+            return print_mutation_result(*cachyos_result, command, items);
+        }
+        return print_result(*cachyos_result);
+    }
 
     fedora_pm::system::DriverManager drivers;
     if (command == "gpu-detect" && argc == 2) return print_result(drivers.detect());
