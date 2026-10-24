@@ -34,6 +34,11 @@ int main() {
     assert(!fedora_pm::core::is_valid_flatpak_app_id("org.123.App"));
     assert(!fedora_pm::core::is_valid_flatpak_app_id("org.example."));
     assert(!fedora_pm::core::is_valid_flatpak_app_id("org.example/App"));
+    // Invalid Flatpak IDs must be rejected before invoking the flatpak executable.
+    const fedora_pm::packages::FlatpakManager flatpak;
+    assert(!flatpak.info("org.123.App").success);
+    assert(!flatpak.install("org.123.App", true).success);
+    assert(!flatpak.remove("org..example.App", true).success);
     assert(trim("  fedora  ") == "fedora");
     assert(trim(" \t\n ") == "");
 
