@@ -39,6 +39,16 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), process_(new QPro
         actions->addWidget(button);
     layout->addLayout(actions);
 
+    auto* flatpakActions = new QHBoxLayout;
+    flatpakSearch_ = new QPushButton("Flatpak search", central);
+    flatpakInstalled_ = new QPushButton("Installed Flatpaks", central);
+    flatpakInfo_ = new QPushButton("Flatpak info", central);
+    flatpakActions->addWidget(flatpakSearch_);
+    flatpakActions->addWidget(flatpakInstalled_);
+    flatpakActions->addWidget(flatpakInfo_);
+    flatpakActions->addStretch(1);
+    layout->addLayout(flatpakActions);
+
     output_ = new QPlainTextEdit(central);
     output_->setReadOnly(true);
     output_->setPlaceholderText("Package results and transaction output appear here.");
@@ -97,6 +107,25 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), process_(new QPro
     });
     connect(update_, &QPushButton::clicked, this, [this] {
         run_dnf({"upgrade"}, true);
+    });
+    connect(flatpakSearch_, &QPushButton::clicked, this, [this] {
+        const auto query = query_->text().trimmed();
+        if (query.isEmpty()) {
+            QMessageBox::information(this, "Flatpak search", "Enter search terms first.");
+            return;
+        }
+        run_flatpak({"search", query});
+    });
+    connect(flatpakInstalled_, &QPushButton::clicked, this, [this] {
+        run_flatpak({"list", "--app"});
+    });
+    connect(flatpakInfo_, &QPushButton::clicked, this, [this] {
+        const auto appId = query_->text().trimmed();
+        if (!valid_package_input(appId) || !appId.contains('.')) {
+            QMessageBox::warning(this, "Invalid Flatpak ID", "Enter a dotted Flatpak application ID, such as org.example.App.");
+            return;
+        }
+        run_flatpak({"info", appId});
     });
     connect(cancel_, &QPushButton::clicked, this, [this] {
         if (process_->state() != QProcess::NotRunning) {
@@ -185,7 +214,7 @@ bool MainWindow::valid_package_input(const QString& value) const {
 }
 
 void MainWindow::set_busy(bool busy) {
-    for (auto* button : {search_, info_, installed_, available_, install_, remove_, update_})
+    for (auto* button : {search_, info_, installed_, available_, install_, remove_, update_, flatpakSearch_, flatpakInstalled_, flatpakInfo_})
         button->setEnabled(!busy);
     query_->setEnabled(!busy);
     cancel_->setEnabled(busy);
@@ -194,6 +223,18 @@ void MainWindow::set_busy(bool busy) {
         progress_->setRange(0, 1);
         progress_->setValue(0);
     }
+}
+
+void MainWindow::run_flatpak(QStringList args) {
+    if (process_->state() != QProcess::NotRunning) return;
+    output_->clear();
+    processOutput_.clear();
+    pendingMutationArgs_.clear();
+    previewingMutation_ = false;
+    cancellationRequested_ = false;
+    output_->appendPlainText("Running flatpak…\\n");
+    set_busy(true);
+    process_->start("flatpak", args);
 }
 
 void MainWindow::run_search() {
