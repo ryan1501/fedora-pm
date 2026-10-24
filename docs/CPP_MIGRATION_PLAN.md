@@ -3,44 +3,41 @@
 The Rust implementation remains authoritative until this checklist is complete and verified on Fedora.
 
 ## Foundation and first feature ports
-- [x] C++20 / CMake project setup
-- [x] Initial CLI
-- [x] Initial Qt 6 Widgets search window
-- [x] Shell-free process invocation abstraction
-- [x] Basic package validation and system information
-- [x] DNF search/info/list/install/remove/upgrade operations (initial implementation)
-- [x] DNF transaction history listing
-- [x] DNF dependency and reverse-dependency queries
-- [x] Installed DNF package-group listing
-- [x] DNF user-installed package export and validated package-list import
-- [x] Flatpak search/list/install/remove operations (initial implementation)
-- [x] Repository list/enable/disable (initial implementation)
+- [x] C++20 / CMake project setup and optional Qt 6 Widgets target
+- [x] Shell-free process runner and initial CLI
+- [x] Initial Qt 6 Widgets search window with asynchronous DNF
+- [x] Basic validation and system information
+- [x] DNF search/info/list/install/remove/upgrade/history
+- [x] Dependency/reverse-dependency queries and installed groups
+- [x] RPM package-list export/import (Flatpak parity still required)
+- [x] Flatpak search/list/install/remove/update/info/Flathub setup
+- [x] Repository list/info/enable/disable/add/refresh
 - [x] Kernel inventory
-- [x] Disk space analysis, largest packages, package-size inspection, cache size, orphan listing and autoremove
-- [x] Package downloads, optional dependency downloads, offline RPM install
+- [x] Disk space, package sizes, cache size, orphan listing/autoremove
+- [x] Package downloads, dependency downloads, offline RPM installation
 - [x] RPM changelog and recent changelog entries
-- [x] Security advisory listing, advisory info, CVE query, audit summary and security-only update
-- [x] Asynchronous DNF search in Qt GUI
-- [x] Unit tests for validation and invalid arguments
-- [x] CI workflow for C++ build, Qt GUI build, tests, and CLI help smoke test (awaiting confirmed pass)
+- [x] Security update listing, advisory info, CVE query, audit, security upgrade
+- [x] Config load/show/get/set for existing known fields
+- [x] Read-only system doctor checks
+- [x] GPU detection, NVIDIA operations, CUDA package install, gaming meta install
+- [x] DNF history undo by transaction ID/newest transaction
+- [x] Unit tests for validation and safe rejection paths
+- [x] CI workflow defined; successful run on the latest branch state still required
 
 ## Feature parity still required
-- [ ] Preserve existing CLI command names, flags, output, and exit codes
-- [ ] Rollback/undo with safe transaction validation and recovery
-- [ ] Driver detection and NVIDIA workflows
-- [ ] Gaming setup and related packages
-- [ ] System doctor/diagnostics
-- [ ] Configuration management
-- [ ] Persistent JSON operation history and consistent action logging
-- [ ] Flatpak-aware export/import parity with the Rust implementation
-- [ ] Changelog update summary / compare workflows
-- [ ] Complete GUI workflows, safe confirmations, progress reporting, cancellation, and privilege handling
-- [ ] Logging and structured error reporting parity
-- [ ] Audit repository enable/disable behavior and DNF plugin availability
-- [ ] Fedora RPM spec, desktop integration, uninstall behavior
-- [ ] Automated tests on Fedora Workstation and Fedora Everything
-- [ ] Compare outputs and behavior against the Rust implementation
-- [ ] Review license and project documentation before final cutover
+- [ ] Persistent JSON operation history and logging for successful operations
+- [ ] Kernel install/remove/remove-old/info workflows
+- [ ] CachyOS status, kernel, repository, and CPU workflows
+- [ ] Flatpak-aware export/import parity
+- [ ] Package group info/install/remove
+- [ ] Changelog update summary/comparison and package cache cleaning
+- [ ] Self-update functionality
+- [ ] Preserve all existing CLI names, subcommands, flags, output, and exit codes
+- [ ] Complete GUI workflows, safe confirmations, progress, cancellation, privilege handling
+- [ ] Strict JSON config compatibility and error handling
+- [ ] Fedora Workstation and Fedora Everything testing
+- [ ] Fedora RPM spec, desktop integration, uninstall behavior, DNF plugin checks
+- [ ] Behavior/output comparison against Rust and license/documentation review
 
 ## Safety and testing
 Do not merge this draft as a replacement yet. Test mutating operations only in disposable Fedora virtual machines until transaction handling, privilege behavior, and failure recovery are reviewed.
