@@ -24,6 +24,9 @@ private:
     QPushButton* install_;
     QPushButton* remove_;
     QPushButton* update_;
+    QPushButton* history_;
+    QPushButton* repositories_;
+    QPushButton* securityUpdates_;
     QPushButton* flatpakSearch_;
     QPushButton* flatpakInstalled_;
     QPushButton* flatpakInfo_;
