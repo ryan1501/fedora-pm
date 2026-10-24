@@ -39,6 +39,16 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), process_(new QPro
         actions->addWidget(button);
     layout->addLayout(actions);
 
+    auto* systemActions = new QHBoxLayout;
+    history_ = new QPushButton("DNF history", central);
+    repositories_ = new QPushButton("Repositories", central);
+    securityUpdates_ = new QPushButton("Security updates", central);
+    systemActions->addWidget(history_);
+    systemActions->addWidget(repositories_);
+    systemActions->addWidget(securityUpdates_);
+    systemActions->addStretch(1);
+    layout->addLayout(systemActions);
+
     auto* flatpakActions = new QHBoxLayout;
     flatpakSearch_ = new QPushButton("Flatpak search", central);
     flatpakInstalled_ = new QPushButton("Installed Flatpaks", central);
@@ -107,6 +117,15 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), process_(new QPro
     });
     connect(update_, &QPushButton::clicked, this, [this] {
         run_dnf({"upgrade"}, true);
+    });
+    connect(history_, &QPushButton::clicked, this, [this] {
+        run_dnf({"history", "list"});
+    });
+    connect(repositories_, &QPushButton::clicked, this, [this] {
+        run_dnf({"repolist", "--all"});
+    });
+    connect(securityUpdates_, &QPushButton::clicked, this, [this] {
+        run_dnf({"updateinfo", "list", "--security"});
     });
     connect(flatpakSearch_, &QPushButton::clicked, this, [this] {
         const auto query = query_->text().trimmed();
