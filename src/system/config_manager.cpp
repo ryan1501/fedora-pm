@@ -24,13 +24,13 @@ std::string json_escape(const std::string& value) {
     return out;
 }
 bool parse_bool(const std::string& data, const std::string& key, bool fallback) {
-    const std::regex pattern("\\"" + key + "\\"\\s*:\\s*(true|false)");
+    const std::regex pattern(std::string("\"") + key + R"re("\s*:\s*(true|false))re");
     std::smatch match;
     if (!std::regex_search(data, match, pattern)) return fallback;
     return match[1].str() == "true";
 }
 std::string parse_string(const std::string& data, const std::string& key, const std::string& fallback) {
-    const std::regex pattern("\\"" + key + "\\"\\s*:\\s*\\"((?:[^\\"\\\\]|\\\\.)*)\\"");
+    const std::regex pattern(std::string("\"") + key + R"re("\s*:\s*"((?:[^"\\]|\\.)*)")re");
     std::smatch match;
     if (!std::regex_search(data, match, pattern)) return fallback;
     std::string value = match[1].str(), result;
