@@ -62,9 +62,10 @@ Use the same CMake configure/build/test commands shown above.
 
 ## Usage
 
-Start with the built CLI help:
+Start with the built CLI help or check the compiled version (`--version`, `-V`, or `version`):
 
 ```bash
+./build/fedora-pm --version
 ./build/fedora-pm help
 ./build/fedora-pm info
 ./build/fedora-pm search firefox
