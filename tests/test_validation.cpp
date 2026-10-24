@@ -8,6 +8,7 @@
 #include "system/driver_manager.hpp"
 #include "system/rollback_manager.hpp"
 #include "system/repository_manager.hpp"
+#include "system/kernel_manager.hpp"
 #include <cassert>
 #include <filesystem>
 #include <string>
@@ -67,4 +68,9 @@ int main() {
     const fedora_pm::system::RepositoryManager repos;
     assert(!repos.add("file:///etc/passwd").success);
     assert(!repos.add("https://example.org/repo repo").success);
+
+    const fedora_pm::system::KernelManager kernels;
+    assert(!kernels.install(std::string("bad;version")).success);
+    assert(!kernels.remove({}, false).success);
+    assert(!kernels.remove_old(0).success);
 }
