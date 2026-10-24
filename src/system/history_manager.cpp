@@ -102,6 +102,126 @@ std::string unescape_json(const std::string& value) {
     }
     return out;
 }
+bool valid_json_document(const std::string& input) {
+    class Parser {
+    public:
+        explicit Parser(const std::string& text) : text_(text) {}
+        bool parse() {
+            skip_space();
+            if (!value(0)) return false;
+            skip_space();
+            return pos_ == text_.size();
+        }
+    private:
+        const std::string& text_;
+        std::size_t pos_ = 0;
+        void skip_space() {
+            while (pos_ < text_.size() &&
+                   (text_[pos_] == ' ' || text_[pos_] == '\t' ||
+                    text_[pos_] == '\r' || text_[pos_] == '\n')) ++pos_;
+        }
+        bool hex4() {
+            if (pos_ + 4 > text_.size()) return false;
+            for (int n = 0; n < 4; ++n) {
+                const char c = text_[pos_++];
+                if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') ||
+                      (c >= 'A' && c <= 'F'))) return false;
+            }
+            return true;
+        }
+        bool string() {
+            if (pos_ >= text_.size() || text_[pos_++] != '"') return false;
+            while (pos_ < text_.size()) {
+                const unsigned char c = static_cast<unsigned char>(text_[pos_++]);
+                if (c == '"') return true;
+                if (c < 0x20) return false;
+                if (c != '\\') continue;
+                if (pos_ >= text_.size()) return false;
+                const char escaped = text_[pos_++];
+                if (escaped == '"' || escaped == '\\' || escaped == '/' ||
+                    escaped == 'b' || escaped == 'f' || escaped == 'n' ||
+                    escaped == 'r' || escaped == 't') continue;
+                if (escaped == 'u') {
+                    if (!hex4()) return false;
+                    continue;
+                }
+                return false;
+            }
+            return false;
+        }
+        bool number() {
+            const std::size_t start = pos_;
+            if (pos_ < text_.size() && text_[pos_] == '-') ++pos_;
+            if (pos_ >= text_.size()) return false;
+            if (text_[pos_] == '0') {
+                ++pos_;
+                if (pos_ < text_.size() && text_[pos_] >= '0' && text_[pos_] <= '9') return false;
+            } else {
+                if (text_[pos_] < '1' || text_[pos_] > '9') return false;
+                while (pos_ < text_.size() && text_[pos_] >= '0' && text_[pos_] <= '9') ++pos_;
+            }
+            if (pos_ < text_.size() && text_[pos_] == '.') {
+                ++pos_;
+                const std::size_t digits = pos_;
+                while (pos_ < text_.size() && text_[pos_] >= '0' && text_[pos_] <= '9') ++pos_;
+                if (digits == pos_) return false;
+            }
+            if (pos_ < text_.size() && (text_[pos_] == 'e' || text_[pos_] == 'E')) {
+                ++pos_;
+                if (pos_ < text_.size() && (text_[pos_] == '+' || text_[pos_] == '-')) ++pos_;
+                const std::size_t digits = pos_;
+                while (pos_ < text_.size() && text_[pos_] >= '0' && text_[pos_] <= '9') ++pos_;
+                if (digits == pos_) return false;
+            }
+            return pos_ > start;
+        }
+        bool literal(const char* word) {
+            const std::string expected(word);
+            if (text_.compare(pos_, expected.size(), expected) != 0) return false;
+            pos_ += expected.size();
+            return true;
+        }
+        bool value(unsigned int depth) {
+            if (depth > 128) return false;
+            skip_space();
+            if (pos_ >= text_.size()) return false;
+            if (text_[pos_] == '"') return string();
+            if (text_[pos_] == '{') {
+                ++pos_;
+                skip_space();
+                if (pos_ < text_.size() && text_[pos_] == '}') { ++pos_; return true; }
+                while (true) {
+                    skip_space();
+                    if (!string()) return false;
+                    skip_space();
+                    if (pos_ >= text_.size() || text_[pos_++] != ':') return false;
+                    if (!value(depth + 1)) return false;
+                    skip_space();
+                    if (pos_ >= text_.size()) return false;
+                    if (text_[pos_] == '}') { ++pos_; return true; }
+                    if (text_[pos_++] != ',') return false;
+                }
+            }
+            if (text_[pos_] == '[') {
+                ++pos_;
+                skip_space();
+                if (pos_ < text_.size() && text_[pos_] == ']') { ++pos_; return true; }
+                while (true) {
+                    if (!value(depth + 1)) return false;
+                    skip_space();
+                    if (pos_ >= text_.size()) return false;
+                    if (text_[pos_] == ']') { ++pos_; return true; }
+                    if (text_[pos_++] != ',') return false;
+                }
+            }
+            if (text_[pos_] == '-' || (text_[pos_] >= '0' && text_[pos_] <= '9')) return number();
+            if (literal("true") || literal("false") || literal("null")) return true;
+            return false;
+        }
+    };
+    return Parser(input).parse();
+}
+
 std::string timestamp_now() {
     const std::time_t now = std::time(nullptr);
     std::tm local{};
@@ -147,8 +267,8 @@ std::pair<bool, std::vector<OperationHistoryEntry>> HistoryManager::read_all(std
     buffer << input.rdbuf();
     const std::string data = buffer.str();
     if (fedora_pm::core::trim(data).empty()) return {true, {}};
-    if (data.find('[') == std::string::npos || data.find(']') == std::string::npos) {
-        error = "History file is not a JSON array: " + path_.string();
+    if (!valid_json_document(data) || data.front() != '[' || data.back() != ']') {
+        error = "History file is not a valid JSON array: " + path_.string();
         return {false, {}};
     }
     const std::regex object_pattern(R"re(\{[\s\S]*?\})re");
