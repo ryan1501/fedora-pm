@@ -37,7 +37,8 @@ The Rust implementation remains authoritative until this checklist is complete a
 - [ ] Strict JSON config compatibility and error handling
 - [ ] Fedora Workstation and Fedora Everything testing
 - [x] Initial CLI/GUI RPM spec files and desktop/metainfo integration assets
-- [ ] Validate RPM builds/install/uninstall on Fedora; verify DNF plugin dependencies and desktop integration
+- [x] Build, install, query, and uninstall the CLI/GUI RPMs in the disposable Fedora CI container; validate desktop-file and metainfo syntax
+- [ ] Test on actual Fedora Workstation and Fedora Everything installations; verify runtime DNF plugin/dependency assumptions and desktop integration outside CI
 - [ ] Behavior/output comparison against Rust and license/documentation review
 
 ## Safety and testing
