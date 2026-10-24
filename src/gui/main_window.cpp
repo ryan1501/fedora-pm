@@ -100,6 +100,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), process_(new QPro
     });
     connect(cancel_, &QPushButton::clicked, this, [this] {
         if (process_->state() != QProcess::NotRunning) {
+            cancellationRequested_ = true;
             output_->appendPlainText("\nCancellation requested…");
             process_->terminate();
             QTimer::singleShot(2500, process_, [this] {
@@ -125,6 +126,12 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), process_(new QPro
     connect(process_, &QProcess::finished, this, [this](int exitCode, QProcess::ExitStatus status) {
         if (previewingMutation_) {
             previewingMutation_ = false;
+            if (cancellationRequested_) {
+                output_->appendPlainText("\nTransaction preview cancelled; no changes were applied.");
+                pendingMutationArgs_.clear();
+                set_busy(false);
+                return;
+            }
             const bool hasTransaction = processOutput_.contains("Transaction Summary", Qt::CaseInsensitive)
                 || processOutput_.contains("Dependencies resolved", Qt::CaseInsensitive)
                 || processOutput_.contains("Nothing to do", Qt::CaseInsensitive);
@@ -204,6 +211,7 @@ void MainWindow::run_dnf(QStringList args, bool mutating) {
     processOutput_.clear();
     pendingMutationArgs_.clear();
     previewingMutation_ = mutating;
+    cancellationRequested_ = false;
     output_->appendPlainText((mutating ? "Resolving proposed DNF transaction (no changes will be made)…\n" : "Running dnf…\n"));
     set_busy(true);
     if (mutating) {
