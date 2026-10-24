@@ -168,7 +168,7 @@ jobs:
           test -n "$cli_rpm"
           test -n "$gui_rpm"
           # Exercise RPM dependency resolution, install ownership, and clean removal in the disposable Fedora container.
-          dnf install --assumeyes "$cli_rpm" "$gui_rpm"
+          dnf install --assumeyes --allowerasing "$cli_rpm" "$gui_rpm"
           rpm -q fedora-pm fedora-pm-gui
           test "$(fedora-pm --version)" = "fedora-pm 2.0.0"
           test -x /usr/bin/fedora-pm-gui
