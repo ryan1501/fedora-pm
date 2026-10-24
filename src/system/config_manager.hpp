@@ -19,6 +19,7 @@ public:
     fedora_pm::packages::PackageResult load();
     fedora_pm::packages::PackageResult save() const;
     fedora_pm::packages::PackageResult show();
+    fedora_pm::packages::PackageResult get(const std::string& key);
     fedora_pm::packages::PackageResult set(const std::string& key, const std::string& value);
     const AppConfig& config() const { return config_; }
 private:
