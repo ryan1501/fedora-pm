@@ -10,6 +10,7 @@ The Rust implementation remains authoritative until this checklist is complete a
 - [x] Basic package validation and system information
 - [x] DNF search/info/list/install/remove/upgrade operations (initial implementation)
 - [x] DNF transaction history listing (initial implementation)
+- [x] DNF user-installed package export and validated package-list import
 - [x] Flatpak search/list/install/remove operations (initial implementation)
 - [x] Repository list/enable/disable (initial implementation)
 - [x] Kernel inventory (initial implementation)
@@ -23,8 +24,9 @@ The Rust implementation remains authoritative until this checklist is complete a
 - [ ] Gaming setup and related packages
 - [ ] Security checks and system doctor/diagnostics
 - [ ] Configuration management
-- [ ] Package export/import and download support
+- [ ] Flatpak-aware export/import parity with the Rust implementation
 - [ ] Package groups, changelog, dependency inspection, disk-space tools
+- [ ] Download support
 - [ ] Complete GUI workflows, safe confirmations, progress reporting, cancellation, and privilege handling
 - [ ] Logging and structured error reporting parity
 - [ ] Audit repository enable/disable behavior and DNF plugin availability
