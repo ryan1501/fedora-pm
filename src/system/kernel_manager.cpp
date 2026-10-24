@@ -32,9 +32,28 @@ std::vector<std::string> lines(const std::string& text) {
     }
     return result;
 }
-std::vector<std::string> packages_for_version(const std::string& version) {
-    const auto r = run("rpm", {"-qa", "kernel*" + version + "*"});
-    return r.success ? lines(r.output) : std::vector<std::string>{};
+std::vector<std::string> packages_for_version(const std::string& requested) {
+    const auto r = run("rpm", {"-qa", "--qf", "%{NAME}\\t%{VERSION}\\t%{RELEASE}\\t%{ARCH}\\n", "kernel*"});
+    if (!r.success) return {};
+    std::vector<std::string> packages;
+    for (const auto& line : lines(r.output)) {
+        std::istringstream row(line);
+        std::string name, version, release, arch;
+        if (!(row >> name >> version >> release >> arch)) continue;
+        const std::string version_release = version + "-" + release;
+        const std::string full_version = version_release + "." + arch;
+        // Match a complete VERSION, VERSION-RELEASE, or VERSION-RELEASE.ARCH.
+        // Substring globs can accidentally match 6.1 when the user meant 6.10.
+        if (requested == version || requested == version_release || requested == full_version)
+            packages.push_back(name + "-" + full_version);
+    }
+    return packages;
+}
+bool matches_running_kernel(const std::string& requested, const std::string& running) {
+    if (requested == running) return true;
+    if (requested.find('-') == std::string::npos)
+        return running.starts_with(requested + "-");
+    return running.starts_with(requested + ".");
 }
 }
 KernelInfo detect_kernels() {
@@ -98,7 +117,7 @@ PackageResult KernelManager::remove(const std::vector<std::string>& versions, bo
     std::vector<std::string> packages;
     for (const auto& version : versions) {
         if (!fedora_pm::core::is_valid_package_name(version)) return {false, {}, "Invalid kernel version: " + version};
-        if (keep_current && !running.empty() && running.find(version) != std::string::npos) continue;
+        if (keep_current && !running.empty() && matches_running_kernel(version, running)) continue;
         auto matches = packages_for_version(version);
         packages.insert(packages.end(), matches.begin(), matches.end());
     }
@@ -127,7 +146,7 @@ PackageResult KernelManager::remove_old(std::size_t keep_last, bool assume_yes) 
     const std::string running = detect_kernels().running;
     std::vector<std::string> targets;
     for (std::size_t i = keep_last; i < kernels.size(); ++i) {
-        if (!running.empty() && running.find(kernels[i].version) != std::string::npos) continue;
+        if (!running.empty() && running == kernels[i].version) continue;
         auto matches = packages_for_version(kernels[i].version);
         targets.insert(targets.end(), matches.begin(), matches.end());
     }
