@@ -48,12 +48,17 @@ jobs:
             exit 1
           fi
 
+      - name: Validate Fedora GUI packaging metadata
+        run: |
+          rpmspec --parse fedora-pm-gui-rpm.spec >/dev/null
+          desktop-file-validate fedora-pm.desktop
+
   fedora-build-and-test:
     runs-on: ubuntu-24.04
     container: fedora:latest
     steps:
       - name: Install C++ and Qt 6 build dependencies
-        run: dnf install --assumeyes git cmake gcc-c++ qt6-qtbase-devel
+        run: dnf install --assumeyes git cmake gcc-c++ qt6-qtbase-devel rpm-build desktop-file-utils
 
       - name: Check out source
         uses: actions/checkout@v4
