@@ -203,7 +203,7 @@ void MainWindow::run_dnf(QStringList args, bool mutating) {
     processOutput_.clear();
     pendingMutationArgs_.clear();
     previewingMutation_ = mutating;
-    output_->appendPlainText((mutating ? "Resolving proposed DNF transaction (no changes will be made)…\\n" : "Running dnf…\\n"));
+    output_->appendPlainText((mutating ? "Resolving proposed DNF transaction (no changes will be made)…\n" : "Running dnf…\n"));
     set_busy(true);
     if (mutating) {
         pendingMutationArgs_ = args;
