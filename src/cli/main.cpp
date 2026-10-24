@@ -55,6 +55,12 @@ void usage() {
               << "  nvidia-remove [--yes]             Remove installed NVIDIA packages\n"
               << "  cuda-install [--yes]              Install CUDA packages\n"
               << "  gaming-install [--yes]            Install fedora-gaming-meta\n"
+              << "  cachyos-status                    Show CachyOS repository status\n"
+              << "  cachyos-list-kernels              List available CachyOS kernels\n"
+              << "  cachyos-enable-repo TYPE [--yes]  Enable CachyOS gcc/lto/bore COPR\n"
+              << "  cachyos-disable-repo TYPE [--yes] Disable CachyOS gcc/lto/bore COPR\n"
+              << "  cachyos-check-cpu                 Check x86-64 CPU feature levels\n"
+              << "  cachyos-install-kernel TYPE [VARIANT] [--yes]\n"
               << "  kernel-current                    Show running kernel\n"
               << "  kernel-list                       List installed kernels\n"
               << "  kernel-available                  List available kernels\n"
@@ -104,6 +110,7 @@ int main(int argc, char** argv) {
         return 0;
     }
     if (command == "doctor" && argc == 2) return print_result(fedora_pm::system::Doctor{}.run_checks());
+    if (auto cachyos_result = fedora_pm::cli::handle_cachyos_command(argc, argv); cachyos_result.has_value()) return print_result(*cachyos_result);
 
     fedora_pm::system::DriverManager drivers;
     if (command == "gpu-detect" && argc == 2) return print_result(drivers.detect());
