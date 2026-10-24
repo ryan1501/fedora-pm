@@ -147,7 +147,7 @@ jobs:
           set -euxo pipefail
           topdir="$PWD/rpmbuild"
           mkdir -p "$topdir"/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS}
-          git archive --format=tar.gz --prefix=fedora-pm-2.0.0/ HEAD > "$topdir/SOURCES/fedora-pm-2.0.0.tar.gz"
+          git -c safe.directory="$PWD" archive --format=tar.gz --prefix=fedora-pm-2.0.0/ HEAD > "$topdir/SOURCES/fedora-pm-2.0.0.tar.gz"
           cp fedora-pm-rpm.spec fedora-pm-gui-rpm.spec "$topdir/SPECS/"
           rpmbuild -ba --define "_topdir $topdir" "$topdir/SPECS/fedora-pm-rpm.spec"
           rpmbuild -ba --define "_topdir $topdir" "$topdir/SPECS/fedora-pm-gui-rpm.spec"
