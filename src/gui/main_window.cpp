@@ -239,7 +239,7 @@ bool MainWindow::valid_flatpak_app_id(const QString& value) const {
 }
 
 void MainWindow::set_busy(bool busy) {
-    for (auto* button : {search_, info_, installed_, available_, install_, remove_, update_, flatpakSearch_, flatpakInstalled_, flatpakInfo_})
+    for (auto* button : {search_, info_, installed_, available_, install_, remove_, update_, history_, repositories_, securityUpdates_, flatpakSearch_, flatpakInstalled_, flatpakInfo_})
         button->setEnabled(!busy);
     query_->setEnabled(!busy);
     cancel_->setEnabled(busy);
