@@ -50,7 +50,7 @@ void usage() {
               << "  groups                            List installed DNF package groups\n"
               << "  changelog NAME                    Show package changelog\n"
               << "  changelog-recent NAME [COUNT]     Show recent installed-package changelog entries\n"
-              << "  whatsnew [COUNT]                  Show available updates and changelog previews\n"
+              << "  whats-new [COUNT] | whatsnew [COUNT]  Show available updates and changelog previews\n"
               << "  changelog-compare NAME V1 V2      Show changelog context for two versions\n"
               << "  security-check                    List available security updates\n"
               << "  security-list [SEVERITY]           List security/advisory updates\n"
@@ -272,7 +272,7 @@ int main(int argc, char** argv) {
         }
         return print_result(changelogs.show_recent(argv[2], count));
     }
-    if (command == "whatsnew" && (argc == 2 || argc == 3)) {
+    if ((command == "whats-new" || command == "whatsnew") && (argc == 2 || argc == 3)) {
         std::size_t count = 10;
         if (argc == 3) {
             const std::string value = argv[2];
