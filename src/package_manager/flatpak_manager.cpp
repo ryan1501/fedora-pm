@@ -16,9 +16,7 @@ PackageResult FlatpakManager::run(const std::vector<std::string>& args) const {
 }
 namespace {
 bool valid_app_id(const std::string& app_id) {
-    return fedora_pm::core::is_valid_package_name(app_id) &&
-           app_id.find('.') != std::string::npos &&
-           app_id.front() != '.' && app_id.back() != '.';
+    return fedora_pm::core::is_valid_flatpak_app_id(app_id);
 }
 }
 PackageResult FlatpakManager::search(const std::string& query) const {
