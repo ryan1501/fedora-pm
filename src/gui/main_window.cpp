@@ -221,7 +221,9 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), process_(new QPro
             output_->appendPlainText("\nCancellation requested…");
             process_->terminate();
             QTimer::singleShot(2500, process_, [this] {
-                if (process_->state() != QProcess::NotRunning) process_->kill();
+                // Do not let a stale cancellation timer kill a later command.
+                if (cancellationRequested_ && process_->state() != QProcess::NotRunning)
+                    process_->kill();
             });
         }
     });
