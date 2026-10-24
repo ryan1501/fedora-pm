@@ -215,7 +215,7 @@ bool MainWindow::valid_package_input(const QString& value) const {
 
 bool MainWindow::valid_flatpak_app_id(const QString& value) const {
     static const QRegularExpression appIdPattern(
-        "^[A-Za-z][A-Za-z0-9_-]*(\\\\.[A-Za-z][A-Za-z0-9_-]*)+$");
+        "^[A-Za-z][A-Za-z0-9_-]*(\\.[A-Za-z][A-Za-z0-9_-]*)+$");
     return appIdPattern.match(value).hasMatch();
 }
 
