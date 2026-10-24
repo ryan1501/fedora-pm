@@ -1,8 +1,10 @@
 #pragma once
 
 #include "package_manager/package_manager.hpp"
+#include <cstddef>
 #include <filesystem>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace fedora_pm::system {
