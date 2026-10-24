@@ -23,6 +23,7 @@ add_library(fedorapm_core
     src/system/driver_manager.cpp
     src/system/gaming_manager.cpp
     src/system/rollback_manager.cpp
+    src/system/cachyos_manager.cpp
     src/package_manager/package_manager.cpp
     src/package_manager/flatpak_manager.cpp
     src/package_manager/export_manager.cpp
@@ -33,7 +34,7 @@ target_include_directories(fedorapm_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_link_libraries(fedorapm_core PUBLIC Threads::Threads)
 target_compile_options(fedorapm_core PRIVATE -Wall -Wextra -Wpedantic)
 
-add_executable(fedora-pm src/cli/main.cpp)
+add_executable(fedora-pm src/cli/main.cpp src/cli/cachyos_commands.cpp)
 target_link_libraries(fedora-pm PRIVATE fedorapm_core)
 
 if(FEDORAPM_BUILD_GUI)
