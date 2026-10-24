@@ -112,7 +112,7 @@ int main() {
     // A lone UTF-16 surrogate is replaced with the Unicode replacement character.
     {
         std::ofstream surrogate_config(test_config_dir / "config.json", std::ios::trunc);
-        surrogate_config << R"json({"history_file":"\\uD800"})json";
+        surrogate_config << R"json({"history_file":"\uD800"})json";
     }
     fedora_pm::system::ConfigManager surrogate_config(test_config_dir);
     assert(surrogate_config.load().success);
