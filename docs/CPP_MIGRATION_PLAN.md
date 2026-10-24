@@ -30,7 +30,7 @@ The Rust implementation remains authoritative until this checklist is complete a
 ## Feature parity still required
 - [x] Log successful CLI mutations and confirmed GUI DNF/Flatpak transactions; test reading legacy Rust-format history JSON, including Unicode escapes and RFC3339 timestamps
 - [ ] Flatpak-aware export/import parity
-- [ ] Changelog update summary/comparison
+- [x] Changelog update summary/comparison commands (`whats-new` and `changelog-compare`) ported; arbitrary-version filtering remains intentionally unavailable, as in the Rust implementation
 - [ ] Self-update functionality
 - [ ] Preserve all existing CLI names, subcommands, flags, output, and exit codes
 - [ ] Complete GUI workflows, safe confirmations, progress, cancellation, privilege handling
