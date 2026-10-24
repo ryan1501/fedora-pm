@@ -36,6 +36,7 @@ private:
     QStringList pendingMutationArgs_;
     QString processOutput_;
     bool previewingMutation_{false};
+    bool applyingMutation_{false};
     bool cancellationRequested_{false};
     void run_search();
     void run_dnf(QStringList args, bool mutating = false);
