@@ -2,6 +2,7 @@
 #include "core/process_runner.hpp"
 #include "core/validation.hpp"
 
+#include <chrono>
 #include <filesystem>
 #include <vector>
 
@@ -40,7 +41,9 @@ PackageResult download_to_impl(const std::vector<std::string>& packages, const s
 PackageResult DownloadManager::download(const std::vector<std::string>& packages) const {
     if (!valid_packages(packages))
         return {false, {}, packages.empty() ? "Specify at least one package." : "Invalid package name in download list."};
-    auto result = execute([&] { std::vector<std::string> a{"download"}; a.insert(a.end(), packages.begin(), packages.end()); return a; }());
+    std::vector<std::string> args{"download"};
+    args.insert(args.end(), packages.begin(), packages.end());
+    auto result = execute(args);
     if (result.success) result.output += "\nDownloaded package files to the current directory.\n";
     return result;
 }
@@ -62,7 +65,7 @@ PackageResult DownloadManager::install_offline(const std::vector<std::string>& r
         std::error_code ec;
         if (!std::filesystem::is_regular_file(path, ec) || ec)
             return {false, {}, "RPM file does not exist or is not a regular file: " + file};
-        args.push_back(path.string()};
+        args.push_back(path.string());
     }
     return execute(args);
 }
