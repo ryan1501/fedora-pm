@@ -109,12 +109,12 @@ jobs:
     runs-on: ubuntu-24.04
     container: fedora:latest
     steps:
-      - name: Synchronize Fedora container and install C++/Qt 6 build dependencies
+      - name: Install C++/Qt 6 build dependencies in Fedora container
         run: |
-          # The rolling Fedora container can start with packages older than enabled repos.
-          # Synchronize first to avoid transient systemd-standalone-tmpfiles/polkit conflicts.
-          dnf distro-sync --refresh --assumeyes
-          dnf install --refresh --assumeyes git cmake gcc-c++ qt6-qtbase-devel rpm-build desktop-file-utils
+          # The minimal rolling image can contain systemd-standalone-tmpfiles while
+          # polkit requires systemd. This is a disposable CI container, so allow DNF
+          # to replace conflicting base packages instead of synchronizing the entire image.
+          dnf install --refresh --assumeyes --allowerasing git cmake gcc-c++ qt6-qtbase-devel rpm-build desktop-file-utils
 
       - name: Check out source
         uses: actions/checkout@v4
