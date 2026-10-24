@@ -127,6 +127,7 @@ int main() {
     assert(!flatpak.info("org..example.App").success);
     const fedora_pm::system::RepositoryManager repos;
     assert(!repos.add("file:///etc/passwd").success);
+    assert(!repos.add("", "https://example.org/repo").success);
     assert(!repos.add("https://example.org/repo repo").success);
 
     const fedora_pm::system::KernelManager kernels;
