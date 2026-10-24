@@ -67,7 +67,13 @@ int main() {
     assert(config.set("auto_clean", "true").success);
     assert(config.get("auto_clean").output == "true\n");
     assert(!config.set("auto_clean", "yes").success);
-    assert(!config.set("unknown_key", "true").success);
+    assert(!config.set("unknown_key", "true").success");
+
+    const std::string special_history_path = (test_config_dir / "path\\with\\"quotes\tand-café.json").string();
+    assert(config.set("history_file", special_history_path).success);
+    fedora_pm::system::ConfigManager reloaded_config(test_config_dir);
+    assert(reloaded_config.load().success);
+    assert(reloaded_config.get("history_file").output == special_history_path + "\\n");
     std::filesystem::remove_all(test_config_dir, cleanup_error);
 
     const fedora_pm::system::RollbackManager rollback;
