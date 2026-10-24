@@ -30,6 +30,7 @@ namespace {
 void usage() {
     std::cout << "fedora-pm (C++20 migration in progress)\n"
               << "Usage: fedora-pm <command> [arguments]\n"
+              << "Options: --version, -V  Show build version\n"
               << "Commands:\n"
               << "  info                              Show OS and architecture\n"
               << "  doctor                            Run read-only system diagnostics\n"
