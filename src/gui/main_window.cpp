@@ -328,7 +328,7 @@ void MainWindow::run_flatpak(QStringList args) {
         pendingMutationArgs_ = args;
         pendingMutationArgs_[0] = "flatpak-" + operation;
     }
-    output_->appendPlainText("Running flatpak…\\n");
+    output_->appendPlainText("Running flatpak…\n");
     set_busy(true);
     process_->start("flatpak", args);
 }
