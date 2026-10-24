@@ -74,6 +74,22 @@ int main() {
     fedora_pm::system::ConfigManager reloaded_config(test_config_dir);
     assert(reloaded_config.load().success);
     assert(reloaded_config.get("history_file").output == special_history_path + "\n");
+
+    // Malformed JSON must fail closed instead of silently resetting settings.
+    const auto config_file = test_config_dir / "config.json";
+    for (const std::string malformed : {
+             R"json({"auto_clean": true,})json",
+             R"json({"auto_clean": tru})json",
+             R"json({"history_file": "bad\q"})json",
+             R"json({"auto_clean": false} trailing)json",
+             R"json([{"auto_clean": false}])json"}) {
+        {
+            std::ofstream broken_config(config_file, std::ios::trunc);
+            broken_config << malformed;
+        }
+        fedora_pm::system::ConfigManager invalid_config(test_config_dir);
+        assert(!invalid_config.load().success);
+    }
     std::filesystem::remove_all(test_config_dir, cleanup_error);
 
     const fedora_pm::system::RollbackManager rollback;
