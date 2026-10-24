@@ -57,9 +57,15 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), process_(new QPro
     flatpakSearch_ = new QPushButton("Flatpak search", central);
     flatpakInstalled_ = new QPushButton("Installed Flatpaks", central);
     flatpakInfo_ = new QPushButton("Flatpak info", central);
+    flatpakInstall_ = new QPushButton("Install Flatpak…", central);
+    flatpakRemove_ = new QPushButton("Remove Flatpak…", central);
+    flatpakUpdate_ = new QPushButton("Update Flatpaks…", central);
     flatpakActions->addWidget(flatpakSearch_);
     flatpakActions->addWidget(flatpakInstalled_);
     flatpakActions->addWidget(flatpakInfo_);
+    flatpakActions->addWidget(flatpakInstall_);
+    flatpakActions->addWidget(flatpakRemove_);
+    flatpakActions->addWidget(flatpakUpdate_);
     flatpakActions->addStretch(1);
     layout->addLayout(flatpakActions);
 
@@ -149,6 +155,31 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), process_(new QPro
             return;
         }
         run_flatpak({"info", appId});
+    });
+    connect(flatpakInstall_, &QPushButton::clicked, this, [this] {
+        const auto appId = query_->text().trimmed();
+        if (!valid_flatpak_app_id(appId)) {
+            QMessageBox::warning(this, "Invalid Flatpak ID", "Enter a dotted Flatpak application ID, such as org.example.App.");
+            return;
+        }
+        if (QMessageBox::question(this, "Confirm Flatpak installation",
+                                  "Install Flatpak application " + appId + "?") == QMessageBox::Yes)
+            run_flatpak({"install", "--assumeyes", appId});
+    });
+    connect(flatpakRemove_, &QPushButton::clicked, this, [this] {
+        const auto appId = query_->text().trimmed();
+        if (!valid_flatpak_app_id(appId)) {
+            QMessageBox::warning(this, "Invalid Flatpak ID", "Enter a dotted Flatpak application ID, such as org.example.App.");
+            return;
+        }
+        if (QMessageBox::question(this, "Confirm Flatpak removal",
+                                  "Remove Flatpak application " + appId + "?") == QMessageBox::Yes)
+            run_flatpak({"uninstall", "--assumeyes", appId});
+    });
+    connect(flatpakUpdate_, &QPushButton::clicked, this, [this] {
+        if (QMessageBox::question(this, "Confirm Flatpak updates",
+                                  "Apply all available Flatpak updates?") == QMessageBox::Yes)
+            run_flatpak({"update", "--assumeyes"});
     });
     connect(cancel_, &QPushButton::clicked, this, [this] {
         if (process_->state() != QProcess::NotRunning) {
@@ -261,7 +292,7 @@ bool MainWindow::valid_flatpak_app_id(const QString& value) const {
 }
 
 void MainWindow::set_busy(bool busy) {
-    for (auto* button : {search_, info_, installed_, available_, install_, remove_, update_, history_, repositories_, securityUpdates_, flatpakSearch_, flatpakInstalled_, flatpakInfo_})
+    for (auto* button : {search_, info_, installed_, available_, install_, remove_, update_, history_, repositories_, securityUpdates_, flatpakSearch_, flatpakInstalled_, flatpakInfo_, flatpakInstall_, flatpakRemove_, flatpakUpdate_})
         button->setEnabled(!busy);
     query_->setEnabled(!busy);
     cancel_->setEnabled(busy);
