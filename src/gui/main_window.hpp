@@ -27,6 +27,9 @@ private:
     QPushButton* cancel_;
     QProgressBar* progress_;
     QProcess* process_;
+    QStringList pendingMutationArgs_;
+    QString processOutput_;
+    bool previewingMutation_{false};
     void run_search();
     void run_dnf(QStringList args, bool mutating = false);
     bool valid_package_input(const QString& value) const;
