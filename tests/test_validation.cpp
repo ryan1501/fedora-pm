@@ -1,4 +1,6 @@
 #include "core/validation.hpp"
+#include "core/process_runner.hpp"
+#include <chrono>
 #include "package_manager/package_manager.hpp"
 #include "package_manager/download_manager.hpp"
 #include "package_manager/changelog_manager.hpp"
@@ -41,6 +43,16 @@ int main() {
     assert(!flatpak.remove("org..example.App", true).success);
     assert(trim("  fedora  ") == "fedora");
     assert(trim(" \t\n ") == "");
+    
+    // The process runner captures output without invoking a shell and enforces a timeout.
+    const auto process_output = fedora_pm::core::run_process("/usr/bin/printf", {"hello", " world"});
+    assert(process_output.exit_code == 0);
+    assert(process_output.standard_output == "hello world");
+    assert(process_output.standard_error.empty());
+    const auto process_timeout = fedora_pm::core::run_process(
+        "/usr/bin/sleep", {"2"}, {.timeout = std::chrono::milliseconds(50)});
+    assert(process_timeout.timed_out);
+
 
     const auto no_packages = fedora_pm::packages::DownloadManager{}.download({});
     assert(!no_packages.success);
