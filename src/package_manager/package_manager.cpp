@@ -22,6 +22,15 @@ PackageResult PackageManager::info(const std::string& package) const {
 }
 PackageResult PackageManager::list_installed() const { return run({"list", "--installed"}); }
 PackageResult PackageManager::history() const { return run({"history", "list"}); }
+PackageResult PackageManager::dependencies(const std::string& package) const {
+    if (!fedora_pm::core::is_valid_package_name(package)) return {false, {}, "Invalid package name."};
+    return run({"repoquery", "--requires", "--resolve", package});
+}
+PackageResult PackageManager::reverse_dependencies(const std::string& package) const {
+    if (!fedora_pm::core::is_valid_package_name(package)) return {false, {}, "Invalid package name."};
+    return run({"repoquery", "--installed", "--whatrequires", package});
+}
+PackageResult PackageManager::installed_groups() const { return run({"group", "list", "--installed"}); }
 PackageResult PackageManager::install(const std::vector<std::string>& packages, bool assume_yes) const {
     if (packages.empty()) return {false, {}, "Specify at least one package."};
     for (const auto& p : packages) if (!fedora_pm::core::is_valid_package_name(p)) return {false, {}, "Invalid package name: " + p};
