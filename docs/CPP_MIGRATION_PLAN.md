@@ -8,25 +8,28 @@ The Rust implementation remains authoritative until this checklist is complete a
 - [x] Initial Qt 6 Widgets search window
 - [x] Shell-free process invocation abstraction
 - [x] Basic package validation and system information
-- [x] DNF package operations (initial implementation)
-- [x] Flatpak operations (initial implementation)
+- [x] DNF search/info/list/install/remove/upgrade operations (initial implementation)
+- [x] DNF transaction history listing (initial implementation)
+- [x] Flatpak search/list/install/remove operations (initial implementation)
 - [x] Repository list/enable/disable (initial implementation)
 - [x] Kernel inventory (initial implementation)
+- [x] Asynchronous DNF search in Qt GUI
+- [x] CI workflow for C++ build, Qt GUI build, tests, and CLI help smoke test
 
 ## Feature parity still required
-- [ ] Preserve the existing CLI command names, flags, output, and exit codes
-- [ ] Package history and transaction details
-- [ ] Rollback/undo with safe transaction validation
+- [ ] Preserve existing CLI command names, flags, output, and exit codes
+- [ ] Rollback/undo with safe transaction validation and recovery
 - [ ] Driver detection and NVIDIA workflows
 - [ ] Gaming setup and related packages
 - [ ] Security checks and system doctor/diagnostics
 - [ ] Configuration management
 - [ ] Package export/import and download support
 - [ ] Package groups, changelog, dependency inspection, disk-space tools
-- [ ] GUI workflows for all supported features, progress reporting and cancellation
+- [ ] Complete GUI workflows, safe confirmations, progress reporting, cancellation, and privilege handling
 - [ ] Logging and structured error reporting parity
+- [ ] Audit repository enable/disable behavior and DNF plugin availability
 - [ ] Fedora RPM spec, desktop integration, uninstall behavior
-- [ ] Automated tests on Fedora Workstation and a Fedora Everything installation
+- [ ] Automated tests on Fedora Workstation and Fedora Everything
 - [ ] Compare outputs and behavior against the Rust implementation
 - [ ] Review license and project documentation before final cutover
 
