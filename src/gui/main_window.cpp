@@ -85,10 +85,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), process_(new QPro
             QMessageBox::warning(this, "Invalid package", "Enter one valid package name to install.");
             return;
         }
-        if (QMessageBox::question(this, "Confirm installation",
-            "Install package '" + package + "'? DNF will automatically accept the transaction and may also install dependencies.",
-            QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::Yes)
-            run_dnf({"install", "-y", package}, true);
+        run_dnf({"install", package}, true);
     });
     connect(remove_, &QPushButton::clicked, this, [this] {
         const auto package = query_->text().trimmed();
@@ -96,16 +93,10 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), process_(new QPro
             QMessageBox::warning(this, "Invalid package", "Enter one valid package name to remove.");
             return;
         }
-        if (QMessageBox::warning(this, "Confirm removal",
-            "Remove package '" + package + "'? DNF will automatically accept the transaction and may remove dependent packages.",
-            QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::Yes)
-            run_dnf({"remove", "-y", package}, true);
+        run_dnf({"remove", package}, true);
     });
     connect(update_, &QPushButton::clicked, this, [this] {
-        if (QMessageBox::warning(this, "Confirm system update",
-            "Check and apply available package updates? DNF will automatically accept the proposed transaction.",
-            QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::Yes)
-            run_dnf({"upgrade", "-y"}, true);
+        run_dnf({"upgrade"}, true);
     });
     connect(cancel_, &QPushButton::clicked, this, [this] {
         if (process_->state() != QProcess::NotRunning) {
@@ -119,13 +110,54 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), process_(new QPro
 
     connect(process_, &QProcess::readyReadStandardOutput, this, [this] {
         const auto text = QString::fromLocal8Bit(process_->readAllStandardOutput());
-        if (!text.isEmpty()) output_->insertPlainText(text);
+        if (!text.isEmpty()) {
+            processOutput_ += text;
+            output_->insertPlainText(text);
+        }
     });
     connect(process_, &QProcess::readyReadStandardError, this, [this] {
         const auto text = QString::fromLocal8Bit(process_->readAllStandardError());
-        if (!text.isEmpty()) output_->insertPlainText(text);
+        if (!text.isEmpty()) {
+            processOutput_ += text;
+            output_->insertPlainText(text);
+        }
     });
     connect(process_, &QProcess::finished, this, [this](int exitCode, QProcess::ExitStatus status) {
+        if (previewingMutation_) {
+            previewingMutation_ = false;
+            const bool hasTransaction = processOutput_.contains("Transaction Summary", Qt::CaseInsensitive)
+                || processOutput_.contains("Dependencies resolved", Qt::CaseInsensitive)
+                || processOutput_.contains("Nothing to do", Qt::CaseInsensitive);
+            if (status == QProcess::NormalExit && hasTransaction) {
+                QMessageBox confirm(this);
+                confirm.setIcon(QMessageBox::Warning);
+                confirm.setWindowTitle("Review DNF transaction");
+                confirm.setText("Review the proposed package changes below. Continue only if the transaction looks correct.");
+                confirm.setDetailedText(processOutput_);
+                confirm.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+                confirm.setDefaultButton(QMessageBox::No);
+                confirm.setButtonText(QMessageBox::Yes, "Apply transaction");
+                confirm.setButtonText(QMessageBox::No, "Cancel");
+                if (confirm.exec() == QMessageBox::Yes) {
+                    QStringList privilegedArgs{"dnf"};
+                    privilegedArgs.append(pendingMutationArgs_);
+                    privilegedArgs.append("-y");
+                    processOutput_.clear();
+                    output_->appendPlainText("\nApplying confirmed transaction…\n");
+                    previewingMutation_ = false;
+                    process_->start("pkexec", privilegedArgs);
+                    return;
+                }
+                output_->appendPlainText("\nTransaction cancelled; no package changes were requested.");
+            } else {
+                output_->appendPlainText(QString("\nCould not verify a DNF transaction preview (exit code %1). No changes were applied.").arg(exitCode));
+                if (!processOutput_.isEmpty())
+                    output_->appendPlainText(processOutput_);
+            }
+            pendingMutationArgs_.clear();
+            set_busy(false);
+            return;
+        }
         output_->appendPlainText(QString("\nProcess finished with exit code %1.").arg(exitCode));
         if (status != QProcess::NormalExit)
             output_->appendPlainText("The command did not exit normally.");
@@ -169,11 +201,16 @@ void MainWindow::run_search() {
 void MainWindow::run_dnf(QStringList args, bool mutating) {
     if (process_->state() != QProcess::NotRunning) return;
     output_->clear();
-    output_->appendPlainText((mutating ? "Requesting administrator authorization…\n" : "Running dnf…\n"));
+    processOutput_.clear();
+    pendingMutationArgs_.clear();
+    previewingMutation_ = mutating;
+    output_->appendPlainText((mutating ? "Resolving proposed DNF transaction (no changes will be made)…\\n" : "Running dnf…\\n"));
     set_busy(true);
     if (mutating) {
+        pendingMutationArgs_ = args;
         QStringList privilegedArgs{"dnf"};
         privilegedArgs.append(args);
+        privilegedArgs.append("--assumeno");
         process_->start("pkexec", privilegedArgs);
     } else {
         process_->start("dnf", args);
