@@ -1,5 +1,7 @@
 #include "package_manager/package_manager.hpp"
 #include "core/validation.hpp"
+#include <algorithm>
+#include <cctype>
 #include <stdexcept>
 #include <utility>
 
@@ -13,20 +15,37 @@ PackageResult PackageManager::run(const std::vector<std::string>& args) const {
         return {false, {}, e.what()};
     }
 }
+namespace {
+bool valid_pattern(const std::string& value) {
+    return !value.empty() && std::all_of(value.begin(), value.end(), [](unsigned char c) {
+        return std::isalnum(c) || c == '-' || c == '_' || c == '.' || c == '+' || c == ':' || c == '*';
+    });
+}
+bool valid_group(const std::string& group) {
+    return !fedora_pm::core::trim(group).empty() &&
+           group.find_first_of("\r\n") == std::string::npos;
+}
+}
 PackageResult PackageManager::search(const std::string& query) const {
     if (fedora_pm::core::trim(query).empty()) return {false, {}, "Search query must not be empty."};
     return run({"search", query});
 }
 PackageResult PackageManager::info(const std::string& package) const {
     if (!fedora_pm::core::is_valid_package_name(package)) return {false, {}, "Invalid package name."};
-    auto rpm = fedora_pm::core::run_process("rpm", {"-qi", package}, {.timeout = std::chrono::minutes(2)});
-    if (!rpm.timed_out && rpm.exit_code == 0) return {true, rpm.standard_output, {}};
+    try {
+        const auto rpm = fedora_pm::core::run_process("rpm", {"-qi", package}, {.timeout = std::chrono::minutes(2)});
+        if (!rpm.timed_out && rpm.exit_code == 0) return {true, rpm.standard_output, {}};
+    } catch (...) {}
     return run({"info", package});
 }
-PackageResult PackageManager::list_installed() const { return run({"list", "--installed"}); }
+PackageResult PackageManager::list_installed(const std::string& pattern) const {
+    if (!pattern.empty() && !valid_pattern(pattern)) return {false, {}, "Invalid package pattern."};
+    std::vector<std::string> args{"list", "--installed"};
+    if (!pattern.empty()) args.push_back(pattern);
+    return run(args);
+}
 PackageResult PackageManager::list_available(const std::string& pattern) const {
-    if (!pattern.empty() && !fedora_pm::core::is_valid_package_name(pattern))
-        return {false, {}, "Invalid package pattern."};
+    if (!pattern.empty() && !valid_pattern(pattern)) return {false, {}, "Invalid package pattern."};
     std::vector<std::string> args{"list", "--available"};
     if (!pattern.empty()) args.push_back(pattern);
     return run(args);
@@ -41,12 +60,6 @@ PackageResult PackageManager::reverse_dependencies(const std::string& package) c
     return run({"repoquery", "--installed", "--whatrequires", package});
 }
 PackageResult PackageManager::installed_groups() const { return run({"group", "list", "--installed"}); }
-namespace {
-bool valid_group(const std::string& group) {
-    return !fedora_pm::core::trim(group).empty() &&
-           group.find_first_of("\r\n\0") == std::string::npos;
-}
-}
 PackageResult PackageManager::group_info(const std::string& group) const {
     if (!valid_group(group)) return {false, {}, "Group name must not be empty or contain newlines."};
     return run({"group", "info", group});
