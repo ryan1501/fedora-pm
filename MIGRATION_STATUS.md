@@ -9,14 +9,16 @@ The C++ implementation is being built in parallel with the Rust application. It 
 - Shell-free process runner with captured stdout/stderr and timeout support.
 - Initial package-name validation and OS/version/architecture detection.
 - DNF search, package info, installed-package listing, install, remove, upgrade, and transaction history.
+- DNF user-installed package list export and validated package-list import with confirmation unless `--yes` is supplied.
 - Flatpak search, installed-app listing, install, and removal.
 - DNF repository listing, enable/disable operations, and installed/running kernel inventory.
 - CLI entry points for the implemented operations.
-- Qt 6 Widgets search window; DNF search now runs asynchronously so the UI event loop remains responsive.
-- Initial validation tests and a CI workflow that configures/builds the CLI, Qt GUI, and tests, then runs CTest and a CLI help smoke test.
+- Qt 6 Widgets search window; DNF search runs asynchronously so the UI event loop remains responsive.
+- Initial validation tests and a CI workflow intended to configure/build the CLI, Qt GUI, and tests, then run CTest and a CLI help smoke test.
 
 ## Remaining work before replacing Rust
-- Inventory and port every existing Rust command/module, including rollback, drivers/NVIDIA, gaming, security, doctor, configuration, export/import, groups, changelog, dependencies, disk-space tools, downloads, and advanced validation.
+- Inventory and port every existing Rust command/module, including rollback, drivers/NVIDIA, gaming, security, doctor, configuration, groups, changelog, dependencies, disk-space tools, downloads, and advanced validation.
+- Add import/export parity tests and support for the existing Rust Flatpak export format where applicable.
 - Preserve existing CLI command names, flags, output, and exit codes; add parity tests against Rust behavior.
 - Expand GUI coverage beyond package search: safe mutation confirmation, progress, cancellation, privilege handling, error reporting, and the rest of the existing workflows.
 - Review repository enable/disable behavior and support for Fedora's installed DNF plugins.
@@ -25,6 +27,7 @@ The C++ implementation is being built in parallel with the Rust application. It 
 - Confirm upstream license and update documentation for the final C++ implementation.
 
 ## Safety notes
+- Import validates every package-list line before invoking DNF and requires confirmation unless `--yes` is given.
 - Do not assume package mutations are elevated; privilege behavior must be designed and tested explicitly.
 - Process arguments are passed directly, not interpolated into a shell command.
-- This remains an incomplete development branch and is not ready to merge as the replacement application.
+- This remains an incomplete development branch and is not ready to merge as the replacement.
