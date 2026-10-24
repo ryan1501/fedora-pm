@@ -9,6 +9,7 @@
 #include "system/rollback_manager.hpp"
 #include "system/repository_manager.hpp"
 #include "system/kernel_manager.hpp"
+#include "system/cachyos_manager.hpp"
 #include <cassert>
 #include <filesystem>
 #include <string>
@@ -73,4 +74,10 @@ int main() {
     assert(!kernels.install(std::string("bad;version")).success);
     assert(!kernels.remove({}, false).success);
     assert(!kernels.remove_old(0).success);
+
+    const fedora_pm::system::CachyOSManager cachyos;
+    assert(!cachyos.enable_repository("unknown").success);
+    assert(!cachyos.disable_repository("unknown").success);
+    assert(!cachyos.install_kernel("unknown").success);
+    assert(!cachyos.install_kernel("default", "unknown").success);
 }
