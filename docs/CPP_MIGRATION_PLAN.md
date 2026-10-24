@@ -29,14 +29,15 @@ The Rust implementation remains authoritative until this checklist is complete a
 
 ## Feature parity still required
 - [x] Log successful CLI mutations and confirmed GUI DNF/Flatpak transactions; test reading legacy Rust-format history JSON, including Unicode escapes and RFC3339 timestamps
-- [ ] Flatpak-aware export/import parity
+- [x] Flatpak-aware export/import, including legacy Rust comment-style Flatpak IDs and strict application-ID validation
 - [x] Changelog update summary/comparison commands (`whats-new` and `changelog-compare`) ported; arbitrary-version filtering remains intentionally unavailable, as in the Rust implementation
 - [ ] Self-update functionality
 - [ ] Preserve all existing CLI names, subcommands, flags, output, and exit codes
 - [ ] Complete GUI workflows, safe confirmations, progress, cancellation, privilege handling
 - [ ] Strict JSON config compatibility and error handling
 - [ ] Fedora Workstation and Fedora Everything testing
-- [ ] Fedora RPM spec, desktop integration, uninstall behavior, DNF plugin checks
+- [x] Initial CLI/GUI RPM spec files and desktop/metainfo integration assets
+- [ ] Validate RPM builds/install/uninstall on Fedora; verify DNF plugin dependencies and desktop integration
 - [ ] Behavior/output comparison against Rust and license/documentation review
 
 ## Safety and testing
