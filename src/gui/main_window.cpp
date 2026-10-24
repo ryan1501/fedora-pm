@@ -86,7 +86,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), process_(new QPro
             return;
         }
         if (QMessageBox::question(this, "Confirm installation",
-            "Install package '" + package + "'? DNF may also install dependencies.",
+            "Install package '" + package + "'? DNF will automatically accept the transaction and may also install dependencies.",
             QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::Yes)
             run_dnf({"install", "-y", package}, true);
     });
@@ -97,13 +97,13 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), process_(new QPro
             return;
         }
         if (QMessageBox::warning(this, "Confirm removal",
-            "Remove package '" + package + "'? Review DNF's proposed transaction carefully.",
+            "Remove package '" + package + "'? DNF will automatically accept the transaction and may remove dependent packages.",
             QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::Yes)
             run_dnf({"remove", "-y", package}, true);
     });
     connect(update_, &QPushButton::clicked, this, [this] {
         if (QMessageBox::warning(this, "Confirm system update",
-            "Check and apply available package updates? Review DNF's proposed transaction before accepting it.",
+            "Check and apply available package updates? DNF will automatically accept the proposed transaction.",
             QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::Yes)
             run_dnf({"upgrade", "-y"}, true);
     });
