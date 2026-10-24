@@ -10,7 +10,7 @@ find_package(Threads REQUIRED)
 option(FEDORAPM_BUILD_GUI "Build the Qt 6 Widgets GUI when Qt is available" ON)
 option(FEDORAPM_BUILD_TESTS "Build unit tests" ON)
 
-add_library(fedorapm_core
+add_library(fedorapm_core STATIC
     src/core/process_runner.cpp
     src/core/validation.cpp
     src/system/system_info.cpp
