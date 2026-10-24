@@ -16,12 +16,12 @@ The C++ CLI currently includes these areas:
 - Kernel listing, install/remove, and old-kernel cleanup
 - Security update/advisory/CVE queries and security updates
 - Package changelog queries
-- Package-list export/import (Flatpak export support exists behind `--with-flatpak`; complete import parity remains under review)
+- Package-list export/import, including Flatpak IDs with `--with-flatpak` and legacy Rust-format backup entries
 - Disk/package-size analysis, orphan cleanup, package downloads, and offline RPM installation
 - GPU/NVIDIA/CUDA operations, gaming meta-package installation, CachyOS-related commands
 - JSON configuration, local operation history, system information, and read-only diagnostics
 
-The Qt GUI currently provides DNF search, package info, installed/available lists, install/remove/update with a transaction preview and explicit confirmation, DNF history, repository listing, security update listing, and read-only Flatpak search/list/info actions. It is an early migration UI, not yet a replacement for every workflow in the original application.
+The Qt GUI currently provides DNF search, package info, installed/available lists, install/remove/update with a transaction preview and explicit confirmation, DNF history, repository listing, security update listing, and Flatpak search/list/info plus confirmed install/remove/update actions. It is an early migration UI, not yet a replacement for every workflow in the original application.
 
 ## Build from source
 
@@ -94,14 +94,12 @@ Configuration is stored under `~/.fedora-pm/config.json`. The default local oper
 
 See the checklist in [`docs/CPP_MIGRATION_PLAN.md`](docs/CPP_MIGRATION_PLAN.md). Outstanding work includes:
 
-- Complete operation-history logging and validation against Rust-generated history files
-- Full Flatpak-aware export/import parity
-- Changelog update summary/comparison parity
+- Audit remaining mutation paths and continue comparing history behavior with legacy Rust-generated files
 - Real self-update functionality (the current C++ CLI only preserves placeholder command behavior)
 - Exact CLI name, flag, output, and exit-code compatibility
 - Broader GUI workflows and privilege/progress/cancellation testing
 - Compatibility testing on Fedora Workstation and Fedora Everything
-- Fedora RPM spec, desktop integration, install/uninstall workflow, and DNF plugin checks
+- RPM spec files and desktop/metainfo assets exist; RPM build/install/uninstall validation and DNF plugin checks remain
 - Behavior comparison against the Rust version, plus final documentation and license review
 
 The existing `install.sh` contains assumptions from the older Rust/Python GUI packaging flow; do not treat it as the supported installer for this C++ migration yet. Use the CMake build steps above for development and testing.
