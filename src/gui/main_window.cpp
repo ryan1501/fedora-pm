@@ -1,4 +1,5 @@
 #include "gui/main_window.hpp"
+#include "system/history_manager.hpp"
 
 #include <QHBoxLayout>
 #include <QLineEdit>
@@ -11,6 +12,9 @@
 #include <QRegularExpression>
 #include <QVBoxLayout>
 #include <QWidget>
+
+#include <string>
+#include <vector>
 
 namespace fedora_pm::gui {
 MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), process_(new QProcess(this)) {
@@ -200,6 +204,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), process_(new QPro
                     processOutput_.clear();
                     output_->appendPlainText("\nApplying confirmed transaction…\n");
                     previewingMutation_ = false;
+                    applyingMutation_ = true;
                     process_->start("pkexec", privilegedArgs);
                     return;
                 }
@@ -213,7 +218,22 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), process_(new QPro
             set_busy(false);
             return;
         }
-        output_->appendPlainText(QString("\nProcess finished with exit code %1.").arg(exitCode));
+        if (applyingMutation_) {
+            if (status == QProcess::NormalExit && exitCode == 0) {
+                QString action = pendingMutationArgs_.value(0);
+                if (action == "upgrade") action = "update";
+                std::vector<std::string> items;
+                for (qsizetype i = 1; i < pendingMutationArgs_.size(); ++i)
+                    items.push_back(pendingMutationArgs_.at(i).toStdString());
+                if (items.empty()) items.push_back(action == "update" ? "system" : "dnf");
+                const auto logged = fedora_pm::system::HistoryManager{}.log(action.toStdString(), items);
+                if (!logged.success)
+                    output_->appendPlainText(QString("\\nWarning: transaction succeeded but local history logging failed: %1").arg(QString::fromStdString(logged.error)));
+            }
+            applyingMutation_ = false;
+            pendingMutationArgs_.clear();
+        }
+        output_->appendPlainText(QString("\\nProcess finished with exit code %1.").arg(exitCode));
         if (status != QProcess::NormalExit)
             output_->appendPlainText("The command did not exit normally.");
         set_busy(false);
@@ -221,6 +241,8 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), process_(new QPro
     connect(process_, &QProcess::errorOccurred, this, [this](QProcess::ProcessError error) {
         if (error == QProcess::FailedToStart) {
             output_->appendPlainText("Could not start the requested command. Check that the required executable is installed and available in PATH.");
+            applyingMutation_ = false;
+            pendingMutationArgs_.clear();
             set_busy(false);
         }
     });
