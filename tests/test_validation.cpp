@@ -27,6 +27,13 @@ int main() {
     assert(!is_valid_package_name(""));
     assert(!is_valid_package_name("firefox; rm -rf /"));
     assert(!is_valid_package_name("foo/bar"));
+    assert(fedora_pm::core::is_valid_flatpak_app_id("org.example.App"));
+    assert(fedora_pm::core::is_valid_flatpak_app_id("com.vendor.App_2"));
+    assert(!fedora_pm::core::is_valid_flatpak_app_id(""));
+    assert(!fedora_pm::core::is_valid_flatpak_app_id("org..example.App"));
+    assert(!fedora_pm::core::is_valid_flatpak_app_id("org.123.App"));
+    assert(!fedora_pm::core::is_valid_flatpak_app_id("org.example."));
+    assert(!fedora_pm::core::is_valid_flatpak_app_id("org.example/App"));
     assert(trim("  fedora  ") == "fedora");
     assert(trim(" \t\n ") == "");
 
@@ -52,6 +59,16 @@ int main() {
     std::error_code cleanup_error;
     const auto invalid_backup = std::filesystem::temp_directory_path() / "fedora-pm-invalid-backup.txt";
     { std::ofstream backup(invalid_backup); backup << "# flatpak:\nflatpak:org..invalid\n"; }
+    assert(!fedora_pm::packages::ExportManager{}.import_from_file(invalid_backup.string(), true).success);
+    {
+        std::ofstream backup(invalid_backup, std::ios::trunc);
+        backup << "flatpak:org.123.App\\n";
+    }
+    assert(!fedora_pm::packages::ExportManager{}.import_from_file(invalid_backup.string(), true).success);
+    {
+        std::ofstream backup(invalid_backup, std::ios::trunc);
+        backup << "# Fedora Package Manager backup v1\\n# DNF Packages\\n";
+    }
     assert(!fedora_pm::packages::ExportManager{}.import_from_file(invalid_backup.string(), true).success);
     std::filesystem::remove(invalid_backup, cleanup_error);
 
