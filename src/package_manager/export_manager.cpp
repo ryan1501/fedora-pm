@@ -10,7 +10,7 @@
 #include <vector>
 
 namespace fedora_pm::packages {
-PackageResult ExportManager::export_to_file(const std::string& path) const {
+PackageResult ExportManager::export_to_file(const std::string& path, bool include_flatpak) const {
     if (fedora_pm::core::trim(path).empty()) return {false, {}, "Output path must not be empty."};
     try {
         const auto result = fedora_pm::core::run_process("dnf", {"repoquery", "--userinstalled"},
@@ -33,7 +33,7 @@ PackageResult ExportManager::export_to_file(const std::string& path) const {
             }
         }
         std::size_t flatpak_count = 0;
-        try {
+        if (include_flatpak) try {
             const auto flatpaks = fedora_pm::core::run_process("flatpak",
                 {"list", "--app", "--columns=application"}, {.timeout = std::chrono::minutes(2)});
             if (!flatpaks.timed_out && flatpaks.exit_code == 0) {
