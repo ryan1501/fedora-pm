@@ -1,6 +1,7 @@
 #include "core/validation.hpp"
 #include "package_manager/package_manager.hpp"
 #include "package_manager/flatpak_manager.hpp"
+#include "package_manager/export_manager.hpp"
 #include "system/system_info.hpp"
 #include "system/repository_manager.hpp"
 #include "system/kernel_manager.hpp"
@@ -21,6 +22,8 @@ void usage() {
               << "  remove [--yes] NAME...            Remove RPM packages\n"
               << "  update [--yes]                    Update installed packages\n"
               << "  history                           Show DNF transaction history\n"
+              << "  export FILE                       Export user-installed RPM package list\n"
+              << "  import [--yes] FILE               Import and install a package list\n"
               << "  repo-list                         List DNF repositories\n"
               << "  repo-enable ID | repo-disable ID  Change repository state\n"
               << "  kernel-list                       Show running and installed kernels\n"
@@ -54,6 +57,17 @@ int main(int argc, char** argv) {
     if (command == "search" && argc >= 3) return print_result(pm.search(argv[2]));
     if (command == "package-info" && argc >= 3) return print_result(pm.info(argv[2]));
     if (command == "list") return print_result(pm.list_installed());
+    if (command == "export" && argc == 3)
+        return print_result(fedora_pm::packages::ExportManager{}.export_to_file(argv[2]));
+    if (command == "import") {
+        const bool yes = has_yes(argc, argv, 2);
+        const int path_index = yes ? 3 : 2;
+        if (argc != path_index + 1) {
+            std::cerr << "Usage: fedora-pm import [--yes] FILE\n";
+            return 2;
+        }
+        return print_result(fedora_pm::packages::ExportManager{}.import_from_file(argv[path_index], yes));
+    }
 
     if (command == "repo-list") return print_result(fedora_pm::system::RepositoryManager{}.list());
     if ((command == "repo-enable" || command == "repo-disable") && argc == 3) {
