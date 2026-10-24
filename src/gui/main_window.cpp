@@ -228,12 +228,12 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), process_(new QPro
                 if (items.empty()) items.push_back(action == "update" ? "system" : "dnf");
                 const auto logged = fedora_pm::system::HistoryManager{}.log(action.toStdString(), items);
                 if (!logged.success)
-                    output_->appendPlainText(QString("\\nWarning: transaction succeeded but local history logging failed: %1").arg(QString::fromStdString(logged.error)));
+                    output_->appendPlainText(QString("\nWarning: transaction succeeded but local history logging failed: %1").arg(QString::fromStdString(logged.error)));
             }
             applyingMutation_ = false;
             pendingMutationArgs_.clear();
         }
-        output_->appendPlainText(QString("\\nProcess finished with exit code %1.").arg(exitCode));
+        output_->appendPlainText(QString("\nProcess finished with exit code %1.").arg(exitCode));
         if (status != QProcess::NormalExit)
             output_->appendPlainText("The command did not exit normally.");
         set_busy(false);
