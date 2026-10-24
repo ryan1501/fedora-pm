@@ -150,7 +150,7 @@ bool is_valid_json_object(const std::string& data) {
 }
 bool has_valid_config_types(const std::string& data) {
     for (const std::string key : {"auto_clean", "parallel_downloads", "fastest_mirror", "color_output"}) {
-        const std::regex field(std::string("\\\"") + key + R"re("\\s*:\\s*)re");
+        const std::regex field(std::string("\\\"") + key + R"re("\s*:\s*)re");
         std::smatch match;
         if (!std::regex_search(data, match, field)) continue;
         const std::size_t value_pos = static_cast<std::size_t>(match.position() + match.length());
@@ -164,7 +164,7 @@ bool has_valid_config_types(const std::string& data) {
             return false;
         }
     }
-    const std::regex history_field(R"re("history_file"\\s*:\\s*)re");
+    const std::regex history_field(R"re("history_file"\s*:\s*)re");
     std::smatch history_match;
     if (std::regex_search(data, history_match, history_field)) {
         const std::size_t value_pos = static_cast<std::size_t>(history_match.position() + history_match.length());
