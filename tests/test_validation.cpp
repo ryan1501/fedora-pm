@@ -106,9 +106,12 @@ int main() {
     const fedora_pm::system::HistoryManager history(history_path);
     assert(history.log("install", {"firefox", "vim"}).success);
     assert(history.log("remove", {"vim"}).success);
-    const auto recent = history.print_recent(2);
+    assert(history.log("install", {"café", "quoted\\\"package", "emoji-\\uD83D\\uDE80"}).success);
+    const auto recent = history.print_recent(3);
     assert(recent.success);
     assert(recent.output.find("install: firefox, vim") != std::string::npos);
     assert(recent.output.find("remove: vim") != std::string::npos);
+    assert(recent.output.find("café") != std::string::npos);
+    assert(recent.output.find("quoted\\\"package") != std::string::npos);
     std::filesystem::remove(history_path, cleanup_error);
 }
