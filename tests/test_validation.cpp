@@ -1,5 +1,6 @@
 #include "core/validation.hpp"
 #include "package_manager/download_manager.hpp"
+#include "package_manager/changelog_manager.hpp"
 #include "system/disk_space_manager.hpp"
 #include <cassert>
 
@@ -24,4 +25,9 @@ int main() {
     assert(!disk.top_packages(0).success);
     assert(!disk.top_packages(1001).success);
     assert(!disk.package_size("not/a-package").success);
+
+    const fedora_pm::packages::ChangelogManager changelog;
+    assert(!changelog.show("bad/name").success);
+    assert(!changelog.show_recent("firefox", 0).success);
+    assert(!changelog.show_recent("firefox", 501).success);
 }
