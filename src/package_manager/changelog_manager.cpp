@@ -72,8 +72,8 @@ PackageResult ChangelogManager::whats_new(std::size_t limit) const {
             std::istringstream fields(trimmed);
             std::string name, version, repository, extra;
             if (!(fields >> name >> version >> repository) || (fields >> extra)) continue;
-            if (count == 0) output << "Available updates and installed-package changelog previews:\\n";
-            output << "\\n" << (count + 1) << ". " << trimmed << '\\n';
+            if (count == 0) output << "Available updates and installed-package changelog previews:\n";
+            output << "\n" << (count + 1) << ". " << trimmed << '\n';
             std::string package = name;
             const auto dot = package.rfind('.');
             if (dot != std::string::npos) {
@@ -87,16 +87,16 @@ PackageResult ChangelogManager::whats_new(std::size_t limit) const {
                 std::string changelog_line;
                 std::size_t preview_lines = 0;
                 while (preview_lines < 5 && std::getline(changelog_lines, changelog_line)) {
-                    output << "  " << changelog_line << '\\n';
+                    output << "  " << changelog_line << '\n';
                     ++preview_lines;
                 }
             } else {
-                output << "  (No installed-package changelog available.)\\n";
+                output << "  (No installed-package changelog available.)\n";
             }
             if (++count >= limit) break;
         }
-        if (count == 0) return {true, "No package updates available.\\n", {}};
-        if (count == limit) output << "\\nShowing at most " << limit << " updates.\\n";
+        if (count == 0) return {true, "No package updates available.\n", {}};
+        if (count == limit) output << "\nShowing at most " << limit << " updates.\n";
         return {true, output.str(), {}};
     } catch (const std::exception& e) {
         return {false, {}, e.what()};
@@ -111,9 +111,9 @@ PackageResult ChangelogManager::compare(const std::string& package, const std::s
         return {false, {}, "Both versions must be provided."};
     auto result = show(package);
     if (!result.success) return result;
-    result.output = "Changelog comparison for " + package + " (" + version1 + " -> " + version2 + ")\\n" +
+    result.output = "Changelog comparison for " + package + " (" + version1 + " -> " + version2 + ")\n" +
         "The installed RPM changelog is shown below; RPM does not provide a reliable arbitrary-version diff here, " +
-        "so entries are not claimed to be version-filtered.\\n\\n" + result.output;
+        "so entries are not claimed to be version-filtered.\n\n" + result.output;
     return result;
 }
 }
