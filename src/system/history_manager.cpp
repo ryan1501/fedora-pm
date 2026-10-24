@@ -95,11 +95,11 @@ std::pair<bool, std::vector<OperationHistoryEntry>> HistoryManager::read_all(std
         error = "History file is not a JSON array: " + path_.string();
         return {false, {}};
     }
-    const std::regex object_pattern("\\{[\\s\\S]*?\\}");
-    const std::regex action_pattern("\\"action\\"\\s*:\\s*\\"((?:[^\\"\\\\]|\\\\.)*)\\"");
-    const std::regex timestamp_pattern("\\"timestamp\\"\\s*:\\s*\\"((?:[^\\"\\\\]|\\\\.)*)\\"");
-    const std::regex items_pattern("\\"items\\"\\s*:\\s*\\[([\\s\\S]*?)\\]");
-    const std::regex string_pattern("\\"((?:[^\\"\\\\]|\\\\.)*)\\"");
+    const std::regex object_pattern(R"re(\{[\s\S]*?\})re");
+    const std::regex action_pattern(R"re("action"\s*:\s*"((?:[^"\\]|\\.)*)")re");
+    const std::regex timestamp_pattern(R"re("timestamp"\s*:\s*"((?:[^"\\]|\\.)*)")re");
+    const std::regex items_pattern(R"re("items"\s*:\s*\[([\s\S]*?)\])re");
+    const std::regex string_pattern(R"re("((?:[^"\\]|\\.)*)")re");
     std::vector<OperationHistoryEntry> entries;
     for (std::sregex_iterator it(data.begin(), data.end(), object_pattern), end; it != end; ++it) {
         const std::string object = it->str();
