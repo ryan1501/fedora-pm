@@ -270,6 +270,19 @@ int main(int argc, char** argv) {
         }
         return print_result(changelogs.show_recent(argv[2], count));
     }
+    if (command == "whatsnew" && (argc == 2 || argc == 3)) {
+        std::size_t count = 10;
+        if (argc == 3) {
+            const std::string value = argv[2];
+            const auto [ptr, ec] = std::from_chars(value.data(), value.data() + value.size(), count);
+            if (ec != std::errc{} || ptr != value.data() + value.size() || count == 0 || count > 100) {
+                std::cerr << "COUNT must be between 1 and 100\\n"; return 2;
+            }
+        }
+        return print_result(changelogs.whats_new(count));
+    }
+    if (command == "changelog-compare" && argc == 5)
+        return print_result(changelogs.compare(argv[2], argv[3], argv[4]));
 
     fedora_pm::system::SecurityManager security;
     if (command == "security-check" && argc == 2) return print_result(security.check());
