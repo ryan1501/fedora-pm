@@ -6,14 +6,14 @@ The C++ implementation is being built in parallel with the Rust application. It 
 
 ## Implemented so far
 - CMake C++20 project, optional Qt 6 Widgets target, and shell-free process runner with timeouts and captured output.
-- Basic validation, system detection, DNF search/info/list/install/remove/upgrade/history.
-- Dependency/reverse-dependency queries and installed package groups.
+- Basic validation, system detection, DNF search/info/list installed/list available/install/remove/upgrade/history.
+- Dependency/reverse-dependency queries, installed groups, and package group info/install/remove.
 - DNF package-list export/import with input validation and confirmation.
 - Flatpak search/list/install/remove/update/info and idempotent Flathub setup.
 - Repository list/info/enable/disable/add/metadata refresh.
 - Kernel current/list/available/install/remove/remove-old/info operations; removal protects the running kernel by default.
 - CachyOS repository status, kernel listing/install, COPR enable/disable, and x86-64 CPU feature-level checks.
-- Disk-space analysis, largest package listing, package-size details, cache size, orphan candidates, and DNF autoremove.
+- DNF cache cleanup; disk-space analysis, largest package listing, package-size details, cache size, orphan candidates, and DNF autoremove.
 - Package downloads, optional dependency downloads, and offline RPM installation.
 - RPM changelog lookup with DNF fallback and recent-entry display.
 - Security advisory listing/details, CVE query, audit summary, and security-only upgrade.
@@ -25,9 +25,8 @@ The C++ implementation is being built in parallel with the Rust application. It 
 
 ## Remaining work before replacing Rust
 - Implement persistent JSON operation history and connect it to successful package/repository/Flatpak/driver actions.
-- Complete Flatpak-aware export/import and group info/install/remove workflows.
-- Add changelog update summary/comparison, package cache cleaning, self-update, and remaining CLI flags/options.
-- Preserve Rust CLI command names, subcommands, flags, output, and exit codes; add parity tests against Rust behavior.
+- Complete Flatpak-aware export/import and full Rust CLI compatibility (including all original flags and output behavior).
+- Add changelog update summary/comparison and self-update.
 - Expand GUI beyond search to safe confirmations, progress, cancellation, privilege handling, error reporting, and all workflows.
 - Strictly validate JSON config compatibility; the current parser handles known fields but is not a general-purpose JSON parser.
 - Validate Fedora Workstation and Fedora Everything, RPM packaging, desktop integration, install/uninstall, DNF plugin requirements, and licensing/documentation.
