@@ -265,7 +265,9 @@ PackageResult ConfigManager::load() {
     std::filesystem::create_directories(config_.config_dir, ec);
     if (ec) return {false, {}, "Could not create config directory: " + ec.message()};
     const auto path = config_.config_dir / "config.json";
-    if (!std::filesystem::exists(path, ec)) return save();
+    const bool config_exists = std::filesystem::exists(path, ec);
+    if (ec) return {false, {}, "Could not check config file: " + ec.message()};
+    if (!config_exists) return save();
     return parse_file(path);
 }
 PackageResult ConfigManager::parse_file(const std::filesystem::path& path) {
