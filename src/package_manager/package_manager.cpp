@@ -25,7 +25,7 @@ bool valid_pattern(const std::string& value) {
 bool valid_group(const std::string& group) {
     const std::string trimmed = fedora_pm::core::trim(group);
     return !trimmed.empty() && trimmed.front() != '-' &&
-           group.find_first_of("\\r\\n") == std::string::npos;
+           group.find_first_of("\r\n") == std::string::npos;
 }
 }
 PackageResult PackageManager::search(const std::string& query) const {
