@@ -3,7 +3,9 @@
 #include "package_manager/changelog_manager.hpp"
 #include "system/disk_space_manager.hpp"
 #include "system/security_manager.hpp"
+#include "system/config_manager.hpp"
 #include <cassert>
+#include <filesystem>
 
 int main() {
     using fedora_pm::core::is_valid_package_name;
@@ -36,4 +38,15 @@ int main() {
     assert(!security.list("arbitrary-command").success);
     assert(!security.advisory_info("bad;command").success);
     assert(!security.cve_check("CVE-2026-1;rm").success);
+
+    const auto test_config_dir = std::filesystem::temp_directory_path() / "fedora-pm-cpp-config-test";
+    std::error_code cleanup_error;
+    std::filesystem::remove_all(test_config_dir, cleanup_error);
+    fedora_pm::system::ConfigManager config(test_config_dir);
+    assert(config.load().success);
+    assert(config.set("auto_clean", "true").success);
+    assert(config.get("auto_clean").output == "true\n");
+    assert(!config.set("auto_clean", "yes").success);
+    assert(!config.set("unknown_key", "true").success);
+    std::filesystem::remove_all(test_config_dir, cleanup_error);
 }
