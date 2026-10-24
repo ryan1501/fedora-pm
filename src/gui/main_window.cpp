@@ -300,7 +300,8 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), process_(new QPro
                     else if (operation == "remove") action = "group_remove";
                 }
                 std::vector<std::string> items;
-                for (qsizetype i = 1; i < pendingMutationArgs_.size(); ++i) {
+                const qsizetype firstItem = pendingMutationArgs_.value(0) == "group" ? 2 : 1;
+                for (qsizetype i = firstItem; i < pendingMutationArgs_.size(); ++i) {
                     const auto item = pendingMutationArgs_.at(i);
                     if (!item.startsWith("--")) items.push_back(item.toStdString());
                 }
