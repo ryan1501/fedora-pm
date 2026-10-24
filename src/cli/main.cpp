@@ -120,8 +120,8 @@ int main(int argc, char** argv) {
         }
         std::vector<std::string> packages;
         for (; i < argc; ++i) packages.emplace_back(argv[i]);
-        if (with_deps || destination != ".")
-            return print_result(downloads.download_with_dependencies(packages, destination == "." ? "." : destination));
+        if (with_deps) return print_result(downloads.download_with_dependencies(packages, destination));
+        if (destination != ".") return print_result(downloads.download_to(packages, destination));
         return print_result(downloads.download(packages));
     }
     if (command == "install-offline") {
