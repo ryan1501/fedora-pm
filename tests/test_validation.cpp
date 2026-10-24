@@ -1,3 +1,7 @@
+#ifdef NDEBUG
+#undef NDEBUG
+#endif
+
 #include "core/validation.hpp"
 #include "core/process_runner.hpp"
 #include <chrono>
