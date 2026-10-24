@@ -3,6 +3,7 @@
 #include "package_manager/flatpak_manager.hpp"
 #include "package_manager/export_manager.hpp"
 #include "package_manager/download_manager.hpp"
+#include "package_manager/changelog_manager.hpp"
 #include "system/system_info.hpp"
 #include "system/repository_manager.hpp"
 #include "system/kernel_manager.hpp"
@@ -28,6 +29,8 @@ void usage() {
               << "  deps NAME                         Show resolved package dependencies\n"
               << "  reverse-deps NAME                 Show installed packages requiring NAME\n"
               << "  groups                            List installed DNF package groups\n"
+              << "  changelog NAME                    Show package changelog\n"
+              << "  changelog-recent NAME [COUNT]     Show recent installed-package changelog entries\n"
               << "  export FILE                       Export user-installed RPM package list\n"
               << "  import [--yes] FILE               Import and install a package list\n"
               << "  size [--top N]                    Show largest installed packages\n"
@@ -73,6 +76,20 @@ int main(int argc, char** argv) {
     if (command == "deps" && argc == 3) return print_result(pm.dependencies(argv[2]));
     if (command == "reverse-deps" && argc == 3) return print_result(pm.reverse_dependencies(argv[2]));
     if (command == "groups") return print_result(pm.installed_groups());
+    fedora_pm::packages::ChangelogManager changelogs;
+    if (command == "changelog" && argc == 3) return print_result(changelogs.show(argv[2]));
+    if (command == "changelog-recent" && (argc == 3 || argc == 4)) {
+        std::size_t count = 10;
+        if (argc == 4) {
+            const std::string value = argv[3];
+            const auto [ptr, ec] = std::from_chars(value.data(), value.data() + value.size(), count);
+            if (ec != std::errc{} || ptr != value.data() + value.size()) {
+                std::cerr << "COUNT must be a positive integer\n";
+                return 2;
+            }
+        }
+        return print_result(changelogs.show_recent(argv[2], count));
+    }
     if (command == "export" && argc == 3)
         return print_result(fedora_pm::packages::ExportManager{}.export_to_file(argv[2]));
     if (command == "import") {
