@@ -29,6 +29,8 @@ int main() {
     assert(!is_valid_package_name(""));
     assert(!is_valid_package_name("firefox; rm -rf /"));
     assert(!is_valid_package_name("foo/bar"));
+    assert(!is_valid_package_name("--assumeyes"));
+    assert(!is_valid_package_name("-kernel"));
     assert(fedora_pm::core::is_valid_flatpak_app_id("org.example.App"));
     assert(fedora_pm::core::is_valid_flatpak_app_id("com.vendor.App_2"));
     assert(!fedora_pm::core::is_valid_flatpak_app_id(""));
@@ -164,8 +166,10 @@ int main() {
 
     const fedora_pm::packages::PackageManager packages;
     assert(!packages.list_available("bad;pattern").success);
+    assert(!packages.list_available("--assumeyes").success);
     assert(!packages.list_installed("bad;pattern").success);
     assert(!packages.group_info("").success);
+    assert(!packages.install_group("--assumeyes").success);
     assert(!packages.install_group("\n").success);
     assert(!packages.remove_group(" \r ").success);
 
