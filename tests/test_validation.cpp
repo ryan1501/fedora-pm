@@ -81,6 +81,9 @@ int main() {
              R"json({"auto_clean": true,})json",
              R"json({"auto_clean": tru})json",
              R"json({"history_file": "bad\q"})json",
+             R"json({"auto_clean": "true"})json",
+             R"json({"parallel_downloads": 1})json",
+             R"json({"history_file": false})json",
              R"json({"auto_clean": false} trailing)json",
              R"json([{"auto_clean": false}])json"}) {
         {
