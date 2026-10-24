@@ -3,8 +3,9 @@ Version:        2.0.0
 Release:        1%{?dist}
 Summary:        Qt 6 graphical interface for Fedora Package Manager
 License:        MIT OR Apache-2.0
-URL:            https://github.com/ryan1501/fedora-pm
-Source0:        %{url}/archive/refs/tags/v%{version}.tar.gz
+%global forgeurl https://github.com/ryan1501/fedora-pm
+URL:            %{forgeurl}
+Source0:        %{forgeurl}/archive/refs/tags/v%{version}.tar.gz
 
 BuildRequires:  cmake
 BuildRequires:  gcc-c++
@@ -27,10 +28,11 @@ inspection, and Flatpak actions.
 
 %build
 %cmake -DFEDORAPM_BUILD_GUI=ON -DFEDORAPM_BUILD_TESTS=OFF
-%cmake_build --target fedora-pm-gui
+%cmake_build
 
 %install
-install -D -m 0755 build/fedora-pm-gui %{buildroot}%{_bindir}/fedora-pm-gui
+%cmake_install
+rm -f %{buildroot}%{_bindir}/fedora-pm
 install -D -m 0644 fedora-pm.desktop %{buildroot}%{_datadir}/applications/fedora-pm.desktop
 install -D -m 0644 fedora-pm.metainfo.xml %{buildroot}%{_metainfodir}/fedora-pm.metainfo.xml
 
