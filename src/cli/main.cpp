@@ -50,6 +50,8 @@ void usage() {
               << "  groups                            List installed DNF package groups\n"
               << "  changelog NAME                    Show package changelog\n"
               << "  changelog-recent NAME [COUNT]     Show recent installed-package changelog entries\n"
+              << "  whatsnew [COUNT]                  Show available updates and changelog previews\n"
+              << "  changelog-compare NAME V1 V2      Show changelog context for two versions\n"
               << "  security-check                    List available security updates\n"
               << "  security-list [SEVERITY]           List security/advisory updates\n"
               << "  security-info ADVISORY             Show advisory details\n"
