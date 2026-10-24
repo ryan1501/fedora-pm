@@ -89,10 +89,12 @@ jobs:
             exit 1
           fi
 
-      - name: Validate Fedora GUI packaging metadata
+      - name: Validate Fedora RPM specs and desktop metadata
         run: |
+          rpmspec --parse fedora-pm-rpm.spec >/dev/null
           rpmspec --parse fedora-pm-gui-rpm.spec >/dev/null
           desktop-file-validate fedora-pm.desktop
+          python3 -c "import xml.etree.ElementTree as ET; ET.parse('fedora-pm.metainfo.xml')"
 
   fedora-build-and-test:
     runs-on: ubuntu-24.04
