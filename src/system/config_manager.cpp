@@ -148,6 +148,30 @@ private:
 bool is_valid_json_object(const std::string& data) {
     return JsonValidator(data).valid_object();
 }
+bool has_valid_config_types(const std::string& data) {
+    for (const std::string key : {"auto_clean", "parallel_downloads", "fastest_mirror", "color_output"}) {
+        const std::regex field(std::string("\\\"") + key + R"re("\\s*:\\s*)re");
+        std::smatch match;
+        if (!std::regex_search(data, match, field)) continue;
+        const std::size_t value_pos = static_cast<std::size_t>(match.position() + match.length());
+        if (data.compare(value_pos, 4, "true") == 0 || data.compare(value_pos, 5, "false") == 0) {
+            const std::size_t len = data.compare(value_pos, 4, "true") == 0 ? 4 : 5;
+            if (value_pos + len < data.size() &&
+                data[value_pos + len] != ',' && data[value_pos + len] != '}' &&
+                data[value_pos + len] != ' ' && data[value_pos + len] != '\\t' &&
+                data[value_pos + len] != '\\r' && data[value_pos + len] != '\\n') return false;
+        } else {
+            return false;
+        }
+    }
+    const std::regex history_field(R"re("history_file"\\s*:\\s*)re");
+    std::smatch history_match;
+    if (std::regex_search(data, history_match, history_field)) {
+        const std::size_t value_pos = static_cast<std::size_t>(history_match.position() + history_match.length());
+        if (value_pos >= data.size() || data[value_pos] != '"') return false;
+    }
+    return true;
+}
 bool parse_bool(const std::string& data, const std::string& key, bool fallback) {
     const std::regex pattern(std::string("\"") + key + R"re("\s*:\s*(true|false))re");
     std::smatch match;
@@ -252,6 +276,8 @@ PackageResult ConfigManager::parse_file(const std::filesystem::path& path) {
     const std::string data = buffer.str();
     if (!is_valid_json_object(data))
         return {false, {}, "Config file is not valid JSON; leaving configuration unchanged: " + path.string()};
+    if (!has_valid_config_types(data))
+        return {false, {}, "Config file has invalid value types; leaving configuration unchanged: " + path.string()};
     config_.auto_clean = parse_bool(data, "auto_clean", false);
     config_.parallel_downloads = parse_bool(data, "parallel_downloads", true);
     config_.fastest_mirror = parse_bool(data, "fastest_mirror", true);
