@@ -1,4 +1,5 @@
 #include "core/validation.hpp"
+#include "cli/cachyos_commands.hpp"
 #include "package_manager/package_manager.hpp"
 #include "package_manager/flatpak_manager.hpp"
 #include "package_manager/export_manager.hpp"
