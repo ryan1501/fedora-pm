@@ -37,6 +37,118 @@ std::string json_escape(const std::string& value) {
     }
     return out;
 }
+class JsonValidator {
+public:
+    explicit JsonValidator(const std::string& input) : input_(input) {}
+    bool valid_object() {
+        skip_space();
+        if (!parse_object()) return false;
+        skip_space();
+        return pos_ == input_.size();
+    }
+private:
+    const std::string& input_;
+    std::size_t pos_{0};
+
+    void skip_space() {
+        while (pos_ < input_.size() &&
+               (input_[pos_] == ' ' || input_[pos_] == '\t' ||
+                input_[pos_] == '\r' || input_[pos_] == '\n')) ++pos_;
+    }
+    bool consume(char expected) {
+        skip_space();
+        if (pos_ >= input_.size() || input_[pos_] != expected) return false;
+        ++pos_;
+        return true;
+    }
+    bool parse_string() {
+        if (pos_ >= input_.size() || input_[pos_++] != '"') return false;
+        while (pos_ < input_.size()) {
+            const unsigned char c = static_cast<unsigned char>(input_[pos_++]);
+            if (c == '"') return true;
+            if (c < 0x20) return false;
+            if (c != '\\') continue;
+            if (pos_ >= input_.size()) return false;
+            const char escape = input_[pos_++];
+            if (escape == '"' || escape == '\\' || escape == '/' ||
+                escape == 'b' || escape == 'f' || escape == 'n' ||
+                escape == 'r' || escape == 't') continue;
+            if (escape != 'u' || input_.size() - pos_ < 4) return false;
+            for (int i = 0; i < 4; ++i) {
+                const char h = input_[pos_++];
+                if (!((h >= '0' && h <= '9') || (h >= 'a' && h <= 'f') ||
+                      (h >= 'A' && h <= 'F'))) return false;
+            }
+        }
+        return false;
+    }
+    bool parse_number() {
+        const std::size_t start = pos_;
+        if (pos_ < input_.size() && input_[pos_] == '-') ++pos_;
+        if (pos_ >= input_.size()) return false;
+        if (input_[pos_] == '0') {
+            ++pos_;
+            if (pos_ < input_.size() && input_[pos_] >= '0' && input_[pos_] <= '9') return false;
+        } else {
+            if (input_[pos_] < '1' || input_[pos_] > '9') return false;
+            while (pos_ < input_.size() && input_[pos_] >= '0' && input_[pos_] <= '9') ++pos_;
+        }
+        if (pos_ < input_.size() && input_[pos_] == '.') {
+            ++pos_;
+            const std::size_t digits = pos_;
+            while (pos_ < input_.size() && input_[pos_] >= '0' && input_[pos_] <= '9') ++pos_;
+            if (digits == pos_) return false;
+        }
+        if (pos_ < input_.size() && (input_[pos_] == 'e' || input_[pos_] == 'E')) {
+            ++pos_;
+            if (pos_ < input_.size() && (input_[pos_] == '+' || input_[pos_] == '-')) ++pos_;
+            const std::size_t digits = pos_;
+            while (pos_ < input_.size() && input_[pos_] >= '0' && input_[pos_] <= '9') ++pos_;
+            if (digits == pos_) return false;
+        }
+        return pos_ > start;
+    }
+    bool parse_array() {
+        if (!consume('[')) return false;
+        skip_space();
+        if (pos_ < input_.size() && input_[pos_] == ']') { ++pos_; return true; }
+        while (true) {
+            if (!parse_value() || !consume(',')) {
+                skip_space();
+                if (pos_ < input_.size() && input_[pos_] == ']') { ++pos_; return true; }
+                return false;
+            }
+        }
+    }
+    bool parse_object() {
+        if (!consume('{')) return false;
+        skip_space();
+        if (pos_ < input_.size() && input_[pos_] == '}') { ++pos_; return true; }
+        while (true) {
+            skip_space();
+            if (!parse_string() || !consume(':') || !parse_value()) return false;
+            skip_space();
+            if (pos_ < input_.size() && input_[pos_] == '}') { ++pos_; return true; }
+            if (!consume(',')) return false;
+        }
+    }
+    bool parse_value() {
+        skip_space();
+        if (pos_ >= input_.size()) return false;
+        if (input_[pos_] == '"') return parse_string();
+        if (input_[pos_] == '{') return parse_object();
+        if (input_[pos_] == '[') return parse_array();
+        if (input_[pos_] == '-' || (input_[pos_] >= '0' && input_[pos_] <= '9')) return parse_number();
+        for (const char* literal : {"true", "false", "null"}) {
+            const std::string token(literal);
+            if (input_.compare(pos_, token.size(), token) == 0) { pos_ += token.size(); return true; }
+        }
+        return false;
+    }
+};
+bool is_valid_json_object(const std::string& data) {
+    return JsonValidator(data).valid_object();
+}
 bool parse_bool(const std::string& data, const std::string& key, bool fallback) {
     const std::regex pattern(std::string("\"") + key + R"re("\s*:\s*(true|false))re");
     std::smatch match;
@@ -139,8 +251,8 @@ PackageResult ConfigManager::parse_file(const std::filesystem::path& path) {
     std::ostringstream buffer;
     buffer << input.rdbuf();
     const std::string data = buffer.str();
-    if (data.find('{') == std::string::npos || data.find('}') == std::string::npos)
-        return {false, {}, "Config file is not a valid JSON object: " + path.string()};
+    if (!is_valid_json_object(data))
+        return {false, {}, "Config file is not valid JSON; leaving configuration unchanged: " + path.string()};
     config_.auto_clean = parse_bool(data, "auto_clean", false);
     config_.parallel_downloads = parse_bool(data, "parallel_downloads", true);
     config_.fastest_mirror = parse_bool(data, "fastest_mirror", true);
