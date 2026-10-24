@@ -20,11 +20,12 @@ The C++ implementation is being built in parallel with the Rust application. It 
 - Config load/show/get/set for existing fields, plus read-only system doctor checks.
 - GPU detection, NVIDIA status/list/install/remove, CUDA package install, and gaming meta-package install.
 - DNF transaction history listing and DNF history undo by transaction ID or newest transaction.
-- Unit tests for validation, config persistence, and invalid-input safety paths.
+- Persistent JSON operation history with timestamps, recent-history display, and CLI logging for many successful mutation commands.
+- Unit tests for validation, config persistence, history JSON round-trip, and invalid-input safety paths.
 - GitHub Actions workflow includes Ubuntu and Fedora builds of CLI, Qt GUI, CTest, and CLI help.
 
 ## Remaining work before replacing Rust
-- Implement persistent JSON operation history and connect it to successful package/repository/Flatpak/driver actions.
+- Finish connecting operation history to every mutation path and validate compatibility with existing Rust history files.
 - Complete Flatpak-aware export/import and full Rust CLI compatibility (including all original flags and output behavior).
 - Add changelog update summary/comparison and self-update.
 - Expand GUI beyond search to safe confirmations, progress, cancellation, privilege handling, error reporting, and all workflows.
