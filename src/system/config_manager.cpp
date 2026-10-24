@@ -111,6 +111,16 @@ PackageResult ConfigManager::show() {
         << "history_file: " << config_.history_file.string() << '\n';
     return {true, out.str(), {}};
 }
+PackageResult ConfigManager::get(const std::string& key) {
+    auto loaded = load();
+    if (!loaded.success) return loaded;
+    if (key == "auto_clean") return {true, config_.auto_clean ? "true\n" : "false\n", {}};
+    if (key == "parallel_downloads") return {true, config_.parallel_downloads ? "true\n" : "false\n", {}};
+    if (key == "fastest_mirror") return {true, config_.fastest_mirror ? "true\n" : "false\n", {}};
+    if (key == "color_output") return {true, config_.color_output ? "true\n" : "false\n", {}};
+    if (key == "history_file") return {true, config_.history_file.string() + "\n", {}};
+    return {false, {}, "Unknown config key: " + key};
+}
 PackageResult ConfigManager::set(const std::string& key, const std::string& value) {
     auto loaded = load();
     if (!loaded.success) return loaded;
