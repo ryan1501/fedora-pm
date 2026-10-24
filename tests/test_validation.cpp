@@ -2,6 +2,7 @@
 #include "package_manager/package_manager.hpp"
 #include "package_manager/download_manager.hpp"
 #include "package_manager/changelog_manager.hpp"
+#include "package_manager/export_manager.hpp"
 #include "package_manager/flatpak_manager.hpp"
 #include "system/disk_space_manager.hpp"
 #include "system/security_manager.hpp"
@@ -14,6 +15,7 @@
 #include "system/history_manager.hpp"
 #include <cassert>
 #include <filesystem>
+#include <fstream>
 #include <string>
 
 int main() {
@@ -42,6 +44,15 @@ int main() {
     assert(!changelog.show("bad/name").success);
     assert(!changelog.show_recent("firefox", 0).success);
     assert(!changelog.show_recent("firefox", 501).success);
+    assert(!changelog.whats_new(0).success);
+    assert(!changelog.whats_new(101).success);
+    assert(!changelog.compare("bad/name", "1", "2").success);
+    assert(!changelog.compare("firefox", "", "2").success);
+
+    const auto invalid_backup = std::filesystem::temp_directory_path() / "fedora-pm-invalid-backup.txt";
+    { std::ofstream backup(invalid_backup); backup << "# flatpak:\\nflatpak:org..invalid\\n"; }
+    assert(!fedora_pm::packages::ExportManager{}.import_from_file(invalid_backup.string(), true).success);
+    std::filesystem::remove(invalid_backup, cleanup_error);
 
     const fedora_pm::system::SecurityManager security;
     assert(!security.list("arbitrary-command").success);
