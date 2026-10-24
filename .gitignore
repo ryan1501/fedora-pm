@@ -27,3 +27,10 @@ Thumbs.db
 *.tmp
 *.log
 
+
+# Generated CMake/Cargo builds and local RPM packaging output
+/build/
+/target/
+/rpmbuild/
+*.rpm
+*.tar.gz
