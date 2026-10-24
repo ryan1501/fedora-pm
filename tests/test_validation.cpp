@@ -47,7 +47,7 @@ int main() {
     assert(trim(" \t\n ") == "");
     
     // The process runner captures output without invoking a shell and enforces a timeout.
-    const auto process_output = fedora_pm::core::run_process("/usr/bin/printf", {"hello", " world"});
+    const auto process_output = fedora_pm::core::run_process("/usr/bin/printf", {"%s%s", "hello", " world"});
     assert(process_output.exit_code == 0);
     assert(process_output.standard_output == "hello world");
     assert(process_output.standard_error.empty());
