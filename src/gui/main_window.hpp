@@ -24,6 +24,9 @@ private:
     QPushButton* install_;
     QPushButton* remove_;
     QPushButton* update_;
+    QPushButton* groupInfo_;
+    QPushButton* groupInstall_;
+    QPushButton* groupRemove_;
     QPushButton* history_;
     QPushButton* repositories_;
     QPushButton* securityUpdates_;
