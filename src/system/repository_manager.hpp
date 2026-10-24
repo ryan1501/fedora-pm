@@ -12,6 +12,7 @@ public:
     fedora_pm::packages::PackageResult enable(const std::string& repo_id) const;
     fedora_pm::packages::PackageResult disable(const std::string& repo_id) const;
     fedora_pm::packages::PackageResult add(const std::string& url) const;
+    fedora_pm::packages::PackageResult add(const std::string& name, const std::string& url) const;
     fedora_pm::packages::PackageResult refresh() const;
 private:
     std::string executable_;
