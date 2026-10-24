@@ -129,7 +129,7 @@ int main(int argc, char** argv) {
     if (argc == 2 && (std::string(argv[1]) == "--version" ||
                       std::string(argv[1]) == "-V" ||
                       std::string(argv[1]) == "version")) {
-        std::cout << "fedora-pm " << FEDORAPM_VERSION << "\\n";
+        std::cout << "fedora-pm " << FEDORAPM_VERSION << "\n";
         return 0;
     }
     if (argc < 2 || std::string(argv[1]) == "help" || std::string(argv[1]) == "--help") { usage(); return 0; }
