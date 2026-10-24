@@ -33,7 +33,7 @@ std::vector<std::string> lines(const std::string& text) {
     return result;
 }
 std::vector<std::string> packages_for_version(const std::string& requested) {
-    const auto r = run("rpm", {"-qa", "--qf", "%{NAME}\\t%{VERSION}\\t%{RELEASE}\\t%{ARCH}\\n", "kernel*"});
+    const auto r = run("rpm", {"-qa", "--qf", "%{NAME}\t%{VERSION}\t%{RELEASE}\t%{ARCH}\n", "kernel*"});
     if (!r.success) return {};
     std::vector<std::string> packages;
     for (const auto& line : lines(r.output)) {
