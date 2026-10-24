@@ -14,7 +14,7 @@ public:
     explicit PackageManager(std::string executable = "dnf");
     PackageResult search(const std::string& query) const;
     PackageResult info(const std::string& package) const;
-    PackageResult list_installed() const;
+    PackageResult list_installed(const std::string& pattern = {}) const;
     PackageResult list_available(const std::string& pattern = {}) const;
     PackageResult history() const;
     PackageResult dependencies(const std::string& package) const;
