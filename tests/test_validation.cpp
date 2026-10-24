@@ -167,6 +167,17 @@ int main() {
     assert(unicode_history.success);
     assert(unicode_history.output.find("café") != std::string::npos);
     assert(unicode_history.output.find("rocket 🚀") != std::string::npos);
+    for (const std::string malformed_history : {
+             R"json([garbage])json",
+             R"json([{"action":"install","items":[],"timestamp":"t",}])json",
+             R"json([{"action":"install","items":[],"timestamp":"t"} trailing])json",
+             R"json([{"action":"install","items":["bad\q"],"timestamp":"t"}])json"}) {
+        {
+            std::ofstream broken_history(history_path, std::ios::trunc);
+            broken_history << malformed_history;
+        }
+        assert(!history.print_recent(1).success);
+    }
     std::filesystem::remove(history_path, cleanup_error);
 
     // A configured history path must never cause an existing directory to be
