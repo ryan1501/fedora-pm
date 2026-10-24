@@ -30,7 +30,13 @@ void usage() {
               << "  doctor                            Run read-only system diagnostics\n"
               << "  search QUERY                      Search DNF packages\n"
               << "  package-info NAME                 Show package metadata\n"
-              << "  list                              List installed RPM packages\n"
+              << "  list [--available|--installed|--all] [PATTERN]\n"
+              << "  list-available [PATTERN]          List available DNF packages\n"
+              << "  clean                             Clean DNF package cache and metadata\n"
+              << "  groups                            List installed DNF package groups\n"
+              << "  group-info NAME                   Show package group details\n"
+              << "  group-install NAME [--yes]        Install a package group\n"
+              << "  group-remove NAME [--yes]         Remove a package group\n"
               << "  install [--yes] NAME...           Install RPM packages\n"
               << "  remove [--yes] NAME...            Remove RPM packages\n"
               << "  update [--yes]                    Update installed packages\n"
@@ -193,7 +199,41 @@ int main(int argc, char** argv) {
     if (command == "history") return print_result(pm.history());
     if (command == "search" && argc >= 3) return print_result(pm.search(argv[2]));
     if (command == "package-info" && argc >= 3) return print_result(pm.info(argv[2]));
-    if (command == "list") return print_result(pm.list_installed());
+    if (command == "list" || command == "list-available") {
+        bool available = command == "list-available";
+        bool installed = command == "list";
+        bool all = false;
+        std::string pattern;
+        for (int i = 2; i < argc; ++i) {
+            const std::string arg = argv[i];
+            if (arg == "--available") { available = true; installed = false; }
+            else if (arg == "--installed") { installed = true; available = false; }
+            else if (arg == "--all") { all = true; installed = true; available = true; }
+            else if (arg.starts_with("--")) { std::cerr << "Unknown list option: " << arg << '\\n'; return 2; }
+            else if (pattern.empty()) pattern = arg;
+            else { std::cerr << "Usage: fedora-pm list [--available|--installed|--all] [PATTERN]\\n"; return 2; }
+        }
+        if (all) {
+            const auto first = pm.list_installed();
+            const auto second = pm.list_available(pattern);
+            return print_result({first.success && second.success, first.output + "\\n" + second.output, first.error + second.error});
+        }
+        if (available) return print_result(pm.list_available(pattern));
+        if (!pattern.empty()) return print_result(pm.list_installed());
+        return print_result(pm.list_installed());
+    }
+    if (command == "clean" && argc == 2) return print_result(pm.clean_cache());
+    if (command == "group-info" && argc == 3) return print_result(pm.group_info(argv[2]));
+    if (command == "group-install" && (argc == 3 || argc == 4)) {
+        const bool yes = argc == 4 && std::string(argv[3]) == "--yes";
+        if (argc == 4 && !yes) { std::cerr << "Usage: fedora-pm group-install NAME [--yes]\\n"; return 2; }
+        return print_result(pm.install_group(argv[2], yes));
+    }
+    if (command == "group-remove" && (argc == 3 || argc == 4)) {
+        const bool yes = argc == 4 && std::string(argv[3]) == "--yes";
+        if (argc == 4 && !yes) { std::cerr << "Usage: fedora-pm group-remove NAME [--yes]\\n"; return 2; }
+        return print_result(pm.remove_group(argv[2], yes));
+    }
     if (command == "deps" && argc == 3) return print_result(pm.dependencies(argv[2]));
     if (command == "reverse-deps" && argc == 3) return print_result(pm.reverse_dependencies(argv[2]));
     if (command == "groups") return print_result(pm.installed_groups());
