@@ -65,10 +65,16 @@ void usage() {
               << "  download [--to DIR] [--with-deps] PACKAGE...\n"
               << "  install-offline [--yes] FILE.rpm... Install local RPM files\n"
               << "  repo-list                         List DNF repositories\n"
+              << "  repo-info ID                      Show repository details\n"
               << "  repo-enable ID | repo-disable ID  Change repository state\n"
+              << "  repo-add URL                      Add a repository URL\n"
+              << "  repo-refresh                      Refresh repository metadata\n"
               << "  kernel-list                       Show running and installed kernels\n"
               << "  flatpak-search QUERY              Search Flatpak remotes\n"
               << "  flatpak-list                      List installed Flatpaks\n"
+              << "  flatpak-info APP_ID               Show Flatpak details\n"
+              << "  flatpak-update [--yes]            Update installed Flatpaks\n"
+              << "  flatpak-setup-flathub             Add the Flathub remote if missing\n"
               << "  flatpak-install APP_ID [--yes]    Install a Flatpak\n"
               << "  flatpak-remove APP_ID [--yes]     Remove a Flatpak\n"
               << "  help                              Show this help\n";
@@ -234,11 +240,13 @@ int main(int argc, char** argv) {
         return print_result(downloads.install_offline(files, yes));
     }
 
-    if (command == "repo-list") return print_result(fedora_pm::system::RepositoryManager{}.list());
-    if ((command == "repo-enable" || command == "repo-disable") && argc == 3) {
-        fedora_pm::system::RepositoryManager repos;
+    fedora_pm::system::RepositoryManager repos;
+    if (command == "repo-list") return print_result(repos.list());
+    if (command == "repo-info" && argc == 3) return print_result(repos.info(argv[2]));
+    if (command == "repo-add" && argc == 3) return print_result(repos.add(argv[2]));
+    if (command == "repo-refresh" && argc == 2) return print_result(repos.refresh());
+    if ((command == "repo-enable" || command == "repo-disable") && argc == 3)
         return print_result(command == "repo-enable" ? repos.enable(argv[2]) : repos.disable(argv[2]));
-    }
     if (command == "kernel-list") {
         const auto kernels = fedora_pm::system::detect_kernels();
         std::cout << "Running kernel: " << kernels.running << "\nInstalled kernels:\n";
@@ -249,6 +257,10 @@ int main(int argc, char** argv) {
     fedora_pm::packages::FlatpakManager flatpak;
     if (command == "flatpak-search" && argc >= 3) return print_result(flatpak.search(argv[2]));
     if (command == "flatpak-list") return print_result(flatpak.list_installed());
+    if (command == "flatpak-info" && argc == 3) return print_result(flatpak.info(argv[2]));
+    if (command == "flatpak-update" && (argc == 2 || argc == 3))
+        return print_result(flatpak.update(has_yes(argc, argv, 2)));
+    if (command == "flatpak-setup-flathub" && argc == 2) return print_result(flatpak.setup_flathub());
     if ((command == "flatpak-install" || command == "flatpak-remove") && argc >= 3) {
         const bool yes = has_yes(argc, argv, 3);
         return print_result(command == "flatpak-install"
