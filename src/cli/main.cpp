@@ -79,7 +79,7 @@ void usage() {
               << "  kernel-remove [--yes] VERSION...  Remove kernels (protect running kernel)\n"
               << "  kernel-remove-old [--keep-last N] [--yes]\n"
               << "  kernel-info [VERSION]             Show matching kernel packages\n"
-              << "  export FILE                       Export user-installed RPM package list\n"
+              << "  export [--with-flatpak] FILE     Export installed RPM packages, optionally Flatpaks\n"
               << "  import [--yes] FILE               Import and install a package list\n"
               << "  size [--top N]                    Show largest installed packages\n"
               << "  package-size NAME                 Show package size and metadata\n"
@@ -310,8 +310,23 @@ int main(int argc, char** argv) {
         return 2;
     }
 
-    if (command == "export" && argc == 3)
-        return print_result(fedora_pm::packages::ExportManager{}.export_to_file(argv[2]));
+    if (command == "export") {
+        bool include_flatpak = false;
+        std::string path;
+        for (int i = 2; i < argc; ++i) {
+            const std::string arg = argv[i];
+            if (arg == "--with-flatpak") include_flatpak = true;
+            else if (arg.starts_with("--") || !path.empty()) {
+                std::cerr << "Usage: fedora-pm export [--with-flatpak] FILE\n";
+                return 2;
+            } else path = arg;
+        }
+        if (path.empty()) {
+            std::cerr << "Usage: fedora-pm export [--with-flatpak] FILE\n";
+            return 2;
+        }
+        return print_result(fedora_pm::packages::ExportManager{}.export_to_file(path, include_flatpak));
+    }
     if (command == "import") {
         const bool yes = has_yes(argc, argv, 2);
         const int path_index = yes ? 3 : 2;
