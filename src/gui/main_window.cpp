@@ -43,6 +43,16 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), process_(new QPro
         actions->addWidget(button);
     layout->addLayout(actions);
 
+    auto* groupActions = new QHBoxLayout;
+    groupInfo_ = new QPushButton("Group info", central);
+    groupInstall_ = new QPushButton("Install group…", central);
+    groupRemove_ = new QPushButton("Remove group…", central);
+    groupActions->addWidget(groupInfo_);
+    groupActions->addWidget(groupInstall_);
+    groupActions->addWidget(groupRemove_);
+    groupActions->addStretch(1);
+    layout->addLayout(groupActions);
+
     auto* systemActions = new QHBoxLayout;
     history_ = new QPushButton("DNF history", central);
     repositories_ = new QPushButton("Repositories", central);
@@ -127,6 +137,30 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), process_(new QPro
     });
     connect(update_, &QPushButton::clicked, this, [this] {
         run_dnf({"upgrade"}, true);
+    });
+    connect(groupInfo_, &QPushButton::clicked, this, [this] {
+        const auto group = query_->text().trimmed();
+        if (!valid_package_input(group)) {
+            QMessageBox::warning(this, "Invalid group", "Enter one valid DNF group ID or name first.");
+            return;
+        }
+        run_dnf({"group", "info", group});
+    });
+    connect(groupInstall_, &QPushButton::clicked, this, [this] {
+        const auto group = query_->text().trimmed();
+        if (!valid_package_input(group)) {
+            QMessageBox::warning(this, "Invalid group", "Enter one valid DNF group ID or name to install.");
+            return;
+        }
+        run_dnf({"group", "install", group}, true);
+    });
+    connect(groupRemove_, &QPushButton::clicked, this, [this] {
+        const auto group = query_->text().trimmed();
+        if (!valid_package_input(group)) {
+            QMessageBox::warning(this, "Invalid group", "Enter one valid DNF group ID or name to remove.");
+            return;
+        }
+        run_dnf({"group", "remove", group}, true);
     });
     connect(history_, &QPushButton::clicked, this, [this] {
         run_dnf({"history", "list"});
@@ -260,6 +294,10 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), process_(new QPro
                     else if (operation == "update") action = "flatpak_update";
                 } else if (action == "upgrade") {
                     action = "update";
+                } else if (action == "group" && pendingMutationArgs_.size() > 1) {
+                    const QString operation = pendingMutationArgs_.value(1);
+                    if (operation == "install") action = "group_install";
+                    else if (operation == "remove") action = "group_remove";
                 }
                 std::vector<std::string> items;
                 for (qsizetype i = 1; i < pendingMutationArgs_.size(); ++i) {
@@ -304,7 +342,7 @@ bool MainWindow::valid_flatpak_app_id(const QString& value) const {
 }
 
 void MainWindow::set_busy(bool busy) {
-    for (auto* button : {search_, info_, installed_, available_, install_, remove_, update_, history_, repositories_, securityUpdates_, flatpakSearch_, flatpakInstalled_, flatpakInfo_, flatpakInstall_, flatpakRemove_, flatpakUpdate_})
+    for (auto* button : {search_, info_, installed_, available_, install_, remove_, update_, groupInfo_, groupInstall_, groupRemove_, history_, repositories_, securityUpdates_, flatpakSearch_, flatpakInstalled_, flatpakInfo_, flatpakInstall_, flatpakRemove_, flatpakUpdate_})
         button->setEnabled(!busy);
     query_->setEnabled(!busy);
     cancel_->setEnabled(busy);
