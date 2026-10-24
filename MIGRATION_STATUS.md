@@ -23,15 +23,15 @@ The C++ implementation is being built in parallel with the Rust application. It 
 - Persistent JSON operation history with timestamps, recent-history display, and CLI logging for many successful mutation commands.
 - Qt 6 Widgets GUI for package search/info/listing, install/remove/update, captured output, busy state, cancellation, and DNF transaction preview before user approval.
 - Unit tests for validation, config persistence, history JSON round-trip, and invalid-input safety paths.
-- GitHub Actions workflow includes Ubuntu and Fedora builds of CLI, Qt GUI, CTest, and CLI help.
+- GitHub Actions workflow builds the CLI, Qt GUI, and tests and runs CTest plus CLI smoke tests on Ubuntu and Fedora; the latest run passed both jobs (run [40134207107](https://github.com/ryan1501/fedora-pm/actions/runs/40134207107)).
 
 ## Remaining work before replacing Rust
-- Finish connecting operation history to every mutation path and validate compatibility with existing Rust history files.
+- Audit remaining mutation paths for operation-history logging and continue validating behavior against existing Rust history files.
 - Complete Flatpak-aware export/import and full Rust CLI compatibility (including all original flags and output behavior).
 - Add self-update support and align remaining CLI names, flags, output, and exit codes with the Rust CLI (for example, Rust's `whats-new` spelling differs from the C++ `whatsnew` command).
 - Expand GUI beyond the current core package workflows to Flatpak, repository, kernel, security, driver, backup/import, configuration, and history workflows; test privilege prompts, preview parsing, cancellation, and error handling.
 - Strictly validate JSON config compatibility; the current parser handles known fields but is not a general-purpose JSON parser.
-- Validate Fedora Workstation and Fedora Everything, RPM packaging, desktop integration, install/uninstall, DNF plugin requirements, and licensing/documentation. Latest GUI transaction-preview changes are awaiting CI; no Fedora Workstation/Everything runtime test is claimed yet.
+- Validate Fedora Workstation and Fedora Everything, RPM packaging, desktop integration, install/uninstall, DNF plugin requirements, and licensing/documentation. Latest GUI transaction-preview and Flatpak mutation changes passed Ubuntu/Fedora CI; no Fedora Workstation/Everything runtime test is claimed yet.
 
 ## Safety notes
 - Repository addition accepts HTTP(S) URLs only; repository removal remains unimplemented rather than guessing a .repo filename that could delete the wrong configuration.
