@@ -76,9 +76,15 @@ PackageResult ExportManager::import_from_file(const std::string& path, bool assu
 
         // Read both the v1 format and backups produced by the old Rust exporter,
         // which stored Flatpak IDs as comments like "# flatpak:org.example.App".
-        if (line.starts_with("# flatpak:")) line = fedora_pm::core::trim(line.substr(10));
-        else if (line.starts_with('#')) continue;
-        else if (line.starts_with("flatpak:")) line = fedora_pm::core::trim(line.substr(8));
+        if (line.starts_with("# flatpak:")) {
+            line = fedora_pm::core::trim(line.substr(10));
+            if (line.empty()) continue; // Legacy Rust format marker, not an application ID.
+        } else if (line.starts_with('#')) continue;
+        else if (line.starts_with("flatpak:")) {
+            line = fedora_pm::core::trim(line.substr(8));
+            if (line.empty())
+                return {false, {}, "Empty Flatpak application ID on line " + std::to_string(line_number)};
+        }
         else {
             if (!fedora_pm::core::is_valid_package_name(line))
                 return {false, {}, "Invalid package entry on line " + std::to_string(line_number) + ": " + line};
