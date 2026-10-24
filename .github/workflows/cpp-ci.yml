@@ -84,8 +84,8 @@ jobs:
           usage_status=$?
           set -e
           test "$usage_status" -eq 2
-          if grep -F '\\n' usage-error.txt; then
-            echo "Usage error contains a literal \\n instead of a line break" >&2
+          if grep -F '\n' usage-error.txt; then
+            echo "Usage error contains a literal \n instead of a line break" >&2
             exit 1
           fi
 
