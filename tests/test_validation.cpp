@@ -102,6 +102,8 @@ int main() {
 
     const auto test_config_dir = std::filesystem::temp_directory_path() / "fedora-pm-cpp-config-test";
     const auto config_file = test_config_dir / "config.json";
+    std::filesystem::create_directories(test_config_dir, cleanup_error);
+    assert(!cleanup_error);
     // Known settings must be read only from top-level fields, not text nested in
     // unrelated objects. Duplicate object keys are rejected as ambiguous JSON.
     {
