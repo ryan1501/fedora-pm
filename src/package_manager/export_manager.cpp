@@ -41,8 +41,7 @@ PackageResult ExportManager::export_to_file(const std::string& path, bool includ
                 std::istringstream app_lines(flatpaks.standard_output);
                 while (std::getline(app_lines, line)) {
                     line = fedora_pm::core::trim(line);
-                    if (line.empty() || !fedora_pm::core::is_valid_package_name(line) ||
-                        line.find('.') == std::string::npos || line.front() == '.' || line.back() == '.')
+                    if (line.empty() || !fedora_pm::core::is_valid_flatpak_app_id(line))
                         continue;
                     output << "flatpak:" << line << '\n';
                     ++flatpak_count;
@@ -92,8 +91,7 @@ PackageResult ExportManager::import_from_file(const std::string& path, bool assu
             continue;
         }
 
-        if (!fedora_pm::core::is_valid_package_name(line) || line.find('.') == std::string::npos ||
-            line.front() == '.' || line.back() == '.')
+        if (!fedora_pm::core::is_valid_flatpak_app_id(line))
             return {false, {}, "Invalid Flatpak application ID on line " + std::to_string(line_number) + ": " + line};
         flatpaks.push_back(line);
     }
