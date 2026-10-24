@@ -454,7 +454,11 @@ int main(int argc, char** argv) {
     fedora_pm::system::RepositoryManager repos;
     if (command == "repo-list") return print_result(repos.list());
     if (command == "repo-info" && argc == 3) return print_result(repos.info(argv[2]));
-    if (command == "repo-add" && argc == 3) return print_mutation_result(repos.add(argv[2]), "repo-add", {argv[2]});
+    if (command == "repo-add" && (argc == 3 || argc == 4)) {
+        if (argc == 3)
+            return print_mutation_result(repos.add(argv[2]), "repo-add", {argv[2]});
+        return print_mutation_result(repos.add(argv[3], argv[2]), "repo-add", {argv[2], argv[3]});
+    }
     if (command == "repo-refresh" && argc == 2) return print_mutation_result(repos.refresh(), "repo-refresh", {});
     if ((command == "repo-enable" || command == "repo-disable") && argc == 3)
         return print_mutation_result(command == "repo-enable" ? repos.enable(argv[2]) : repos.disable(argv[2]), command, {argv[2]});
