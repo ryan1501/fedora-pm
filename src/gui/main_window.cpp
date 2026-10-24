@@ -232,7 +232,7 @@ void MainWindow::run_flatpak(QStringList args) {
     pendingMutationArgs_.clear();
     previewingMutation_ = false;
     cancellationRequested_ = false;
-    output_->appendPlainText("Running flatpak…\\n");
+    output_->appendPlainText("Running flatpak…\n");
     set_busy(true);
     process_->start("flatpak", args);
 }
