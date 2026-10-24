@@ -106,13 +106,13 @@ int main() {
     const fedora_pm::system::HistoryManager history(history_path);
     assert(history.log("install", {"firefox", "vim"}).success);
     assert(history.log("remove", {"vim"}).success);
-    assert(history.log("install", {"café", "quoted\\\"package", "emoji-\uD83D\uDE80"}).success);
+    assert(history.log("install", {"café", "quoted\"package", "emoji-🚀"}).success);
     const auto recent = history.print_recent(3);
     assert(recent.success);
     assert(recent.output.find("install: firefox, vim") != std::string::npos);
     assert(recent.output.find("remove: vim") != std::string::npos);
     assert(recent.output.find("café") != std::string::npos);
-    assert(recent.output.find("quoted\\\"package") != std::string::npos);
+    assert(recent.output.find("quoted\"package") != std::string::npos);
     {
         std::ofstream legacy(history_path, std::ios::trunc);
         legacy << R"json([{"action":"install","items":["caf\u00e9","rocket \uD83D\uDE80"],"timestamp":"2026-10-24T12:00:00-05:00"}])json";
