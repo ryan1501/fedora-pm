@@ -9,6 +9,7 @@ The C++ implementation is being built in parallel with the Rust application. It 
 - Shell-free process runner with captured stdout/stderr and timeout support.
 - Initial package-name validation and OS/version/architecture detection.
 - DNF search, package info, installed-package listing, install, remove, upgrade, and transaction history.
+- Resolved dependency and reverse-dependency queries; installed package-group listing.
 - DNF user-installed package list export and validated package-list import with confirmation unless `--yes` is supplied.
 - Flatpak search, installed-app listing, install, and removal.
 - DNF repository listing, enable/disable operations, and installed/running kernel inventory.
@@ -17,7 +18,7 @@ The C++ implementation is being built in parallel with the Rust application. It 
 - Initial validation tests and a CI workflow intended to configure/build the CLI, Qt GUI, and tests, then run CTest and a CLI help smoke test.
 
 ## Remaining work before replacing Rust
-- Inventory and port every existing Rust command/module, including rollback, drivers/NVIDIA, gaming, security, doctor, configuration, groups, changelog, dependencies, disk-space tools, downloads, and advanced validation.
+- Inventory and port every existing Rust command/module, including rollback, drivers/NVIDIA, gaming, security, doctor, configuration, changelog, disk-space tools, downloads, and advanced validation.
 - Add import/export parity tests and support for the existing Rust Flatpak export format where applicable.
 - Preserve existing CLI command names, flags, output, and exit codes; add parity tests against Rust behavior.
 - Expand GUI coverage beyond package search: safe mutation confirmation, progress, cancellation, privilege handling, error reporting, and the rest of the existing workflows.
