@@ -1,15 +1,15 @@
 #include "gui/main_window.hpp"
-#include "package_manager/package_manager.hpp"
+
 #include <QHBoxLayout>
 #include <QLineEdit>
-#include <QMessageBox>
 #include <QPlainTextEdit>
+#include <QProcess>
 #include <QPushButton>
 #include <QVBoxLayout>
 #include <QWidget>
 
 namespace fedora_pm::gui {
-MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
+MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), process_(new QProcess(this)) {
     setWindowTitle("Fedora Package Manager — C++ migration");
     resize(760, 520);
     auto* central = new QWidget(this);
@@ -26,19 +26,40 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     layout->addLayout(row);
     layout->addWidget(output_);
     setCentralWidget(central);
+
     connect(search_, &QPushButton::clicked, this, &MainWindow::run_search);
     connect(query_, &QLineEdit::returnPressed, this, &MainWindow::run_search);
+    connect(process_, &QProcess::readyReadStandardOutput, this, [this] {
+        output_->appendPlainText(QString::fromLocal8Bit(process_->readAllStandardOutput()));
+    });
+    connect(process_, &QProcess::readyReadStandardError, this, [this] {
+        output_->appendPlainText(QString::fromLocal8Bit(process_->readAllStandardError()));
+    });
+    connect(process_, &QProcess::finished, this, [this](int exitCode, QProcess::ExitStatus status) {
+        if (status != QProcess::NormalExit || exitCode != 0) {
+            output_->appendPlainText(QString("\nDNF exited with code %1.").arg(exitCode));
+        }
+        search_->setEnabled(true);
+        query_->setEnabled(true);
+    });
+    connect(process_, &QProcess::errorOccurred, this, [this](QProcess::ProcessError error) {
+        if (error == QProcess::FailedToStart) {
+            output_->appendPlainText("Could not start dnf. Ensure DNF is installed and available in PATH.");
+            search_->setEnabled(true);
+            query_->setEnabled(true);
+        }
+    });
 }
+
 void MainWindow::run_search() {
-    const auto query = query_->text().trimmed().toStdString();
-    if (query.empty()) {
-        QMessageBox::information(this, "Search", "Enter a package search term.");
+    const QString query = query_->text().trimmed();
+    if (query.isEmpty() || process_->state() != QProcess::NotRunning) {
         return;
     }
+    output_->clear();
+    output_->appendPlainText("Searching with DNF…");
     search_->setEnabled(false);
-    output_->setPlainText("Searching with DNF…\n");
-    const auto result = fedora_pm::packages::PackageManager{}.search(query);
-    output_->setPlainText(QString::fromStdString(result.output + (result.error.empty() ? "" : "\n" + result.error)));
-    search_->setEnabled(true);
+    query_->setEnabled(false);
+    process_->start("dnf", {"search", query});
 }
 }
