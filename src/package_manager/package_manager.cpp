@@ -17,7 +17,8 @@ PackageResult PackageManager::run(const std::vector<std::string>& args) const {
 }
 namespace {
 bool valid_pattern(const std::string& value) {
-    return !value.empty() && std::all_of(value.begin(), value.end(), [](unsigned char c) {
+    return !value.empty() && std::isalnum(static_cast<unsigned char>(value.front())) &&
+           std::all_of(value.begin(), value.end(), [](unsigned char c) {
         return std::isalnum(c) || c == '-' || c == '_' || c == '.' || c == '+' || c == ':' || c == '*';
     });
 }
