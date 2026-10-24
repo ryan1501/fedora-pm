@@ -129,7 +129,18 @@ HistoryManager::HistoryManager(std::filesystem::path path) {
 }
 std::pair<bool, std::vector<OperationHistoryEntry>> HistoryManager::read_all(std::string& error) const {
     std::error_code ec;
-    if (!std::filesystem::exists(path_, ec)) return {true, {}};
+    const bool path_exists = std::filesystem::exists(path_, ec);
+    if (ec) {
+        error = "Could not inspect history path " + path_.string() + ": " + ec.message();
+        return {false, {}};
+    }
+    if (!path_exists) return {true, {}};
+    const bool regular_file = std::filesystem::is_regular_file(path_, ec);
+    if (ec || !regular_file) {
+        error = "History path is not a readable regular file: " + path_.string();
+        if (ec) error += " (" + ec.message() + ")";
+        return {false, {}};
+    }
     std::ifstream input(path_);
     if (!input) { error = "Could not read history file: " + path_.string(); return {false, {}}; }
     std::ostringstream buffer;
