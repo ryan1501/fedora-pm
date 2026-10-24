@@ -35,7 +35,8 @@ void usage() {
               << "  info                              Show OS and architecture\n"
               << "  doctor                            Run read-only system diagnostics\n"
               << "  search QUERY                      Search DNF packages\n"
-              << "  package-info NAME                 Show package metadata\n"
+              << "  info [NAME]                       Show system information or package metadata\n"
+              << "  package-info NAME                 Alias for info NAME\n"
               << "  list [--available|--installed|--all] [PATTERN]\n"
               << "  list-available [PATTERN]          List available DNF packages\n"
               << "  clean                             Clean DNF package cache and metadata\n"
@@ -135,7 +136,7 @@ int main(int argc, char** argv) {
     }
     if (argc < 2 || std::string(argv[1]) == "help" || std::string(argv[1]) == "--help") { usage(); return 0; }
     const std::string command = argv[1];
-    if (command == "info") {
+    if (command == "info" && argc == 2) {
         const auto s = fedora_pm::system::detect_system();
         std::cout << "OS: " << s.operating_system << "\nVersion: " << s.version
                   << "\nArchitecture: " << s.architecture << "\nPackage manager: " << s.package_manager << "\n";
@@ -231,7 +232,10 @@ int main(int argc, char** argv) {
     if (command == "history") return print_result(fedora_pm::system::HistoryManager{}.print_recent(10));
     if (command == "rollback-history") return print_result(pm.history());
     if (command == "search" && argc >= 3) return print_result(pm.search(argv[2]));
-    if (command == "package-info" && argc >= 3) return print_result(pm.info(argv[2]));
+    // Keep the original Rust CLI spelling (info PACKAGE) while retaining the
+    // C++ migration's explicit package-info alias and bare system-info command.
+    if ((command == "info" || command == "package-info") && argc == 3)
+        return print_result(pm.info(argv[2]));
     if (command == "list" || command == "list-available") {
         bool available = command == "list-available";
         bool installed = command == "list";
