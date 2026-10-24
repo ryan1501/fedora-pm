@@ -55,6 +55,13 @@ void usage() {
               << "  nvidia-remove [--yes]             Remove installed NVIDIA packages\n"
               << "  cuda-install [--yes]              Install CUDA packages\n"
               << "  gaming-install [--yes]            Install fedora-gaming-meta\n"
+              << "  kernel-current                    Show running kernel\n"
+              << "  kernel-list                       List installed kernels\n"
+              << "  kernel-available                  List available kernels\n"
+              << "  kernel-install [VERSION] [--yes]  Install a kernel\n"
+              << "  kernel-remove [--yes] VERSION...  Remove kernels (protect running kernel)\n"
+              << "  kernel-remove-old [--keep-last N] [--yes]\n"
+              << "  kernel-info [VERSION]             Show matching kernel packages\n"
               << "  export FILE                       Export user-installed RPM package list\n"
               << "  import [--yes] FILE               Import and install a package list\n"
               << "  size [--top N]                    Show largest installed packages\n"
@@ -69,7 +76,6 @@ void usage() {
               << "  repo-enable ID | repo-disable ID  Change repository state\n"
               << "  repo-add URL                      Add a repository URL\n"
               << "  repo-refresh                      Refresh repository metadata\n"
-              << "  kernel-list                       Show running and installed kernels\n"
               << "  flatpak-search QUERY              Search Flatpak remotes\n"
               << "  flatpak-list                      List installed Flatpaks\n"
               << "  flatpak-info APP_ID               Show Flatpak details\n"
@@ -121,6 +127,49 @@ int main(int argc, char** argv) {
     }
     if (command == "gaming-install" && (argc == 2 || argc == 3))
         return print_result(fedora_pm::system::GamingManager{}.install_meta(has_yes(argc, argv, 2)));
+
+    fedora_pm::system::KernelManager kernels;
+    if (command == "kernel-current" && argc == 2) return print_result(kernels.current());
+    if (command == "kernel-list" && argc == 2) return print_result(kernels.list_installed());
+    if (command == "kernel-available" && argc == 2) return print_result(kernels.list_available());
+    if (command == "kernel-info" && (argc == 2 || argc == 3))
+        return print_result(kernels.info(argc == 3 ? std::optional<std::string>(argv[2]) : std::nullopt));
+    if (command == "kernel-install" && (argc == 2 || argc == 3 || argc == 4)) {
+        bool yes = false;
+        std::optional<std::string> version;
+        for (int i = 2; i < argc; ++i) {
+            if (std::string(argv[i]) == "--yes") yes = true;
+            else if (!version) version = argv[i];
+            else { std::cerr << "Usage: fedora-pm kernel-install [VERSION] [--yes]\n"; return 2; }
+        }
+        return print_result(kernels.install(version, yes));
+    }
+    if (command == "kernel-remove") {
+        bool yes = false;
+        std::vector<std::string> versions;
+        for (int i = 2; i < argc; ++i) {
+            if (std::string(argv[i]) == "--yes") yes = true;
+            else versions.emplace_back(argv[i]);
+        }
+        return print_result(kernels.remove(versions, yes, true));
+    }
+    if (command == "kernel-remove-old") {
+        bool yes = false;
+        std::size_t keep = 2;
+        for (int i = 2; i < argc; ++i) {
+            const std::string arg = argv[i];
+            if (arg == "--yes") yes = true;
+            else if (arg == "--keep-last" && i + 1 < argc) {
+                const std::string value = argv[++i];
+                const auto [ptr, ec] = std::from_chars(value.data(), value.data() + value.size(), keep);
+                if (ec != std::errc{} || ptr != value.data() + value.size()) {
+                    std::cerr << "--keep-last requires a positive integer\n";
+                    return 2;
+                }
+            } else { std::cerr << "Usage: fedora-pm kernel-remove-old [--keep-last N] [--yes]\n"; return 2; }
+        }
+        return print_result(kernels.remove_old(keep, yes));
+    }
 
     fedora_pm::system::RollbackManager rollback;
     if (command == "rollback-history" && argc == 2) return print_result(rollback.list_history());
@@ -247,12 +296,6 @@ int main(int argc, char** argv) {
     if (command == "repo-refresh" && argc == 2) return print_result(repos.refresh());
     if ((command == "repo-enable" || command == "repo-disable") && argc == 3)
         return print_result(command == "repo-enable" ? repos.enable(argv[2]) : repos.disable(argv[2]));
-    if (command == "kernel-list") {
-        const auto kernels = fedora_pm::system::detect_kernels();
-        std::cout << "Running kernel: " << kernels.running << "\nInstalled kernels:\n";
-        for (const auto& kernel : kernels.installed) std::cout << "  " << kernel << "\n";
-        return 0;
-    }
 
     fedora_pm::packages::FlatpakManager flatpak;
     if (command == "flatpak-search" && argc >= 3) return print_result(flatpak.search(argv[2]));
