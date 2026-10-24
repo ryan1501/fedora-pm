@@ -193,12 +193,10 @@ PackageResult HistoryManager::log(const std::string& action, const std::vector<s
     output << "]\n";
     output.close();
     if (!output) return {false, {}, "Failed while writing history data."};
+    // On POSIX, rename replaces the destination atomically. Never delete the
+    // existing history as a fallback: if replacement fails, preserve the
+    // previous file and report the error instead of risking data loss.
     std::filesystem::rename(temp, path_, ec);
-    if (ec) {
-        std::filesystem::remove(path_, ec);
-        ec.clear();
-        std::filesystem::rename(temp, path_, ec);
-    }
     if (ec) return {false, {}, "Could not replace history file: " + ec.message()};
     return {true, {}, {}};
 }
