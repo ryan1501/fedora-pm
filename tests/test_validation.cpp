@@ -11,6 +11,7 @@
 #include "system/repository_manager.hpp"
 #include "system/kernel_manager.hpp"
 #include "system/cachyos_manager.hpp"
+#include "system/history_manager.hpp"
 #include <cassert>
 #include <filesystem>
 #include <string>
@@ -88,4 +89,15 @@ int main() {
     assert(!packages.group_info("").success);
     assert(!packages.install_group("\n").success);
     assert(!packages.remove_group(" \r ").success);
+
+    const auto history_path = std::filesystem::temp_directory_path() / "fedora-pm-cpp-history-test.json";
+    std::filesystem::remove(history_path, cleanup_error);
+    const fedora_pm::system::HistoryManager history(history_path);
+    assert(history.log("install", {"firefox", "vim"}).success);
+    assert(history.log("remove", {"vim"}).success);
+    const auto recent = history.print_recent(2);
+    assert(recent.success);
+    assert(recent.output.find("install: firefox, vim") != std::string::npos);
+    assert(recent.output.find("remove: vim") != std::string::npos);
+    std::filesystem::remove(history_path, cleanup_error);
 }
