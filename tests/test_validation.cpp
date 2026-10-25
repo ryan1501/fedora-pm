@@ -102,6 +102,9 @@ int main() {
 
     const fedora_pm::packages::ChangelogManager changelog;
     assert(!changelog.show("bad/name").success);
+    assert(!changelog.show_limited("bad/name", 5).success);
+    assert(!changelog.show_limited("firefox", 0).success);
+    assert(!changelog.show_limited("firefox", 501).success);
     assert(!changelog.show_recent("firefox", 0).success);
     assert(!changelog.show_recent("firefox", 501).success);
     assert(!changelog.whats_new(0).success);
