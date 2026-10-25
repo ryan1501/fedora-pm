@@ -123,6 +123,14 @@ int main() {
         backup << "# Fedora Package Manager backup v1\\n# DNF Packages\\n";
     }
     assert(!fedora_pm::packages::ExportManager{}.import_from_file(invalid_backup.string(), true).success);
+    {
+        std::ofstream backup(invalid_backup, std::ios::trunc);
+        backup << "flatpak:org.example.App\n";
+    }
+    const auto flatpak_only_import =
+        fedora_pm::packages::ExportManager{}.import_from_file(invalid_backup.string(), true);
+    assert(flatpak_only_import.success);
+    assert(flatpak_only_import.output.find("--with-flatpak") != std::string::npos);
     std::filesystem::remove(invalid_backup, cleanup_error);
 
     const fedora_pm::system::SecurityManager security;
