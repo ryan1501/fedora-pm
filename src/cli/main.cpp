@@ -99,7 +99,8 @@ void usage() {
               << "  repo-list                         List DNF repositories\n"
               << "  repo-info ID                      Show repository details\n"
               << "  repo-enable ID | repo-disable ID  Change repository state\n"
-              << "  repo-add URL                      Add a repository URL\n"
+              << "  repo-add [NAME] URL               Add a repository URL\n"
+              << "  repo-remove ID                    Disable and remove a repository file\n"
               << "  repo-refresh                      Refresh repository metadata\n"
               << "  flatpak-search QUERY              Search Flatpak remotes\n"
               << "  flatpak-list                      List installed Flatpaks\n"
@@ -181,6 +182,8 @@ int main(int argc, char** argv) {
             else if (sub == "enable") replacement = "repo-enable";
             else if (sub == "disable") replacement = "repo-disable";
             else if (sub == "refresh") replacement = "repo-refresh";
+            else if (sub == "add") replacement = "repo-add";
+            else if (sub == "remove") replacement = "repo-remove";
         } else if (top == "security") {
             if (sub == "check") replacement = "security-check";
             else if (sub == "list") replacement = "security-list";
@@ -596,6 +599,8 @@ int main(int argc, char** argv) {
         return print_mutation_result(repos.add(argv[2], argv[3]), "repo-add", {argv[2], argv[3]});
     }
     if (command == "repo-refresh" && argc == 2) return print_mutation_result(repos.refresh(), "repo-refresh", {});
+    if (command == "repo-remove" && argc == 3)
+        return print_mutation_result(repos.remove(argv[2]), "repo-remove", {argv[2]});
     if ((command == "repo-enable" || command == "repo-disable") && argc == 3)
         return print_mutation_result(command == "repo-enable" ? repos.enable(argv[2]) : repos.disable(argv[2]), command, {argv[2]});
 

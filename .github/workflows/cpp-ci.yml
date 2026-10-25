@@ -88,6 +88,8 @@ jobs:
           expect_usage_error ./build/fedora-pm flatpak-search firefox extra
           expect_usage_error ./build/fedora-pm flatpak-list extra
           expect_usage_error ./build/fedora-pm repo-list extra
+          expect_usage_error ./build/fedora-pm repo remove
+          expect_usage_error ./build/fedora-pm repo remove example extra
           expect_usage_error ./build/fedora-pm diskspace extra
           expect_usage_error ./build/fedora-pm orphans extra
           expect_usage_error ./build/fedora-pm install

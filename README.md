@@ -12,7 +12,7 @@ The C++ CLI currently includes these areas:
 - Dependency and reverse-dependency queries
 - DNF transaction history and undo operations
 - Flatpak search, list, info, install/remove/update, and Flathub setup
-- Repository list/info/enable/disable/add/refresh
+- Repository list/info/enable/disable/add/remove/refresh
 - Kernel listing, install/remove, and old-kernel cleanup
 - Security update/advisory/CVE queries and security updates
 - Package changelog queries

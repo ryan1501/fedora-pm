@@ -1,5 +1,6 @@
 #include "system/repository_manager.hpp"
 #include "core/validation.hpp"
+#include "core/process_runner.hpp"
 #include <chrono>
 #include <utility>
 
@@ -37,6 +38,24 @@ PackageResult RepositoryManager::add(const std::string& name, const std::string&
     if (!fedora_pm::core::is_valid_package_name(name))
         return {false, {}, "Invalid repository name."};
     return add(url);
+}
+PackageResult RepositoryManager::remove(const std::string& id) const {
+    if (!fedora_pm::core::is_valid_package_name(id)) return {false, {}, "Invalid repository ID."};
+    const auto disabled = disable(id);
+    if (!disabled.success) return disabled;
+    const std::string repo_file = "/etc/yum.repos.d/" + id + ".repo";
+    try {
+        const auto result = fedora_pm::core::run_process("rm", {"-f", repo_file},
+            {.timeout = std::chrono::minutes(2), .use_sudo = true});
+        if (result.timed_out || result.exit_code != 0) {
+            return {false, disabled.output + result.standard_output,
+                result.timed_out ? "Timed out removing repository file. " + result.standard_error
+                                 : result.standard_error};
+        }
+        return {true, disabled.output + result.standard_output, {}};
+    } catch (const std::exception& e) {
+        return {false, disabled.output, e.what()};
+    }
 }
 PackageResult RepositoryManager::refresh() const {
     auto clean = run({"clean", "metadata"}, true);

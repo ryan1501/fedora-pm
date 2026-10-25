@@ -12,7 +12,7 @@ The Rust implementation remains authoritative until this checklist is complete a
 - [x] Package group info/install/remove
 - [x] RPM package-list export/import (Flatpak parity still required)
 - [x] Flatpak search/list/install/remove/update/info/Flathub setup
-- [x] Repository list/info/enable/disable/add/refresh
+- [x] Repository list/info/enable/disable/add/remove/refresh
 - [x] Kernel current/list/available/install/remove/remove-old/info
 - [x] CachyOS status, kernel list/install, repository enable/disable, CPU feature checks
 - [x] Disk space, package sizes, cache cleanup, orphan listing/autoremove
