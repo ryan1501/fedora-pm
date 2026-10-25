@@ -236,10 +236,19 @@ int main(int argc, char** argv) {
     // Clap accepted the conventional short confirmation flag; keep it working.
     for (auto& arg : normalized_args) if (arg == "-y") arg = "--yes";
     if (normalized_args.size() >= 4 && normalized_args[1] == "deps") {
-        const auto reverse = std::find(normalized_args.begin() + 2, normalized_args.end(), "--reverse");
+        const auto reverse = std::find_if(normalized_args.begin() + 2, normalized_args.end(),
+            [](const std::string& arg) { return arg == "--reverse" || arg == "-r"; });
+        const auto tree = std::find_if(normalized_args.begin() + 2, normalized_args.end(),
+            [](const std::string& arg) { return arg == "--tree" || arg == "-t"; });
         if (reverse != normalized_args.end()) {
             normalized_args[1] = "reverse-deps";
             normalized_args.erase(reverse);
+            const auto tree_after = std::find_if(normalized_args.begin() + 2, normalized_args.end(),
+                [](const std::string& arg) { return arg == "--tree" || arg == "-t"; });
+            if (tree_after != normalized_args.end()) normalized_args.erase(tree_after);
+        } else if (tree != normalized_args.end()) {
+            normalized_args[1] = "deps-tree";
+            normalized_args.erase(tree);
         }
     }
     std::vector<char*> normalized_argv;
@@ -427,7 +436,14 @@ int main(int argc, char** argv) {
         if (argc == 4 && !yes) { std::cerr << "Usage: fedora-pm group-remove NAME [--yes]\n"; return 2; }
         return print_mutation_result(pm.remove_group(argv[2], yes), "group-remove", {argv[2]});
     }
-    if (command == "deps" && argc == 3) return print_result(pm.dependencies(argv[2]));
+    if (command == "deps" && argc == 3) {
+        const auto tree = pm.dependencies(argv[2]);
+        const auto reverse = pm.reverse_dependencies(argv[2]);
+        return print_result({tree.success && reverse.success,
+                             tree.output + (tree.output.empty() || reverse.output.empty() ? "" : "\\n") + reverse.output,
+                             tree.error + (tree.error.empty() || reverse.error.empty() ? "" : "\\n") + reverse.error});
+    }
+    if (command == "deps-tree" && argc == 3) return print_result(pm.dependencies(argv[2]));
     if (command == "reverse-deps" && argc == 3) return print_result(pm.reverse_dependencies(argv[2]));
     if (command == "groups" && argc == 2) return print_result(pm.installed_groups());
 
