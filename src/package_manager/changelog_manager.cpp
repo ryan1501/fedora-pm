@@ -30,6 +30,16 @@ PackageResult ChangelogManager::show(const std::string& package) const {
     return {false, {}, "Could not retrieve changelog for " + package +
         ". RPM reports: " + result.error + " DNF reports: " + fallback.error};
 }
+PackageResult ChangelogManager::show_limited(const std::string& package, std::size_t limit) const {
+    if (!fedora_pm::core::is_valid_package_name(package)) return {false, {}, "Invalid package name."};
+    if (limit == 0 || limit > 500) return {false, {}, "Changelog limit must be between 1 and 500."};
+    auto result = execute("dnf", {"changelog", package, "--count=" + std::to_string(limit)});
+    if (!result.success) {
+        if (result.error.empty()) result.error = "Could not retrieve changelog for " + package + ".";
+        return result;
+    }
+    return result;
+}
 PackageResult ChangelogManager::show_recent(const std::string& package, std::size_t entries) const {
     if (!fedora_pm::core::is_valid_package_name(package)) return {false, {}, "Invalid package name."};
     if (entries == 0 || entries > 500) return {false, {}, "Entry limit must be between 1 and 500."};
