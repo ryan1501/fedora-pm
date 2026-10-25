@@ -329,7 +329,7 @@ int main(int argc, char** argv) {
         const auto append = [](const std::string& a, const std::string& b) {
             if (a.empty()) return b;
             if (b.empty()) return a;
-            return a + (a.back() == '\\n' ? "" : "\\n") + b;
+            return a + (a.back() == '\n' ? "" : "\n") + b;
         };
         return print_result({
             current.success && installed.success && available.success,
