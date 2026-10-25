@@ -343,7 +343,7 @@ int main(int argc, char** argv) {
     if (command == "history" && argc == 2) return print_result(fedora_pm::system::HistoryManager{}.print_recent(10));
     if (command == "rollback-history") return print_result(pm.history());
     if (command == "search") {
-        if (argc != 3) { std::cerr << "Usage: fedora-pm search QUERY\\n"; return 2; }
+        if (argc != 3) { std::cerr << "Usage: fedora-pm search QUERY\n"; return 2; }
         return print_result(pm.search(argv[2]));
     }
     // Keep the original Rust CLI spelling (info PACKAGE) while retaining the
@@ -564,7 +564,7 @@ int main(int argc, char** argv) {
 
     fedora_pm::packages::FlatpakManager flatpak;
     if (command == "flatpak-search") {
-        if (argc != 3) { std::cerr << "Usage: fedora-pm flatpak-search QUERY\\n"; return 2; }
+        if (argc != 3) { std::cerr << "Usage: fedora-pm flatpak-search QUERY\n"; return 2; }
         return print_result(flatpak.search(argv[2]));
     }
     if (command == "flatpak-list" && argc == 2) return print_result(flatpak.list_installed());
