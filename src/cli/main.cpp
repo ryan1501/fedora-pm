@@ -488,12 +488,12 @@ int main(int argc, char** argv) {
             const std::string value = argv[4];
             const auto [ptr, ec] = std::from_chars(value.data(), value.data() + value.size(), limit);
             if (ec != std::errc{} || ptr != value.data() + value.size() || limit == 0 || limit > 500) {
-                std::cerr << "LIMIT must be between 1 and 500\\n";
+                std::cerr << "LIMIT must be between 1 and 500\n";
                 return 2;
             }
             return print_result(changelogs.show_limited(argv[2], limit));
         }
-        std::cerr << "Usage: fedora-pm changelog NAME [--limit N]\\n";
+        std::cerr << "Usage: fedora-pm changelog NAME [--limit N]\n";
         return 2;
     }
     if (command == "changelog-recent" && (argc == 3 || argc == 4)) {
