@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <filesystem>
 #include <sstream>
 #include <vector>
 
@@ -115,5 +116,46 @@ PackageResult DriverManager::install_cuda(bool assume_yes) const {
     if (assume_yes) args.push_back("-y");
     args.insert(args.end(), {"cuda", "cuda-toolkit", "nvidia-cuda-toolkit"});
     return dnf(args, true);
+}
+PackageResult DriverManager::check_cuda_support() const {
+    std::ostringstream out;
+    out << "=== CUDA Support Check ===\n";
+    const auto smi = run("nvidia-smi", {});
+    if (smi.success) {
+        out << "NVIDIA driver is working.\n";
+        std::istringstream lines(smi.output);
+        std::string line;
+        while (std::getline(lines, line)) {
+            const auto pos = line.find("CUDA Version");
+            if (pos != std::string::npos) {
+                const auto colon = line.find(':', pos);
+                if (colon != std::string::npos) out << "CUDA Version: " << fedora_pm::core::trim(line.substr(colon + 1)) << '\n';
+            }
+        }
+    } else {
+        out << "NVIDIA driver not working or nvidia-smi unavailable; CUDA runtime unavailable.\n";
+    }
+    const auto nvcc = run("nvcc", {"--version"});
+    if (nvcc.success) {
+        out << "CUDA compiler (nvcc) found.\n";
+        std::istringstream lines(nvcc.output);
+        std::string line;
+        while (std::getline(lines, line)) if (line.find("release") != std::string::npos) out << "  " << fedora_pm::core::trim(line) << '\n';
+    } else {
+        out << "CUDA compiler (nvcc) not found.\nInstall with: fedora-pm driver install-nvidia --cuda --toolkit\n";
+    }
+    out << "\nCUDA installation paths:\n";
+    for (const char* path : {"/usr/local/cuda", "/usr/cuda", "/opt/cuda"})
+        out << "  " << (std::filesystem::exists(path) ? "✓ " : "✗ ") << path << '\n';
+    return {true, out.str(), {}};
+}
+PackageResult DriverManager::setup_cuda_development(bool assume_yes) const {
+    std::vector<std::string> args{"install"};
+    if (assume_yes) args.push_back("-y");
+    args.insert(args.end(), {"nvidia-cuda-toolkit", "nvidia-cuda-devel", "nvidia-cuda-doc",
+                             "cuda-samples", "cuda-profiler-tools", "nsight-compute", "nsight-systems"});
+    auto result = dnf(args, true);
+    if (result.success) result.output += "\nNVIDIA development environment set up.\nCompile samples with: /usr/local/cuda/samples/1_Utilities/deviceQuery/deviceQuery\n";
+    return result;
 }
 }
