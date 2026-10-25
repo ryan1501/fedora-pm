@@ -440,8 +440,8 @@ int main(int argc, char** argv) {
         const auto tree = pm.dependencies(argv[2]);
         const auto reverse = pm.reverse_dependencies(argv[2]);
         return print_result({tree.success && reverse.success,
-                             tree.output + (tree.output.empty() || reverse.output.empty() ? "" : "\\n") + reverse.output,
-                             tree.error + (tree.error.empty() || reverse.error.empty() ? "" : "\\n") + reverse.error});
+                             tree.output + (tree.output.empty() || reverse.output.empty() ? "" : "\n") + reverse.output,
+                             tree.error + (tree.error.empty() || reverse.error.empty() ? "" : "\n") + reverse.error});
     }
     if (command == "deps-tree" && argc == 3) return print_result(pm.dependencies(argv[2]));
     if (command == "reverse-deps" && argc == 3) return print_result(pm.reverse_dependencies(argv[2]));
