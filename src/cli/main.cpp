@@ -280,9 +280,14 @@ int main(int argc, char** argv) {
         bool yes = false;
         std::optional<std::string> version;
         for (int i = 2; i < argc; ++i) {
-            if (std::string(argv[i]) == "--yes") yes = true;
-            else if (!version) version = argv[i];
-            else { std::cerr << "Usage: fedora-pm kernel-install [VERSION] [--yes]\n"; return 2; }
+            const std::string arg = argv[i];
+            if (arg == "--yes") yes = true;
+            else if (arg.starts_with("-") || arg.empty() || version) {
+                std::cerr << "Usage: fedora-pm kernel-install [VERSION] [--yes]\n";
+                return 2;
+            } else {
+                version = arg;
+            }
         }
         return print_mutation_result(kernels.install(version, yes), "kernel_install", {version.value_or("kernel")});
     }
@@ -290,8 +295,14 @@ int main(int argc, char** argv) {
         bool yes = false;
         std::vector<std::string> versions;
         for (int i = 2; i < argc; ++i) {
-            if (std::string(argv[i]) == "--yes") yes = true;
-            else versions.emplace_back(argv[i]);
+            const std::string arg = argv[i];
+            if (arg == "--yes") yes = true;
+            else if (arg.starts_with("-") || arg.empty()) {
+                std::cerr << "Usage: fedora-pm kernel-remove [--yes] VERSION...\n";
+                return 2;
+            } else {
+                versions.emplace_back(arg);
+            }
         }
         return print_mutation_result(kernels.remove(versions, yes, true), "kernel_remove", versions);
     }
