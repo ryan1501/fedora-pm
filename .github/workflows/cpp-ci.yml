@@ -81,6 +81,13 @@ jobs:
           expect_usage_error ./build/fedora-pm flatpak-update --bogus
           expect_usage_error ./build/fedora-pm flatpak-install org.example.App --bogus
           expect_usage_error ./build/fedora-pm flatpak-remove org.example.App --bogus
+          # Commands with one/no positional arguments must reject extras instead of silently ignoring them.
+          expect_usage_error ./build/fedora-pm search firefox extra
+          expect_usage_error ./build/fedora-pm groups extra
+          expect_usage_error ./build/fedora-pm history extra
+          expect_usage_error ./build/fedora-pm flatpak-search firefox extra
+          expect_usage_error ./build/fedora-pm flatpak-list extra
+          expect_usage_error ./build/fedora-pm repo-list extra
           expect_usage_error ./build/fedora-pm kernel remove --bogus
           # Legacy nested commands should normalize to the corresponding supported C++ command.
           set +e
