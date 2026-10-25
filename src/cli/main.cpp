@@ -128,6 +128,90 @@ bool has_yes(int argc, char** argv, int index) {
 }
 }
 int main(int argc, char** argv) {
+    // Translate established Rust CLI subcommands to the equivalent C++ commands.
+    // Keep this compatibility shim conservative: unsupported legacy workflows
+    // must remain visibly unsupported rather than being mapped to a different action.
+    std::vector<std::string> normalized_args;
+    normalized_args.reserve(static_cast<std::size_t>(argc));
+    for (int i = 0; i < argc; ++i) normalized_args.emplace_back(argv[i]);
+    if (normalized_args.size() >= 3) {
+        const std::string top = normalized_args[1];
+        const std::string sub = normalized_args[2];
+        std::string replacement;
+        if (top == "kernel") {
+            if (sub == "list") replacement = "kernel-list";
+            else if (sub == "install") replacement = "kernel-install";
+            else if (sub == "remove") replacement = "kernel-remove";
+            else if (sub == "remove-old") replacement = "kernel-remove-old";
+            else if (sub == "info") replacement = "kernel-info";
+        } else if (top == "driver") {
+            if (sub == "status" || sub == "check-nvidia") replacement = "driver-status";
+            else if (sub == "detect") replacement = "gpu-detect";
+            else if (sub == "list-nvidia") replacement = "nvidia-list";
+            else if (sub == "remove-nvidia") replacement = "nvidia-remove";
+            else if (sub == "install-nvidia") {
+                replacement = "nvidia-install";
+                if (normalized_args.size() >= 4 && !normalized_args[3].starts_with("--") &&
+                    normalized_args[3] != "-y" && normalized_args[3] != "-q") {
+                    normalized_args.insert(normalized_args.begin() + 3, "--version");
+                }
+                for (auto& arg : normalized_args) if (arg == "--toolkit") arg = "--cuda";
+            }
+        } else if (top == "gaming" && sub == "install") {
+            replacement = "gaming-install";
+        } else if (top == "cachyos") {
+            if (sub == "status") replacement = "cachyos-status";
+            else if (sub == "list-kernels") replacement = "cachyos-list-kernels";
+            else if (sub == "install-kernel") replacement = "cachyos-install-kernel";
+            else if (sub == "enable-repo") replacement = "cachyos-enable-repo";
+            else if (sub == "disable-repo") replacement = "cachyos-disable-repo";
+            else if (sub == "check-cpu") replacement = "cachyos-check-cpu";
+        } else if (top == "flatpak") {
+            if (sub == "search") replacement = "flatpak-search";
+            else if (sub == "list") replacement = "flatpak-list";
+            else if (sub == "info") replacement = "flatpak-info";
+            else if (sub == "install") replacement = "flatpak-install";
+            else if (sub == "remove") replacement = "flatpak-remove";
+            else if (sub == "update") replacement = "flatpak-update";
+            else if (sub == "setup-flathub") replacement = "flatpak-setup-flathub";
+        } else if (top == "repo") {
+            if (sub == "list") replacement = "repo-list";
+            else if (sub == "info") replacement = "repo-info";
+            else if (sub == "enable") replacement = "repo-enable";
+            else if (sub == "disable") replacement = "repo-disable";
+            else if (sub == "refresh") replacement = "repo-refresh";
+        } else if (top == "security") {
+            if (sub == "check") replacement = "security-check";
+            else if (sub == "list") replacement = "security-list";
+            else if (sub == "update") replacement = "security-update";
+            else if (sub == "info") replacement = "security-info";
+            else if (sub == "cve") replacement = "cve-check";
+            else if (sub == "audit") replacement = "security-audit";
+        } else if (top == "group") {
+            if (sub == "list") replacement = "groups";
+            else if (sub == "info") replacement = "group-info";
+            else if (sub == "install") replacement = "group-install";
+            else if (sub == "remove") replacement = "group-remove";
+        }
+        if (!replacement.empty()) {
+            normalized_args[1] = replacement;
+            normalized_args.erase(normalized_args.begin() + 2);
+        }
+    }
+    // Clap accepted the conventional short confirmation flag; keep it working.
+    for (auto& arg : normalized_args) if (arg == "-y") arg = "--yes";
+    if (normalized_args.size() >= 4 && normalized_args[1] == "deps") {
+        const auto reverse = std::find(normalized_args.begin() + 2, normalized_args.end(), "--reverse");
+        if (reverse != normalized_args.end()) {
+            normalized_args[1] = "reverse-deps";
+            normalized_args.erase(reverse);
+        }
+    }
+    std::vector<char*> normalized_argv;
+    normalized_argv.reserve(normalized_args.size());
+    for (auto& arg : normalized_args) normalized_argv.push_back(arg.data());
+    argc = static_cast<int>(normalized_argv.size());
+    argv = normalized_argv.data();
     if (argc == 2 && (std::string(argv[1]) == "--version" ||
                       std::string(argv[1]) == "-V" ||
                       std::string(argv[1]) == "version")) {
