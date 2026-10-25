@@ -9,6 +9,7 @@
 #include <regex>
 #include <sstream>
 #include <system_error>
+#include <vector>
 
 namespace fedora_pm::system {
 using fedora_pm::packages::PackageResult;
@@ -263,6 +264,33 @@ bool json_array_objects_only(const std::string& input) {
     return false;
 }
 
+std::size_t matching_json_delimiter(const std::string& input, std::size_t start) {
+    if (start >= input.size() || (input[start] != '{' && input[start] != '['))
+        return std::string::npos;
+    std::vector<char> delimiters;
+    bool in_string = false;
+    bool escaped = false;
+    for (std::size_t i = start; i < input.size(); ++i) {
+        const char c = input[i];
+        if (in_string) {
+            if (escaped) escaped = false;
+            else if (c == '\\\\') escaped = true;
+            else if (c == '"') in_string = false;
+            continue;
+        }
+        if (c == '"') { in_string = true; continue; }
+        if (c == '{' || c == '[') delimiters.push_back(c);
+        else if (c == '}' || c == ']') {
+            if (delimiters.empty()) return std::string::npos;
+            const char expected = c == '}' ? '{' : '[';
+            if (delimiters.back() != expected) return std::string::npos;
+            delimiters.pop_back();
+            if (delimiters.empty()) return i;
+        }
+    }
+    return std::string::npos;
+}
+
 std::string timestamp_now() {
     const std::time_t now = std::time(nullptr);
     std::tm local{};
@@ -313,25 +341,45 @@ std::pair<bool, std::vector<OperationHistoryEntry>> HistoryManager::read_all(std
         error = "History file is not a valid JSON array of operation entries: " + path_.string();
         return {false, {}};
     }
-    const std::regex object_pattern(R"re(\{[\s\S]*?\})re");
     const std::regex action_pattern(R"re("action"\s*:\s*"((?:[^"\\]|\\.)*)")re");
     const std::regex timestamp_pattern(R"re("timestamp"\s*:\s*"((?:[^"\\]|\\.)*)")re");
-    const std::regex items_pattern(R"re("items"\s*:\s*\[([\s\S]*?)\])re");
+    const std::regex items_key_pattern(R"re("items"\s*:\s*\[)re");
     const std::regex string_pattern(R"re("((?:[^"\\]|\\.)*)")re");
+    std::vector<std::string> objects;
+    std::size_t pos = 1;
+    const std::size_t array_end = data.size() - 1;
+    while (pos < array_end) {
+        while (pos < array_end && (data[pos] == ' ' || data[pos] == '\\t' ||
+                                   data[pos] == '\\r' || data[pos] == '\\n' || data[pos] == ','))
+            ++pos;
+        if (pos >= array_end) break;
+        const std::size_t object_end = matching_json_delimiter(data, pos);
+        if (object_end == std::string::npos || data[pos] != '{') {
+            error = "Could not parse an entry in history file: " + path_.string();
+            return {false, {}};
+        }
+        objects.push_back(data.substr(pos, object_end - pos + 1));
+        pos = object_end + 1;
+    }
     std::vector<OperationHistoryEntry> entries;
-    for (std::sregex_iterator it(data.begin(), data.end(), object_pattern), end; it != end; ++it) {
-        const std::string object = it->str();
+    for (const std::string& object : objects) {
         std::smatch action_match, timestamp_match, items_match;
         if (!std::regex_search(object, action_match, action_pattern) ||
             !std::regex_search(object, timestamp_match, timestamp_pattern) ||
-            !std::regex_search(object, items_match, items_pattern)) {
+            !std::regex_search(object, items_match, items_key_pattern)) {
             error = "Could not parse an entry in history file: " + path_.string();
             return {false, {}};
         }
         OperationHistoryEntry entry;
         entry.action = unescape_json(action_match[1].str());
         entry.timestamp = unescape_json(timestamp_match[1].str());
-        const std::string item_data = items_match[1].str();
+        const std::size_t items_open = static_cast<std::size_t>(items_match.position() + items_match.length() - 1);
+        const std::size_t items_close = matching_json_delimiter(object, items_open);
+        if (items_close == std::string::npos) {
+            error = "Could not parse items in history file: " + path_.string();
+            return {false, {}};
+        }
+        const std::string item_data = object.substr(items_open + 1, items_close - items_open - 1);
         for (std::sregex_iterator item(item_data.begin(), item_data.end(), string_pattern), item_end; item != item_end; ++item)
             entry.items.push_back(unescape_json((*item)[1].str()));
         entries.push_back(std::move(entry));
