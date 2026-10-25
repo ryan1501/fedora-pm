@@ -142,7 +142,7 @@ jobs:
           driver_usage_status=$?
           set -e
           test "$driver_usage_status" -eq 2
-          if grep -F '\\n' driver-usage-error.txt; then
+          if grep -F '\n' driver-usage-error.txt; then
             echo "Driver setup usage error contains a literal \\n instead of a line break" >&2
             exit 1
           fi
