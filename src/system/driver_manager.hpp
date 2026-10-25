@@ -14,5 +14,7 @@ public:
                                                        bool cuda = false, bool assume_yes = false) const;
     fedora_pm::packages::PackageResult remove_nvidia(bool assume_yes = false) const;
     fedora_pm::packages::PackageResult install_cuda(bool assume_yes = false) const;
+    fedora_pm::packages::PackageResult check_cuda_support() const;
+    fedora_pm::packages::PackageResult setup_cuda_development(bool assume_yes = false) const;
 };
 }
