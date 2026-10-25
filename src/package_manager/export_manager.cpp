@@ -59,7 +59,8 @@ PackageResult ExportManager::export_to_file(const std::string& path, bool includ
     }
 }
 
-PackageResult ExportManager::import_from_file(const std::string& path, bool assume_yes) const {
+PackageResult ExportManager::import_from_file(const std::string& path, bool assume_yes,
+                                                    bool include_flatpak) const {
     if (fedora_pm::core::trim(path).empty()) return {false, {}, "Input path must not be empty."};
     std::ifstream input(path);
     if (!input) return {false, {}, "Could not open package list: " + path};
@@ -98,11 +99,17 @@ PackageResult ExportManager::import_from_file(const std::string& path, bool assu
     if (packages.empty() && flatpaks.empty())
         return {false, {}, "Package list contains no package or Flatpak entries."};
 
+    const std::size_t selected_flatpak_count = include_flatpak ? flatpaks.size() : 0;
+    if (packages.empty() && selected_flatpak_count == 0) {
+        return {true, "No RPM packages to import. Skipped " + std::to_string(flatpaks.size()) +
+            " Flatpak application entries; pass --with-flatpak to install them.\n", {}};
+    }
+
     if (!assume_yes) {
-        std::cout << "The following " << packages.size() << " RPM packages and " << flatpaks.size()
+        std::cout << "The following " << packages.size() << " RPM packages and " << selected_flatpak_count
                   << " Flatpak applications will be installed:\n";
         for (const auto& package : packages) std::cout << "  " << package << '\n';
-        for (const auto& app : flatpaks) std::cout << "  flatpak:" << app << '\n';
+        if (include_flatpak) for (const auto& app : flatpaks) std::cout << "  flatpak:" << app << '\n';
         std::cout << "Proceed? [y/N] " << std::flush;
         std::string answer;
         if (!std::getline(std::cin, answer) || (answer != "y" && answer != "Y" &&
@@ -117,7 +124,7 @@ PackageResult ExportManager::import_from_file(const std::string& path, bool assu
         if (!rpm_result.success) return rpm_result;
         output << rpm_result.output;
     }
-    if (!flatpaks.empty()) {
+    if (include_flatpak && !flatpaks.empty()) {
         FlatpakManager flatpak;
         for (const auto& app : flatpaks) {
             const auto result = flatpak.install(app, true);
@@ -128,6 +135,10 @@ PackageResult ExportManager::import_from_file(const std::string& path, bool assu
             output << result.output;
         }
     }
-    return {true, "Package import completed.\n" + output.str(), {}};
+    std::string summary = "Package import completed.\n";
+    if (!include_flatpak && !flatpaks.empty())
+        summary += "Skipped " + std::to_string(flatpaks.size()) +
+            " Flatpak application entries; pass --with-flatpak to install them.\n";
+    return {true, summary + output.str(), {}};
 }
 }
