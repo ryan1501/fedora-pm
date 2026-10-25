@@ -46,6 +46,21 @@ jobs:
       - name: Smoke-test CLI help and self-update compatibility
         run: |
           ./build/fedora-pm help
+          # Verify the global --gui flag execs the companion GUI, both before and after a command.
+          gui_test_dir="$(mktemp -d)"
+          mkdir -p "$gui_test_dir/bin"
+          cp ./build/fedora-pm "$gui_test_dir/bin/fedora-pm"
+          cat > "$gui_test_dir/bin/fedora-pm-gui" <<'EOF'
+          #!/bin/sh
+          printf 'launched\\n' > "$FEDORAPM_GUI_TEST_MARKER"
+          EOF
+          chmod +x "$gui_test_dir/bin/fedora-pm-gui"
+          FEDORAPM_GUI_TEST_MARKER="$gui_test_dir/marker" "$gui_test_dir/bin/fedora-pm" --gui info
+          test "$(cat "$gui_test_dir/marker")" = "launched"
+          rm -f "$gui_test_dir/marker"
+          FEDORAPM_GUI_TEST_MARKER="$gui_test_dir/marker" "$gui_test_dir/bin/fedora-pm" info --gui
+          test "$(cat "$gui_test_dir/marker")" = "launched"
+          rm -rf "$gui_test_dir"
           config_dir="$(mktemp -d)"
           trap 'rm -rf "$config_dir"' EXIT
           ./build/fedora-pm --config-dir "$config_dir" config show
