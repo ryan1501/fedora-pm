@@ -1,287 +1,54 @@
-# Building Fedora Package Manager as an RPM GUI Application
+# RPM packaging guide for the C++ migration
 
-This guide explains how to build and package the Fedora Package Manager (CLI + GUI) as an RPM package that can be installed system-wide and appears in your applications menu.
+The C++ migration uses C++20, CMake, and Qt 6 Widgets. This guide replaces the old Python/PySide6 RPM instructions, which refer to files and a build script that are no longer the supported path.
 
-## Quick Start
+**Packaging status:** CI builds the CLI and GUI RPMs, installs both in a disposable Fedora container, verifies commands and desktop metadata, and removes both packages. Real Fedora Workstation and Fedora Everything VM testing remains outstanding, so treat the packages as experimental.
 
-### 1. Install Build Dependencies
+## Build and test from source
 
-```bash
-sudo dnf install rpm-build rpmdevtools python3-pyside6 python3-devel
-```
-
-### 2. Build the RPM
+On Fedora Workstation or Fedora Everything, install the development dependencies:
 
 ```bash
-./build-rpm.sh
+sudo dnf install cmake gcc-c++ qt6-qtbase-devel dnf-plugins-core polkit
 ```
 
-### 3. Install the RPM
+Install `flatpak` as well if you want to test Flatpak commands. The CLI uses `sudo --non-interactive` for system-changing DNF operations when not already root; the GUI uses `pkexec` for DNF mutations.
+
+From the repository root:
 
 ```bash
-sudo dnf install rpmbuild/RPMS/noarch/fedora-pm-*.rpm
+cmake -S . -B build -DFEDORAPM_BUILD_GUI=ON -DFEDORAPM_BUILD_TESTS=ON -DCMAKE_BUILD_TYPE=Release
+cmake --build build --parallel
+ctest --test-dir build --output-on-failure
 ```
 
-After installation:
-- **CLI**: Run `fedora-pm --help` from terminal
-- **GUI**: Find "Fedora Package Manager" in your applications menu or run `fedora-pm-gui`
-
-## What Gets Installed
-
-When you install the RPM, the following files are installed:
-
-### Executables
-- `/usr/bin/fedora-pm` - CLI interface
-- `/usr/bin/fedora-pm-gui` - GUI interface
-
-### Desktop Integration
-- `/usr/share/applications/fedora-pm.desktop` - Desktop entry file (makes it appear in applications menu)
-
-### Documentation
-- `/usr/share/doc/fedora-pm/README.md` - Documentation
-
-## Manual Build Process
-
-If you prefer to build manually:
-
-### Step 1: Create Source Tarball
+To build only the CLI on a minimal installation without Qt 6 Widgets:
 
 ```bash
-# Create temporary directory structure
-TEMP_DIR=$(mktemp -d)
-mkdir -p "$TEMP_DIR/fedora-pm-1.0.0"
-
-# Copy source files
-cp fedora-pm.py "$TEMP_DIR/fedora-pm-1.0.0/"
-cp fedora-pm-gui.py "$TEMP_DIR/fedora-pm-1.0.0/"
-cp fedora-pm.desktop "$TEMP_DIR/fedora-pm-1.0.0/"
-cp README.md "$TEMP_DIR/fedora-pm-1.0.0/"
-cp requirements.txt "$TEMP_DIR/fedora-pm-1.0.0/"
-
-# Create tarball
-cd "$TEMP_DIR"
-tar -czf ~/rpmbuild/SOURCES/fedora-pm-1.0.0.tar.gz fedora-pm-1.0.0
-cd -
-rm -rf "$TEMP_DIR"
+cmake -S . -B build -DFEDORAPM_BUILD_GUI=OFF -DFEDORAPM_BUILD_TESTS=ON -DCMAKE_BUILD_TYPE=Release
+cmake --build build --parallel
+ctest --test-dir build --output-on-failure
 ```
 
-### Step 2: Copy Spec File
+## Packaging assets
 
-```bash
-cp rpmbuild/SPECS/fedora-pm.spec ~/rpmbuild/SPECS/
-```
+- `fedora-pm-rpm.spec` — CLI package spec
+- `fedora-pm-gui-rpm.spec` — Qt 6 GUI package spec
+- `fedora-pm.desktop` — desktop launcher entry
+- `fedora-pm.metainfo.xml` — AppStream metadata
 
-### Step 3: Build RPM
+The specs currently expect a versioned source archive from the repository's release/tag URL. Do not assume that running `rpmbuild -ba` directly against the repository root works, and do not use the old `build-rpm.sh` instructions.
 
-```bash
-cd ~/rpmbuild/SPECS
-rpmbuild -ba fedora-pm.spec
-```
+## Required validation before distribution
 
-### Step 4: Install
+Use a disposable Fedora virtual machine and verify:
 
-```bash
-sudo dnf install ~/rpmbuild/RPMS/noarch/fedora-pm-*.rpm
-```
+1. Build both spec files against the same versioned source archive and inspect build logs.
+2. Confirm the CLI and GUI packages have correct runtime dependencies, including Qt 6 Widgets for the GUI and required DNF/plugin/Flatpak tooling for the commands that use them.
+3. Install both packages and check `fedora-pm --help`, `fedora-pm --version`, and `fedora-pm-gui`.
+4. Verify `/usr/share/applications/fedora-pm.desktop` with `desktop-file-validate`, and check the AppStream metadata installation path.
+5. Exercise GUI privilege prompts, transaction preview/confirmation, cancellation, and error paths.
+6. Remove the packages and confirm package-owned files are removed without deleting user configuration or history.
+7. Repeat on Fedora Workstation and on a minimal Fedora Everything installation with a graphical session added.
 
-## Spec File Details
-
-The `fedora-pm.spec` file defines:
-
-### Dependencies
-- `python3 >= 3.6` - Python runtime
-- `python3-pyside6` - Qt GUI framework
-- `dnf` - Package manager
-- `rpm` - RPM tools
-- `sudo` - For privilege escalation
-
-### Installation Locations
-- **Binaries**: `/usr/bin/` (system PATH)
-- **Desktop Entry**: `/usr/share/applications/` (applications menu)
-- **Documentation**: `/usr/share/doc/fedora-pm/`
-
-## Desktop Entry File
-
-The `fedora-pm.desktop` file makes the GUI appear in your applications menu:
-
-```ini
-[Desktop Entry]
-Name=Fedora Package Manager
-Exec=fedora-pm-gui
-Icon=system-software-install
-Categories=System;PackageManager;Settings;
-```
-
-This file is automatically installed to `/usr/share/applications/` by the RPM.
-
-## Verifying Installation
-
-After installation, verify everything works:
-
-### Check CLI
-```bash
-fedora-pm --help
-```
-
-### Check GUI
-```bash
-fedora-pm-gui
-```
-
-### Check Desktop Entry
-```bash
-# Should show the desktop entry
-ls /usr/share/applications/fedora-pm.desktop
-
-# Should appear in applications menu
-gtk4-launcher fedora-pm.desktop  # or use your desktop environment's app launcher
-```
-
-## Troubleshooting
-
-### GUI Doesn't Appear in Applications Menu
-
-1. **Refresh desktop database:**
-   ```bash
-   sudo update-desktop-database
-   ```
-
-2. **Check desktop entry file:**
-   ```bash
-   desktop-file-validate /usr/share/applications/fedora-pm.desktop
-   ```
-
-3. **Verify file permissions:**
-   ```bash
-   ls -l /usr/share/applications/fedora-pm.desktop
-   # Should be readable by all
-   ```
-
-### PySide6 Not Found
-
-If the GUI fails to launch:
-```bash
-# Install PySide6
-sudo dnf install python3-pyside6
-
-# Verify installation
-python3 -c "import PySide6; print(PySide6.__version__)"
-```
-
-### Build Errors
-
-**"No source number 0":**
-- Ensure the source tarball exists in `rpmbuild/SOURCES/`
-- Check that `Source0` in spec file matches tarball name
-
-**"Bad exit status from %prep":**
-- Ensure tarball has correct top-level directory structure
-- The tarball should extract to `fedora-pm-1.0.0/` directory
-
-**"File not found":**
-- Verify all source files exist before building
-- Check file paths in spec file match actual files
-
-## Customization
-
-### Changing Installation Paths
-
-Edit `fedora-pm.spec` and modify the `%install` section:
-
-```spec
-%install
-# Custom installation directory
-mkdir -p %{buildroot}/opt/fedora-pm
-install -m 755 fedora-pm-gui.py %{buildroot}/opt/fedora-pm/
-```
-
-### Adding an Icon
-
-1. Create or obtain an icon file (e.g., `fedora-pm.png` or `fedora-pm.svg`)
-2. Add to spec file:
-   ```spec
-   # In %install section
-   install -m 644 fedora-pm.png %{buildroot}%{_datadir}/icons/hicolor/48x48/apps/
-   ```
-3. Update desktop file:
-   ```ini
-   Icon=fedora-pm
-   ```
-
-### Adding Additional Files
-
-To include additional files (configs, scripts, etc.):
-
-1. Copy files in `%install` section
-2. Add to `%files` section:
-   ```spec
-   %files
-   %{_bindir}/fedora-pm-gui
-   %config(noreplace) %{_sysconfdir}/fedora-pm/config.conf
-   ```
-
-## Distribution
-
-### Creating a Source RPM (SRPM)
-
-The build script automatically creates an SRPM:
-```bash
-# SRPM location
-rpmbuild/SRPMS/fedora-pm-1.0.0-1.src.rpm
-```
-
-### Sharing the RPM
-
-You can share the built RPM file:
-```bash
-# Binary RPM
-rpmbuild/RPMS/noarch/fedora-pm-1.0.0-1.noarch.rpm
-
-# Source RPM (for rebuilding)
-rpmbuild/SRPMS/fedora-pm-1.0.0-1.src.rpm
-```
-
-### Installing from RPM File
-
-```bash
-sudo dnf install /path/to/fedora-pm-1.0.0-1.noarch.rpm
-```
-
-## Advanced: Creating a Repository
-
-To create your own RPM repository:
-
-```bash
-# Install createrepo
-sudo dnf install createrepo
-
-# Create repository directory
-mkdir -p ~/rpm-repo
-
-# Copy RPMs
-cp rpmbuild/RPMS/noarch/*.rpm ~/rpm-repo/
-
-# Create repository metadata
-createrepo ~/rpm-repo
-
-# Add repository to system
-sudo tee /etc/yum.repos.d/my-repo.repo <<EOF
-[my-repo]
-name=My Custom Repository
-baseurl=file://$HOME/rpm-repo
-enabled=1
-gpgcheck=0
-EOF
-```
-
-## Summary
-
-The RPM package provides:
-- ✅ System-wide installation
-- ✅ Desktop menu integration
-- ✅ Proper dependency management
-- ✅ Easy uninstallation (`sudo dnf remove fedora-pm`)
-- ✅ Professional packaging standards
-
-Use `./build-rpm.sh` for the easiest build process!
-
+Until those checks are complete, use the CMake workflow above for development and testing rather than treating the RPMs as ready for general distribution. See [`docs/CPP_MIGRATION_PLAN.md`](docs/CPP_MIGRATION_PLAN.md) and [`BUILD_RPM_QUICKSTART.md`](BUILD_RPM_QUICKSTART.md) for migration status and build commands.

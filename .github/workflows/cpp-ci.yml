@@ -1,0 +1,280 @@
+name: C++ migration CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cpp-migration-${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  ubuntu-build-and-test:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          filter: blob:none
+          sparse-checkout: |
+            /*
+            !/target/
+            !/rpmbuild/
+          sparse-checkout-cone-mode: false
+
+      - name: Install C++ and Qt 6 build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes cmake g++ qt6-base-dev rpm desktop-file-utils
+
+      - name: Configure
+        run: cmake -S . -B build -DFEDORAPM_BUILD_GUI=ON -DFEDORAPM_BUILD_TESTS=ON -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build CLI, GUI, and tests
+        run: cmake --build build --parallel 2
+
+      - name: Run unit tests
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Smoke-test CLI help and self-update compatibility
+        run: |
+          ./build/fedora-pm help
+          # Verify the global --gui flag execs the companion GUI, both before and after a command.
+          gui_test_dir="$(mktemp -d)"
+          mkdir -p "$gui_test_dir/bin"
+          cp ./build/fedora-pm "$gui_test_dir/bin/fedora-pm"
+          cat > "$gui_test_dir/bin/fedora-pm-gui" <<'EOF'
+          #!/bin/sh
+          printf launched > "$FEDORAPM_GUI_TEST_MARKER"
+          EOF
+          chmod +x "$gui_test_dir/bin/fedora-pm-gui"
+          FEDORAPM_GUI_TEST_MARKER="$gui_test_dir/marker" "$gui_test_dir/bin/fedora-pm" --gui info
+          test "$(cat "$gui_test_dir/marker")" = "launched"
+          rm -f "$gui_test_dir/marker"
+          FEDORAPM_GUI_TEST_MARKER="$gui_test_dir/marker" "$gui_test_dir/bin/fedora-pm" info --gui
+          test "$(cat "$gui_test_dir/marker")" = "launched"
+          rm -rf "$gui_test_dir"
+          config_dir="$(mktemp -d)"
+          trap 'rm -rf "$config_dir"' EXIT
+          ./build/fedora-pm --config-dir "$config_dir" config show
+          test -f "$config_dir/config.json"
+          ./build/fedora-pm config show --config-dir "$config_dir"
+          ./build/fedora-pm --config-dir="$config_dir" config get auto_clean
+          ./build/fedora-pm --config-dir "$config_dir" --sudo false config show >/dev/null
+          ./build/fedora-pm --config-dir="$config_dir" --sudo=false config get auto_clean
+          test "$(./build/fedora-pm --version)" = "fedora-pm 2.0.0"
+          test "$(./build/fedora-pm -V)" = "fedora-pm 2.0.0"
+          test "$(./build/fedora-pm version)" = "fedora-pm 2.0.0"
+          # Legacy global verbose/quiet switches are accepted before or after commands.
+          ./build/fedora-pm --verbose info >/dev/null
+          ./build/fedora-pm -v info >/dev/null
+          ./build/fedora-pm --quiet info >/dev/null
+          ./build/fedora-pm -q info >/dev/null
+          ./build/fedora-pm info --verbose >/dev/null
+          ./build/fedora-pm info --quiet >/dev/null
+          # self-update update has a command-local quiet option distinct from global --quiet.
+          test "$(./build/fedora-pm self-update update --quiet)" = "Self-update not configured - GitHub repository needed"
+          ./build/fedora-pm self-update status | grep -Fq "Checking self-update status"
+          ./build/fedora-pm driver check-nvidia >/dev/null
+          ./build/fedora-pm self-update update --force --quiet | grep -Fq "Self-update not configured - GitHub repository needed"
+          ./build/fedora-pm self-update enable daily | grep -Fq "Enabling automatic updates with frequency: daily"
+          ./build/fedora-pm self-update disable | grep -Fq "Disabling automatic updates"
+          if ./build/fedora-pm self-update update --unknown; then
+            echo "Unknown self-update option unexpectedly succeeded" >&2
+            exit 1
+          fi
+
+      - name: Check CLI usage errors
+        run: |
+          expect_usage_error() {
+            set +e
+            "$@" >/dev/null 2>&1
+            status=$?
+            set -e
+            if [ "$status" -ne 2 ]; then
+              echo "Expected usage error (exit 2): $*" >&2
+              exit 1
+            fi
+          }
+          # Invalid flags must never be silently ignored by system-mutating commands.
+          expect_usage_error ./build/fedora-pm --sudo
+          expect_usage_error ./build/fedora-pm --sudo maybe info
+          expect_usage_error ./build/fedora-pm nvidia-remove --bogus
+          expect_usage_error ./build/fedora-pm driver setup-dev --bogus
+          expect_usage_error ./build/fedora-pm cuda-install --bogus
+          expect_usage_error ./build/fedora-pm gaming-install --bogus
+          expect_usage_error ./build/fedora-pm rollback-last --bogus
+          expect_usage_error ./build/fedora-pm clean-orphans --bogus
+          expect_usage_error ./build/fedora-pm flatpak-update --bogus
+          expect_usage_error ./build/fedora-pm flatpak-install org.example.App --bogus
+          expect_usage_error ./build/fedora-pm flatpak-remove org.example.App --bogus
+          # Commands with one/no positional arguments must reject extras instead of silently ignoring them.
+          expect_usage_error ./build/fedora-pm search firefox extra
+          expect_usage_error ./build/fedora-pm groups extra
+          expect_usage_error ./build/fedora-pm history extra
+          expect_usage_error ./build/fedora-pm flatpak-search firefox extra
+          expect_usage_error ./build/fedora-pm flatpak-list extra
+          expect_usage_error ./build/fedora-pm repo-list extra
+          expect_usage_error ./build/fedora-pm repo remove
+          expect_usage_error ./build/fedora-pm repo remove example extra
+          expect_usage_error ./build/fedora-pm diskspace extra
+          expect_usage_error ./build/fedora-pm orphans extra
+          expect_usage_error ./build/fedora-pm install
+          expect_usage_error ./build/fedora-pm remove
+          expect_usage_error ./build/fedora-pm download
+          expect_usage_error ./build/fedora-pm download firefox --bogus
+          expect_usage_error ./build/fedora-pm install firefox --bogus
+          expect_usage_error ./build/fedora-pm remove firefox --bogus
+          expect_usage_error ./build/fedora-pm update firefox --bogus
+          expect_usage_error ./build/fedora-pm help extra
+          expect_usage_error ./build/fedora-pm rollback-history extra
+          expect_usage_error ./build/fedora-pm kernel-remove-old --keep-last 0
+          expect_usage_error ./build/fedora-pm changelog-recent firefox 0
+          expect_usage_error ./build/fedora-pm changelog firefox --limit 0
+          expect_usage_error ./build/fedora-pm changelog firefox --limit 501
+          expect_usage_error ./build/fedora-pm changelog firefox --bogus
+          expect_usage_error ./build/fedora-pm size --top 0
+          expect_usage_error ./build/fedora-pm install-offline
+          expect_usage_error ./build/fedora-pm install-offline --bogus
+          expect_usage_error ./build/fedora-pm kernel remove --bogus
+          # Legacy nested commands should normalize to the corresponding supported C++ command.
+          set +e
+          legacy_driver_output="$(./build/fedora-pm driver install-nvidia --bogus 2>&1)"
+          legacy_driver_status=$?
+          legacy_kernel_output="$(./build/fedora-pm kernel install --bogus 2>&1)"
+          legacy_kernel_status=$?
+          legacy_flatpak_output="$(./build/fedora-pm flatpak update --bogus 2>&1)"
+          legacy_flatpak_status=$?
+          set -e
+          test "$legacy_driver_status" -eq 2
+          test "$legacy_kernel_status" -eq 2
+          test "$legacy_flatpak_status" -eq 2
+          printf '%s\n' "$legacy_driver_output" | grep -Fq 'Usage: fedora-pm nvidia-install'
+          printf '%s\n' "$legacy_kernel_output" | grep -Fq 'Usage: fedora-pm kernel-install'
+          printf '%s\n' "$legacy_flatpak_output" | grep -Fq 'Usage: fedora-pm flatpak-update'
+          # Usage errors should emit actual line breaks, not the literal \\n sequence.
+          set +e
+          ./build/fedora-pm flatpak-update --bogus 2>usage-error.txt
+          usage_status=$?
+          set -e
+          test "$usage_status" -eq 2
+          if grep -F '\n' usage-error.txt; then
+            echo "Usage error contains a literal \n instead of a line break" >&2
+            exit 1
+          fi
+          set +e
+          ./build/fedora-pm driver setup-dev --bogus 2>driver-usage-error.txt
+          driver_usage_status=$?
+          set -e
+          test "$driver_usage_status" -eq 2
+          if grep -F '\n' driver-usage-error.txt; then
+            echo "Driver setup usage error contains a literal \\n instead of a line break" >&2
+            exit 1
+          fi
+
+      - name: Validate Fedora RPM specs and desktop metadata
+        run: |
+          rpmspec --parse fedora-pm-rpm.spec >/dev/null
+          rpmspec --parse fedora-pm-gui-rpm.spec >/dev/null
+          desktop-file-validate fedora-pm.desktop
+          python3 -c "import xml.etree.ElementTree as ET; ET.parse('fedora-pm.metainfo.xml')"
+
+      - name: Validate C++ installer script
+        run: |
+          bash -n install.sh
+          bash install.sh --help
+          bash install.sh --dry-run --cli
+
+  fedora-build-and-test:
+    runs-on: ubuntu-24.04
+    container: fedora:latest
+    steps:
+      - name: Install C++/Qt 6 build dependencies in Fedora container
+        run: |
+          # The minimal rolling image can contain systemd-standalone-tmpfiles while
+          # polkit requires systemd. This is a disposable CI container, so allow DNF
+          # to replace conflicting base packages instead of synchronizing the entire image.
+          dnf install --refresh --assumeyes --allowerasing git cmake gcc-c++ qt6-qtbase-devel rpm-build desktop-file-utils
+
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          filter: blob:none
+          sparse-checkout: |
+            /*
+            !/target/
+            !/rpmbuild/
+          sparse-checkout-cone-mode: false
+
+      - name: Configure
+        run: cmake -S . -B build -DFEDORAPM_BUILD_GUI=ON -DFEDORAPM_BUILD_TESTS=ON -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build CLI, GUI, and tests
+        run: cmake --build build --parallel 2
+
+      - name: Run unit tests
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Smoke-test CLI help and self-update compatibility
+        run: |
+          ./build/fedora-pm help
+          config_dir="$(mktemp -d)"
+          trap 'rm -rf "$config_dir"' EXIT
+          ./build/fedora-pm --config-dir "$config_dir" config show
+          test -f "$config_dir/config.json"
+          ./build/fedora-pm config show --config-dir "$config_dir"
+          ./build/fedora-pm --config-dir="$config_dir" config get auto_clean
+          test "$(./build/fedora-pm --version)" = "fedora-pm 2.0.0"
+          test "$(./build/fedora-pm -V)" = "fedora-pm 2.0.0"
+          test "$(./build/fedora-pm version)" = "fedora-pm 2.0.0"
+          ./build/fedora-pm self-update status | grep -Fq "Checking self-update status"
+          ./build/fedora-pm driver check-nvidia >/dev/null
+          ./build/fedora-pm self-update update --force --quiet | grep -Fq "Self-update not configured - GitHub repository needed"
+          ./build/fedora-pm self-update enable daily | grep -Fq "Enabling automatic updates with frequency: daily"
+          ./build/fedora-pm self-update disable | grep -Fq "Disabling automatic updates"
+          if ./build/fedora-pm self-update update --unknown; then
+            echo "Unknown self-update option unexpectedly succeeded" >&2
+            exit 1
+          fi
+
+      - name: Build CLI and GUI RPMs from this checkout
+        run: |
+          set -euxo pipefail
+          # Use a fresh temporary build tree so old checked-in RPMs can never be selected by find.
+          topdir="$RUNNER_TEMP/rpmbuild"
+          rm -rf "$topdir"
+          mkdir -p "$topdir"/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS}
+          # Exclude checked-in legacy build artifacts; .gitignore does not affect git archive.
+          git -c safe.directory="$PWD" archive --format=tar.gz --prefix=fedora-pm-2.0.0/ HEAD -- . \
+            ':(exclude)target/**' ':(exclude)rpmbuild/**' ':(exclude)*.rpm' ':(exclude)*.tar.gz' \
+            > "$topdir/SOURCES/fedora-pm-2.0.0.tar.gz"
+          cp fedora-pm-rpm.spec fedora-pm-gui-rpm.spec "$topdir/SPECS/"
+          rpmbuild -ba --define "_topdir $topdir" "$topdir/SPECS/fedora-pm-rpm.spec"
+          rpmbuild -ba --define "_topdir $topdir" "$topdir/SPECS/fedora-pm-gui-rpm.spec"
+          cli_rpm="$(find "$topdir/RPMS" -type f -name 'fedora-pm-[0-9]*.rpm' -print -quit)"
+          gui_rpm="$(find "$topdir/RPMS" -type f -name 'fedora-pm-gui-[0-9]*.rpm' -print -quit)"
+          test -n "$cli_rpm"
+          test -n "$gui_rpm"
+          # Exercise RPM dependency resolution, install ownership, and clean removal in the disposable Fedora container.
+          dnf install --assumeyes --allowerasing "$cli_rpm" "$gui_rpm"
+          rpm -q fedora-pm fedora-pm-gui
+          test "$(fedora-pm --version)" = "fedora-pm 2.0.0"
+          test -x /usr/bin/fedora-pm-gui
+          test -f /usr/share/applications/fedora-pm.desktop
+          test -f /usr/share/metainfo/fedora-pm.metainfo.xml
+          dnf remove --assumeyes fedora-pm fedora-pm-gui
+          if rpm -q fedora-pm fedora-pm-gui; then
+            echo "RPM packages remained installed after removal" >&2
+            exit 1
+          fi
+          test ! -e /usr/bin/fedora-pm
+          test ! -e /usr/bin/fedora-pm-gui
+          test ! -e /usr/share/applications/fedora-pm.desktop
+          test ! -e /usr/share/metainfo/fedora-pm.metainfo.xml

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>fedora-pm.desktop</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT OR Apache-2.0</project_license>
+  <name>Fedora Package Manager</name>
+  <summary>Manage Fedora packages with a Qt 6 graphical interface</summary>
+  <description>
+    <p>A native Qt 6 Widgets interface for inspecting DNF packages, reviewing confirmed package transactions, viewing repositories and security updates, and managing Flatpak applications.</p>
+  </description>
+  <launchable type="desktop-id">fedora-pm.desktop</launchable>
+  <provides>
+    <binary>fedora-pm-gui</binary>
+  </provides>
+  <url type="homepage">https://github.com/ryan1501/fedora-pm</url>
+  <categories>
+    <category>System</category>
+    <category>PackageManager</category>
+  </categories>
+</component>

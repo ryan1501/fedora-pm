@@ -1,65 +1,39 @@
-#!/bin/bash
-
-# Enhanced spec file that builds multiple RPM types
-# Builds both .src.rpm and .nosrc.rpm packages
-
-%define _base_version 1.1.0
-%define _version %{_base_version}
-
 Name:           fedora-pm
-Version:        %{_version}
+Version:        2.0.0
 Release:        1%{?dist}
-Summary:        Modern package manager for Fedora Linux with GitHub-based self-update
+Summary:        Fedora package management CLI
 License:        MIT OR Apache-2.0
-URL:            https://github.com/yourusername/fedora-pm
-Source0:        %{name}-%{version}.tar.gz
+%global forgeurl https://github.com/ryan1501/fedora-pm
+URL:            %{forgeurl}
+Source0:        fedora-pm-%{version}.tar.gz
 
-# Build architecture
-BuildArch:      noarch
+BuildRequires:  cmake
+BuildRequires:  gcc-c++
+BuildRequires:  make
 
-# Required build tools
-BuildRequires:  cargo
-BuildRequires:  rust
-BuildRequires:  fedpkg-packager
-
-# Runtime requirements
 Requires:       dnf
+Requires:       dnf-plugins-core
 Requires:       rpm
-Requires:       git
+Requires:       polkit
 
 %description
-A comprehensive package manager for Fedora Linux with CLI and GUI interfaces.
-Features package management, system diagnostics, security updates,
-and GitHub-based self-update capabilities with smart fallbacks.
+A C++20 command-line package management tool for Fedora Linux. It provides
+DNF and Flatpak operations, package export/import, security and system
+diagnostics, and local operation history.
 
-%package
-# Build in a clean directory
-%setup -q
+%prep
+%autosetup -n fedora-pm-%{version}
 
 %build
-# Build the Rust binary
-cargo build --release
+%cmake -DFEDORAPM_BUILD_GUI=OFF -DFEDORAPM_BUILD_TESTS=ON
+%cmake_build
+
+%check
+%ctest --output-on-failure
 
 %install
-# Install main binary
-mkdir -p %{buildroot}%{_bindir}
-install -m 0755 target/release/fedora-pm %{buildroot}%{_bindir}/fedora-pm
+%cmake_install
 
 %files
-# Binary file
 %{_bindir}/fedora-pm
-
-# Documentation (optional)
-%doc README.md CHANGELOG.md LICENSE*
-
-# License files (optional)
-%license LICENSE*
-
-%changelog
-* Wed Dec 31 2024 Your Name <your@email.com> - %{_base_version}-1
-- Added GitHub-based self-update integration with smart fallbacks
-- Binary download with source compilation fallback
-- Auto-update cron job management
-- Comprehensive documentation and testing tools
-- Supports multiple Fedora distributions
-- Robust error handling and user feedback
+%doc README.md docs/CPP_MIGRATION_PLAN.md

@@ -1,14 +1,10 @@
 [Desktop Entry]
 Type=Application
-Name=FedoraAPM
-Comment=The Modern Fedora Package Manager
-Exec=fedorapm-gui
-Icon=fedora-pm
+Name=Fedora Package Manager
+Comment=Manage Fedora DNF packages and Flatpak applications
+Exec=fedora-pm-gui
+Icon=system-software-install
 Terminal=false
 Categories=System;PackageManager;
-Keywords=package;manager;fedora;linux;dnf;
-MimeType=application/x-executable;
+Keywords=package;manager;fedora;linux;dnf;flatpak;
 StartupNotify=true
-Actions=new-window;install;remove;update;
-DBusActivatable=true
-X-GNOME-UsesNotifications=true
