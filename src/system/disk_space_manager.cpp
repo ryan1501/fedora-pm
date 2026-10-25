@@ -95,6 +95,21 @@ PackageResult DiskSpaceManager::remove_orphans(bool assume_yes) const {
     if (assume_yes) args.push_back("-y");
     return run("dnf", args, true);
 }
+PackageResult DiskSpaceManager::total_size() const {
+    auto packages = run("rpm", {"-qa", "--queryformat", "%{SIZE}\\n"});
+    if (!packages.success) return packages;
+    unsigned long long total = 0;
+    std::istringstream lines(packages.output);
+    std::string line;
+    while (std::getline(lines, line)) {
+        try { total += std::stoull(line); } catch (...) {}
+    }
+    std::ostringstream out;
+    out << std::fixed << std::setprecision(2)
+        << "Total installed package size: "
+        << (static_cast<double>(total) / (1024.0 * 1024.0)) << " MB\\n";
+    return {true, out.str(), {}};
+}
 PackageResult DiskSpaceManager::analyze() const {
     auto packages = run("rpm", {"-qa", "--queryformat", "%{SIZE}\n"});
     if (!packages.success) return packages;
