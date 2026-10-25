@@ -18,6 +18,7 @@
 #include "system/history_manager.hpp"
 #include <algorithm>
 #include <charconv>
+#include <cstdlib>
 #include <iostream>
 #include <optional>
 #include <string>
@@ -32,6 +33,7 @@ void usage() {
     std::cout << "fedora-pm (C++20 migration in progress)\n"
               << "Usage: fedora-pm <command> [arguments]\n"
               << "Options: --version, -V  Show build version\n"
+              << "         --config-dir DIR  Use an alternate configuration directory\n"
               << "Commands:\n"
               << "  info                              Show OS and architecture\n"
               << "  doctor                            Run read-only system diagnostics\n"
@@ -88,7 +90,7 @@ void usage() {
               << "  kernel-remove-old [--keep-last N] [--yes]\n"
               << "  kernel-info [VERSION]             Show matching kernel packages\n"
               << "  export [--with-flatpak] FILE     Export installed RPM packages, optionally Flatpaks\n"
-              << "  import [--yes] FILE               Import and install a package list\n"
+              << "  import [--yes] [--with-flatpak] FILE  Import a package list, optionally including Flatpaks\n"
               << "  size [--top N] [--total] [--analyze]  Show installed package size information\n"
               << "  package-size NAME                 Show package size and metadata\n"
               << "  diskspace                         Analyze package/cache/filesystem usage\n"
@@ -136,6 +138,35 @@ int main(int argc, char** argv) {
     std::vector<std::string> normalized_args;
     normalized_args.reserve(static_cast<std::size_t>(argc));
     for (int i = 0; i < argc; ++i) normalized_args.emplace_back(argv[i]);
+    // Clap's global --config-dir option may appear before or after the command.
+    // Pass it through the environment so all managers, including history logging,
+    // resolve the same configuration directory.
+    for (std::size_t i = 1; i < normalized_args.size();) {
+        std::string value;
+        if (normalized_args[i] == "--config-dir") {
+            if (i + 1 >= normalized_args.size() || normalized_args[i + 1].empty()) {
+                std::cerr << "Option --config-dir requires a directory path\n";
+                return 2;
+            }
+            value = normalized_args[i + 1];
+            normalized_args.erase(normalized_args.begin() + static_cast<std::ptrdiff_t>(i),
+                                  normalized_args.begin() + static_cast<std::ptrdiff_t>(i + 2));
+        } else if (normalized_args[i].starts_with("--config-dir=")) {
+            value = normalized_args[i].substr(std::string("--config-dir=").size());
+            normalized_args.erase(normalized_args.begin() + static_cast<std::ptrdiff_t>(i));
+        } else {
+            ++i;
+            continue;
+        }
+        if (value.empty()) {
+            std::cerr << "Option --config-dir requires a non-empty directory path\n";
+            return 2;
+        }
+        if (::setenv("FEDORAPM_CONFIG_DIR", value.c_str(), 1) != 0) {
+            std::cerr << "Could not set the configuration directory override.\n";
+            return 1;
+        }
+    }
     if (normalized_args.size() >= 3) {
         const std::string top = normalized_args[1];
         const std::string sub = normalized_args[2];

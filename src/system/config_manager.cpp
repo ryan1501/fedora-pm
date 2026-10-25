@@ -270,7 +270,14 @@ std::string parse_string(const std::string& data, const std::string& key, const 
 }
 }
 ConfigManager::ConfigManager(std::filesystem::path config_dir) {
-    config_.config_dir = config_dir.empty() ? home_directory() / ".fedora-pm" : std::move(config_dir);
+    if (config_dir.empty()) {
+        const char* override_dir = std::getenv("FEDORAPM_CONFIG_DIR");
+        config_.config_dir = (override_dir && *override_dir)
+            ? std::filesystem::path(override_dir)
+            : home_directory() / ".fedora-pm";
+    } else {
+        config_.config_dir = std::move(config_dir);
+    }
     config_.history_file = config_.config_dir / "history.json";
 }
 PackageResult ConfigManager::load() {
