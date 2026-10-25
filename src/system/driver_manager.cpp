@@ -10,14 +10,15 @@
 namespace fedora_pm::system {
 using fedora_pm::packages::PackageResult;
 namespace {
-PackageResult run(const std::string& program, const std::vector<std::string>& args, std::chrono::milliseconds timeout = std::chrono::minutes(20)) {
+PackageResult run(const std::string& program, const std::vector<std::string>& args, std::chrono::milliseconds timeout = std::chrono::minutes(20), bool privileged = false) {
     try {
-        const auto r = fedora_pm::core::run_process(program, args, {.timeout = timeout});
+        const auto r = fedora_pm::core::run_process(program, args,
+            {.timeout = timeout, .use_sudo = privileged});
         return {!r.timed_out && r.exit_code == 0, r.standard_output,
                 r.timed_out ? "Command timed out. " + r.standard_error : r.standard_error};
     } catch (const std::exception& e) { return {false, {}, e.what()}; }
 }
-PackageResult dnf(const std::vector<std::string>& args) { return run("dnf", args); }
+PackageResult dnf(const std::vector<std::string>& args, bool privileged = false) { return run("dnf", args, std::chrono::minutes(20), privileged); }
 std::vector<std::string> rpm_lines(const std::string& pattern) {
     const auto result = run("rpm", {"-qa", pattern});
     std::vector<std::string> packages;
@@ -93,7 +94,7 @@ PackageResult DriverManager::install_nvidia(std::optional<std::string> version, 
     std::vector<std::string> args{"install"};
     if (assume_yes) args.push_back("-y");
     args.insert(args.end(), packages.begin(), packages.end());
-    auto result = dnf(args);
+    auto result = dnf(args, true);
     if (result.success) result.output += "\nReboot after installation and verify with nvidia-smi.\n";
     return result;
 }
@@ -107,12 +108,12 @@ PackageResult DriverManager::remove_nvidia(bool assume_yes) const {
     std::vector<std::string> args{"remove"};
     if (assume_yes) args.push_back("-y");
     args.insert(args.end(), packages.begin(), packages.end());
-    return dnf(args);
+    return dnf(args, true);
 }
 PackageResult DriverManager::install_cuda(bool assume_yes) const {
     std::vector<std::string> args{"install"};
     if (assume_yes) args.push_back("-y");
     args.insert(args.end(), {"cuda", "cuda-toolkit", "nvidia-cuda-toolkit"});
-    return dnf(args);
+    return dnf(args, true);
 }
 }

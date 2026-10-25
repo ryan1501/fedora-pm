@@ -11,9 +11,10 @@
 namespace fedora_pm::system {
 using fedora_pm::packages::PackageResult;
 namespace {
-PackageResult run_dnf(const std::vector<std::string>& args) {
+PackageResult run_dnf(const std::vector<std::string>& args, bool privileged = false) {
     try {
-        const auto r = fedora_pm::core::run_process("dnf", args, {.timeout = std::chrono::minutes(60)});
+        const auto r = fedora_pm::core::run_process("dnf", args,
+            {.timeout = std::chrono::minutes(60), .use_sudo = privileged});
         return {!r.timed_out && r.exit_code == 0, r.standard_output,
                 r.timed_out ? "DNF transaction operation timed out. " + r.standard_error : r.standard_error};
     } catch (const std::exception& e) { return {false, {}, e.what()}; }
@@ -44,7 +45,7 @@ PackageResult RollbackManager::rollback(std::string transaction_id, bool assume_
     if (!valid_id(transaction_id)) return {false, {}, "Transaction ID must be a positive integer."};
     std::vector<std::string> args{"history", "undo", transaction_id};
     if (assume_yes) args.push_back("-y");
-    return run_dnf(args);
+    return run_dnf(args, true);
 }
 PackageResult RollbackManager::rollback_last(bool assume_yes) const {
     const auto history = list_history();

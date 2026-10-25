@@ -7,9 +7,10 @@
 
 namespace fedora_pm::packages {
 PackageManager::PackageManager(std::string executable) : executable_(std::move(executable)) {}
-PackageResult PackageManager::run(const std::vector<std::string>& args) const {
+PackageResult PackageManager::run(const std::vector<std::string>& args, bool privileged) const {
     try {
-        const auto r = fedora_pm::core::run_process(executable_, args, {.timeout = std::chrono::minutes(15)});
+        const auto r = fedora_pm::core::run_process(executable_, args,
+            {.timeout = std::chrono::minutes(15), .use_sudo = privileged});
         return { !r.timed_out && r.exit_code == 0, r.standard_output, r.timed_out ? "DNF command timed out. " + r.standard_error : r.standard_error };
     } catch (const std::exception& e) {
         return {false, {}, e.what()};
@@ -71,23 +72,23 @@ PackageResult PackageManager::install_group(const std::string& group, bool assum
     std::vector<std::string> args{"group", "install"};
     if (assume_yes) args.push_back("-y");
     args.push_back(group);
-    return run(args);
+    return run(args, true);
 }
 PackageResult PackageManager::remove_group(const std::string& group, bool assume_yes) const {
     if (!valid_group(group)) return {false, {}, "Group name must not be empty or contain newlines."};
     std::vector<std::string> args{"group", "remove"};
     if (assume_yes) args.push_back("-y");
     args.push_back(group);
-    return run(args);
+    return run(args, true);
 }
-PackageResult PackageManager::clean_cache() const { return run({"clean", "all"}); }
+PackageResult PackageManager::clean_cache() const { return run({"clean", "all"}, true); }
 PackageResult PackageManager::install(const std::vector<std::string>& packages, bool assume_yes) const {
     if (packages.empty()) return {false, {}, "Specify at least one package."};
     for (const auto& p : packages) if (!fedora_pm::core::is_valid_package_name(p)) return {false, {}, "Invalid package name: " + p};
     std::vector<std::string> args{"install"};
     if (assume_yes) args.push_back("-y");
     args.insert(args.end(), packages.begin(), packages.end());
-    return run(args);
+    return run(args, true);
 }
 PackageResult PackageManager::remove(const std::vector<std::string>& packages, bool assume_yes) const {
     if (packages.empty()) return {false, {}, "Specify at least one package."};
@@ -95,11 +96,11 @@ PackageResult PackageManager::remove(const std::vector<std::string>& packages, b
     std::vector<std::string> args{"remove"};
     if (assume_yes) args.push_back("-y");
     args.insert(args.end(), packages.begin(), packages.end());
-    return run(args);
+    return run(args, true);
 }
 PackageResult PackageManager::update(bool assume_yes) const {
     std::vector<std::string> args{"upgrade"};
     if (assume_yes) args.push_back("-y");
-    return run(args);
+    return run(args, true);
 }
 }

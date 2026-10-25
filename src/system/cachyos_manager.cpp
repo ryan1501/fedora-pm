@@ -13,9 +13,10 @@
 namespace fedora_pm::system {
 using fedora_pm::packages::PackageResult;
 namespace {
-PackageResult run(const std::vector<std::string>& args, std::chrono::milliseconds timeout = std::chrono::minutes(30)) {
+PackageResult run(const std::vector<std::string>& args, std::chrono::milliseconds timeout = std::chrono::minutes(30), bool privileged = false) {
     try {
-        const auto r = fedora_pm::core::run_process("dnf", args, {.timeout = timeout});
+        const auto r = fedora_pm::core::run_process("dnf", args,
+            {.timeout = timeout, .use_sudo = privileged});
         return {!r.timed_out && r.exit_code == 0, r.standard_output,
                 r.timed_out ? "DNF command timed out. " + r.standard_error : r.standard_error};
     } catch (const std::exception& e) { return {false, {}, e.what()}; }
@@ -69,7 +70,7 @@ PackageResult CachyOSManager::enable_repository(const std::string& type, bool as
     std::vector<std::string> args{"copr", "enable"};
     if (assume_yes) args.push_back("-y");
     args.push_back(repo);
-    return run(args, std::chrono::minutes(10));
+    return run(args, std::chrono::minutes(10), true);
 }
 PackageResult CachyOSManager::disable_repository(const std::string& type, bool assume_yes) const {
     const auto repo = repo_name(type);
@@ -77,7 +78,7 @@ PackageResult CachyOSManager::disable_repository(const std::string& type, bool a
     std::vector<std::string> args{"copr", "disable"};
     if (assume_yes) args.push_back("-y");
     args.push_back(repo);
-    return run(args, std::chrono::minutes(10));
+    return run(args, std::chrono::minutes(10), true);
 }
 PackageResult CachyOSManager::check_cpu() const {
     std::ifstream input("/proc/cpuinfo");
@@ -128,7 +129,7 @@ PackageResult CachyOSManager::install_kernel(const std::string& kernel_type, con
     if (assume_yes) args.push_back("-y");
     args.push_back(package);
     args.push_back(package + "-devel-matched");
-    auto result = run(args, std::chrono::minutes(60));
+    auto result = run(args, std::chrono::minutes(60), true);
     if (result.success) result.output += "\nReboot to use the new CachyOS kernel.\n";
     return result;
 }

@@ -79,6 +79,17 @@ void terminate_child(pid_t pid, int& status, bool& child_done) {
 
 ProcessResult run_process(const std::string& program, const std::vector<std::string>& arguments,
                           const ProcessOptions& options) {
+    const bool elevate = options.use_sudo && ::geteuid() != 0;
+    const std::string executable = elevate ? "sudo" : program;
+    std::vector<std::string> effective_arguments;
+    if (elevate) {
+        effective_arguments.reserve(arguments.size() + 2);
+        effective_arguments.emplace_back("--non-interactive");
+        effective_arguments.push_back(program);
+        effective_arguments.insert(effective_arguments.end(), arguments.begin(), arguments.end());
+    } else {
+        effective_arguments = arguments;
+    }
     int out_pipe[2]{-1, -1};
     int err_pipe[2]{-1, -1};
     if (::pipe(out_pipe) != 0)
@@ -105,11 +116,11 @@ ProcessResult run_process(const std::string& program, const std::vector<std::str
         }
         close_pipes(out_pipe, err_pipe);
         std::vector<char*> argv;
-        argv.reserve(arguments.size() + 2);
-        argv.push_back(const_cast<char*>(program.c_str()));
-        for (const auto& arg : arguments) argv.push_back(const_cast<char*>(arg.c_str()));
+        argv.reserve(effective_arguments.size() + 2);
+        argv.push_back(const_cast<char*>(executable.c_str()));
+        for (const auto& arg : effective_arguments) argv.push_back(const_cast<char*>(arg.c_str()));
         argv.push_back(nullptr);
-        ::execvp(program.c_str(), argv.data());
+        ::execvp(executable.c_str(), argv.data());
         const std::string message = "exec failed: " + std::string(std::strerror(errno)) + "\n";
         const auto written = ::write(STDERR_FILENO, message.data(), message.size());
         (void)written;

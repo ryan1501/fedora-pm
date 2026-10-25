@@ -15,9 +15,10 @@ namespace fedora_pm::system {
 using fedora_pm::packages::PackageResult;
 namespace {
 PackageResult run(const std::string& program, const std::vector<std::string>& args,
-                  std::chrono::milliseconds timeout = std::chrono::minutes(30)) {
+                  std::chrono::milliseconds timeout = std::chrono::minutes(30), bool privileged = false) {
     try {
-        const auto r = fedora_pm::core::run_process(program, args, {.timeout = timeout});
+        const auto r = fedora_pm::core::run_process(program, args,
+            {.timeout = timeout, .use_sudo = privileged});
         return {!r.timed_out && r.exit_code == 0, r.standard_output,
                 r.timed_out ? "Command timed out. " + r.standard_error : r.standard_error};
     } catch (const std::exception& e) { return {false, {}, e.what()}; }
@@ -107,7 +108,7 @@ PackageResult KernelManager::install(std::optional<std::string> version, bool as
     std::vector<std::string> args{"install"};
     if (assume_yes) args.push_back("-y");
     args.push_back(package);
-    auto result = run("dnf", args, std::chrono::minutes(60));
+    auto result = run("dnf", args, std::chrono::minutes(60), true);
     if (result.success) result.output += "\nReboot to use the new kernel.\n";
     return result;
 }
@@ -127,7 +128,7 @@ PackageResult KernelManager::remove(const std::vector<std::string>& versions, bo
     std::vector<std::string> args{"remove"};
     if (assume_yes) args.push_back("-y");
     args.insert(args.end(), packages.begin(), packages.end());
-    return run("dnf", args, std::chrono::minutes(60));
+    return run("dnf", args, std::chrono::minutes(60), true);
 }
 PackageResult KernelManager::remove_old(std::size_t keep_last, bool assume_yes) const {
     if (keep_last == 0 || keep_last > 20) return {false, {}, "keep-last must be between 1 and 20."};
@@ -156,7 +157,7 @@ PackageResult KernelManager::remove_old(std::size_t keep_last, bool assume_yes) 
     std::vector<std::string> args{"remove"};
     if (assume_yes) args.push_back("-y");
     args.insert(args.end(), targets.begin(), targets.end());
-    return run("dnf", args, std::chrono::minutes(60));
+    return run("dnf", args, std::chrono::minutes(60), true);
 }
 PackageResult KernelManager::info(std::optional<std::string> version) const {
     const std::string target = version.value_or(detect_kernels().running);

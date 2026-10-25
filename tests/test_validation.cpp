@@ -20,6 +20,8 @@
 #include "system/cachyos_manager.hpp"
 #include "system/history_manager.hpp"
 #include <cassert>
+#include <cstdlib>
+#include <unistd.h>
 #include <filesystem>
 #include <fstream>
 #include <string>
@@ -55,6 +57,34 @@ int main() {
     assert(process_output.exit_code == 0);
     assert(process_output.standard_output == "hello world");
     assert(process_output.standard_error.empty());
+    // Verify privileged process execution builds an argv vector for sudo without a shell.
+    if (::geteuid() != 0) {
+        const auto sudo_test_dir = std::filesystem::temp_directory_path() / "fedora-pm-sudo-test";
+        std::error_code sudo_test_error;
+        std::filesystem::remove_all(sudo_test_dir, sudo_test_error);
+        std::filesystem::create_directories(sudo_test_dir, sudo_test_error);
+        assert(!sudo_test_error);
+        const auto fake_sudo = sudo_test_dir / "sudo";
+        {
+            std::ofstream script(fake_sudo);
+            script << "#!/bin/sh\nprintf '<%s>\\n' \"$@\"\n";
+        }
+        std::filesystem::permissions(fake_sudo,
+            std::filesystem::perms::owner_read | std::filesystem::perms::owner_write |
+            std::filesystem::perms::owner_exec, std::filesystem::perm_options::replace, sudo_test_error);
+        assert(!sudo_test_error);
+        const char* original_path = std::getenv("PATH");
+        const bool had_path = original_path != nullptr;
+        const std::string saved_path = original_path ? original_path : "";
+        const std::string test_path = sudo_test_dir.string() + ":" + saved_path;
+        assert(::setenv("PATH", test_path.c_str(), 1) == 0);
+        const auto sudo_output = fedora_pm::core::run_process("/usr/bin/printf", {"%s", "payload"}, {.use_sudo = true});
+        if (had_path) assert(::setenv("PATH", saved_path.c_str(), 1) == 0);
+        else assert(::unsetenv("PATH") == 0);
+        assert(sudo_output.exit_code == 0);
+        assert(sudo_output.standard_output == "<--non-interactive>\n</usr/bin/printf>\n<%s>\n<payload>\n");
+        std::filesystem::remove_all(sudo_test_dir, sudo_test_error);
+    }
     const auto process_timeout = fedora_pm::core::run_process(
         "/usr/bin/sleep", {"2"}, {.timeout = std::chrono::milliseconds(50)});
     assert(process_timeout.timed_out);

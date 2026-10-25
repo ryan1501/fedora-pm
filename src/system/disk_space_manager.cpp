@@ -11,9 +11,10 @@
 namespace fedora_pm::system {
 using fedora_pm::packages::PackageResult;
 namespace {
-PackageResult run(const std::string& program, const std::vector<std::string>& args) {
+PackageResult run(const std::string& program, const std::vector<std::string>& args, bool privileged = false) {
     try {
-        const auto r = fedora_pm::core::run_process(program, args, {.timeout = std::chrono::minutes(5)});
+        const auto r = fedora_pm::core::run_process(program, args,
+            {.timeout = std::chrono::minutes(5), .use_sudo = privileged});
         return {!r.timed_out && r.exit_code == 0, r.standard_output,
                 r.standard_error.empty() && r.timed_out ? "Command timed out." : r.standard_error};
     } catch (const std::exception& e) { return {false, {}, e.what()}; }
@@ -92,7 +93,7 @@ PackageResult DiskSpaceManager::orphaned_packages() const {
 PackageResult DiskSpaceManager::remove_orphans(bool assume_yes) const {
     std::vector<std::string> args{"autoremove"};
     if (assume_yes) args.push_back("-y");
-    return run("dnf", args);
+    return run("dnf", args, true);
 }
 PackageResult DiskSpaceManager::analyze() const {
     auto packages = run("rpm", {"-qa", "--queryformat", "%{SIZE}\n"});

@@ -9,9 +9,10 @@
 namespace fedora_pm::system {
 using fedora_pm::packages::PackageResult;
 namespace {
-PackageResult run(const std::vector<std::string>& args, std::chrono::milliseconds timeout = std::chrono::minutes(10)) {
+PackageResult run(const std::vector<std::string>& args, std::chrono::milliseconds timeout = std::chrono::minutes(10), bool privileged = false) {
     try {
-        const auto r = fedora_pm::core::run_process("dnf", args, {.timeout = timeout});
+        const auto r = fedora_pm::core::run_process("dnf", args,
+            {.timeout = timeout, .use_sudo = privileged});
         return {!r.timed_out && r.exit_code == 0, r.standard_output,
                 r.timed_out ? "DNF command timed out. " + r.standard_error : r.standard_error};
     } catch (const std::exception& e) { return {false, {}, e.what()}; }
@@ -61,6 +62,6 @@ PackageResult SecurityManager::audit() const {
 PackageResult SecurityManager::update(bool assume_yes) const {
     std::vector<std::string> args{"upgrade", "--security"};
     if (assume_yes) args.push_back("-y");
-    return run(args, std::chrono::minutes(60));
+    return run(args, std::chrono::minutes(60), true);
 }
 }

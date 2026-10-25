@@ -8,9 +8,10 @@
 
 namespace fedora_pm::packages {
 namespace {
-PackageResult execute(const std::vector<std::string>& args, std::chrono::milliseconds timeout = std::chrono::minutes(30)) {
+PackageResult execute(const std::vector<std::string>& args, std::chrono::milliseconds timeout = std::chrono::minutes(30), bool privileged = false) {
     try {
-        const auto result = fedora_pm::core::run_process("dnf", args, {.timeout = timeout});
+        const auto result = fedora_pm::core::run_process("dnf", args,
+            {.timeout = timeout, .use_sudo = privileged});
         if (result.timed_out) return {false, result.standard_output, "DNF command timed out. " + result.standard_error};
         return {result.exit_code == 0, result.standard_output, result.standard_error};
     } catch (const std::exception& e) { return {false, {}, e.what()}; }
@@ -67,6 +68,6 @@ PackageResult DownloadManager::install_offline(const std::vector<std::string>& r
             return {false, {}, "RPM file does not exist or is not a regular file: " + file};
         args.push_back(path.string());
     }
-    return execute(args);
+    return execute(args, std::chrono::minutes(30), true);
 }
 }

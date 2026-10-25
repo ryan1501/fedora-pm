@@ -15,6 +15,8 @@ struct ProcessResult {
 struct ProcessOptions {
     std::chrono::milliseconds timeout{std::chrono::seconds(60)};
     bool require_success{false};
+    // For system-changing operations, use sudo without a shell when not already root.
+    bool use_sudo{false};
 };
 
 // Executes an argument vector directly (never through a shell), avoiding shell injection.

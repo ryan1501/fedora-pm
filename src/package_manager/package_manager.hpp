@@ -29,6 +29,6 @@ public:
     PackageResult update(bool assume_yes = false) const;
 private:
     std::string executable_;
-    PackageResult run(const std::vector<std::string>& args) const;
+    PackageResult run(const std::vector<std::string>& args, bool privileged = false) const;
 };
 }
