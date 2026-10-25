@@ -5,7 +5,7 @@ Target branch: migration/cpp20-qt6
 The C++ implementation is being built in parallel with the Rust application. It does not yet replace the Rust application or provide full feature parity.
 
 ## Implemented so far
-- CMake C++20 project, optional Qt 6 Widgets target, and shell-free process runner with timeouts and captured output.
+- CMake C++20 project, optional Qt 6 Widgets target, and shell-free process runner with timeouts, captured output, and explicit `sudo --non-interactive` escalation for CLI system mutations.
 - Basic validation, system detection, DNF search/info/list installed/list available/install/remove/upgrade/history.
 - Dependency/reverse-dependency queries, installed groups, and package group info/install/remove.
 - DNF package-list export/import with input validation and confirmation; Flatpak export/import has an explicit `--with-flatpak` path and legacy ID parsing, but full parity and edge-case comparison remain open.
@@ -27,14 +27,15 @@ The C++ implementation is being built in parallel with the Rust application. It 
 
 ## Remaining work before replacing Rust
 - Audit remaining mutation paths for operation-history logging and continue validating behavior against existing Rust history files.
-- Finish Rust CLI compatibility (all original flags, output, and exit codes) and compare Flatpak export/import edge cases against the Rust version.
-- Implement real self-update support; the current command is only a compatibility placeholder. Align remaining CLI names, flags, output, and exit codes with the Rust CLI (for example, Rust's `whats-new` spelling differs from the C++ `whatsnew` command).
+- Finish Rust CLI compatibility (all original flags, output, and exit codes), including global flags (`--verbose`, `--quiet`, `--sudo`, `--config-dir`), package-specific updates, `deps --tree`, `size --total/--analyze`, `download --dest`, and Flatpak import/export edge cases.
+- Implement real self-update support; the current command is only a compatibility placeholder. Keep unsupported legacy workflows explicit rather than silently mapping them to different actions.
 - Expand GUI beyond the current core package workflows to Flatpak, repository, kernel, security, driver, backup/import, configuration, and history workflows; test privilege prompts, preview parsing, cancellation, and error handling.
 - Strictly validate JSON config compatibility; the current parser handles known fields but is not a general-purpose JSON parser.
-- Validate Fedora Workstation and Fedora Everything, RPM packaging, desktop integration, install/uninstall, DNF plugin requirements, and licensing/documentation. Latest GUI transaction-preview and Flatpak mutation changes passed Ubuntu/Fedora CI; no Fedora Workstation/Everything runtime test is claimed yet.
+- Validate Fedora Workstation and Fedora Everything beyond container CI, including GUI privilege prompts and cancellation. CI builds/installs/uninstalls both RPMs in a disposable Fedora container, but real-machine runtime tests and licensing/documentation review remain outstanding.
+- Port the legacy COPR upload scripts to the C++ RPM specs; they remain intentionally disabled so they cannot accidentally publish the old Rust package.
 
 ## Safety notes
 - Repository addition accepts HTTP(S) URLs only; repository removal remains unimplemented rather than guessing a .repo filename that could delete the wrong configuration.
-- Package mutations may require privileges; automatic elevation is not assumed.
+- System-changing CLI DNF operations use `sudo --non-interactive` when not already root; GUI DNF mutations use `pkexec` and transaction confirmation.
 - DNF transaction rollback and kernel removal can alter the system and should be reviewed carefully before confirmation.
 - This remains an incomplete development branch and is not ready to merge as the replacement.

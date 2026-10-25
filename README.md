@@ -33,6 +33,16 @@ Install the C++ build tools and Qt 6 development headers:
 sudo dnf install cmake gcc-c++ qt6-qtbase-devel
 ```
 
+On a minimal Fedora Everything installation, add the runtime tools used by repository-management and download commands, plus `pkexec` for GUI mutations:
+
+```bash
+sudo dnf install dnf-plugins-core polkit
+# Optional: needed only for Flatpak commands
+sudo dnf install flatpak
+```
+
+When run as a non-root user, the C++ CLI uses `sudo --non-interactive` for system-changing DNF operations. Configure non-interactive sudo authorization for those commands; they fail rather than prompting for a sudo password. The GUI uses `pkexec` for DNF transaction preview and application.
+
 From the repository root:
 
 ```bash
@@ -97,10 +107,10 @@ See the checklist in [`docs/CPP_MIGRATION_PLAN.md`](docs/CPP_MIGRATION_PLAN.md).
 
 - Audit remaining mutation paths and continue comparing history behavior with legacy Rust-generated files
 - Real self-update functionality (the current C++ CLI only preserves placeholder command behavior)
-- Exact CLI name, flag, output, and exit-code compatibility
+- Exact CLI name, flag, output, and exit-code compatibility, including global flags (`--verbose`, `--quiet`, `--sudo`, `--config-dir`), package-specific updates, `deps --tree`, `size --total/--analyze`, and remaining aliases/options
 - Broader GUI workflows and privilege/progress/cancellation testing
 - Compatibility testing on Fedora Workstation and Fedora Everything
-- RPM spec files and desktop/metainfo assets exist; RPM build/install/uninstall validation and DNF plugin checks remain
+- CI builds both RPMs and tests install/uninstall in a disposable Fedora container; real Fedora Workstation/Everything testing and DNF plugin checks remain
 - Behavior comparison against the Rust version, plus final documentation and license review
 
 The repository `install.sh` now builds and installs the C++ implementation with CMake. Run `./install.sh --help` for `--cli`, `--gui`, `--both`, `--user`, `--prefix`, and `--dry-run` options. For development or manual control, use the CMake commands above.

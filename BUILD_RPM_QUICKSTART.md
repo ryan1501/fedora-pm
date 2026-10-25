@@ -38,6 +38,6 @@ The GUI command is available only when CMake finds Qt 6 Widgets and GUI building
 
 ## RPM packaging status
 
-The repository contains `fedora-pm-rpm.spec` for the CLI, `fedora-pm-gui-rpm.spec` for the GUI, plus `fedora-pm.desktop` and `fedora-pm.metainfo.xml`. These are initial packaging assets, not yet a validated install/uninstall workflow. The specs currently expect a versioned source archive; verify the source archive, build requirements, RPM output, file ownership, desktop integration, and uninstall behavior on a disposable Fedora virtual machine before distributing packages.
+The repository contains `fedora-pm-rpm.spec` for the CLI, `fedora-pm-gui-rpm.spec` for the GUI, plus `fedora-pm.desktop` and `fedora-pm.metainfo.xml`. CI builds both RPMs and validates installation/removal in a disposable Fedora container, including desktop integration and file cleanup. Real Fedora Workstation and Fedora Everything testing is still outstanding. The specs expect a versioned source archive; CI creates one from the checkout while excluding checked-in legacy build artifacts. Complete real-machine validation and licensing review before distribution.
 
 See [`docs/CPP_MIGRATION_PLAN.md`](docs/CPP_MIGRATION_PLAN.md) for remaining parity and packaging checks, and [`RPM_BUILD_GUIDE.md`](RPM_BUILD_GUIDE.md) for additional packaging notes.

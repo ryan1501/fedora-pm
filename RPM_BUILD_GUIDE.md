@@ -2,15 +2,17 @@
 
 The C++ migration uses C++20, CMake, and Qt 6 Widgets. This guide replaces the old Python/PySide6 RPM instructions, which refer to files and a build script that are no longer the supported path.
 
-**Packaging status:** initial CLI and GUI spec files and desktop metadata exist, and CI parses the GUI spec and validates the desktop entry. A complete RPM build/install/uninstall cycle has not yet been validated on a real Fedora Workstation or Fedora Everything installation. Treat the packaging as experimental.
+**Packaging status:** CI builds the CLI and GUI RPMs, installs both in a disposable Fedora container, verifies commands and desktop metadata, and removes both packages. Real Fedora Workstation and Fedora Everything VM testing remains outstanding, so treat the packages as experimental.
 
 ## Build and test from source
 
 On Fedora Workstation or Fedora Everything, install the development dependencies:
 
 ```bash
-sudo dnf install cmake gcc-c++ qt6-qtbase-devel
+sudo dnf install cmake gcc-c++ qt6-qtbase-devel dnf-plugins-core polkit
 ```
+
+Install `flatpak` as well if you want to test Flatpak commands. The CLI uses `sudo --non-interactive` for system-changing DNF operations when not already root; the GUI uses `pkexec` for DNF mutations.
 
 From the repository root:
 
