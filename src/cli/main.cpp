@@ -219,7 +219,12 @@ int main(int argc, char** argv) {
         std::cout << "fedora-pm " << FEDORAPM_VERSION << "\n";
         return 0;
     }
-    if (argc < 2 || std::string(argv[1]) == "help" || std::string(argv[1]) == "--help") { usage(); return 0; }
+    if (argc < 2) { usage(); return 0; }
+    if (std::string(argv[1]) == "help" || std::string(argv[1]) == "--help") {
+        if (argc != 2) { std::cerr << "Usage: fedora-pm help\n"; return 2; }
+        usage();
+        return 0;
+    }
     const std::string command = argv[1];
     if (command == "info" && argc == 2) {
         const auto s = fedora_pm::system::detect_system();
@@ -321,6 +326,7 @@ int main(int argc, char** argv) {
                 }
             } else { std::cerr << "Usage: fedora-pm kernel-remove-old [--keep-last N] [--yes]\n"; return 2; }
         }
+        if (keep == 0) { std::cerr << "--keep-last requires a positive integer\n"; return 2; }
         return print_mutation_result(kernels.remove_old(keep, yes), "kernel_remove_old", {std::to_string(keep)});
     }
 
@@ -341,7 +347,10 @@ int main(int argc, char** argv) {
 
     fedora_pm::packages::PackageManager pm;
     if (command == "history" && argc == 2) return print_result(fedora_pm::system::HistoryManager{}.print_recent(10));
-    if (command == "rollback-history") return print_result(pm.history());
+    if (command == "rollback-history") {
+        std::cerr << "Usage: fedora-pm rollback-history\n";
+        return 2;
+    }
     if (command == "search") {
         if (argc != 3) { std::cerr << "Usage: fedora-pm search QUERY\n"; return 2; }
         return print_result(pm.search(argv[2]));
@@ -395,7 +404,7 @@ int main(int argc, char** argv) {
         if (argc == 4) {
             const std::string value = argv[3];
             const auto [ptr, ec] = std::from_chars(value.data(), value.data() + value.size(), count);
-            if (ec != std::errc{} || ptr != value.data() + value.size()) {
+            if (ec != std::errc{} || ptr != value.data() + value.size() || count == 0) {
                 std::cerr << "COUNT must be a positive integer\n";
                 return 2;
             }
@@ -518,7 +527,7 @@ int main(int argc, char** argv) {
         if (argc == 4 && std::string(argv[2]) == "--top") {
             const std::string value = argv[3];
             const auto [ptr, ec] = std::from_chars(value.data(), value.data() + value.size(), limit);
-            if (ec != std::errc{} || ptr != value.data() + value.size()) {
+            if (ec != std::errc{} || ptr != value.data() + value.size() || limit == 0) {
                 std::cerr << "--top requires a positive integer\n";
                 return 2;
             }
@@ -562,8 +571,19 @@ int main(int argc, char** argv) {
         int i = 2;
         bool yes = false;
         if (i < argc && std::string(argv[i]) == "--yes") { yes = true; ++i; }
+        if (i >= argc) {
+            std::cerr << "Usage: fedora-pm install-offline [--yes] FILE.rpm...\n";
+            return 2;
+        }
         std::vector<std::string> files;
-        for (; i < argc; ++i) files.emplace_back(argv[i]);
+        for (; i < argc; ++i) {
+            const std::string file = argv[i];
+            if (file.starts_with("-")) {
+                std::cerr << "Unknown install-offline option: " << file << '\n';
+                return 2;
+            }
+            files.emplace_back(file);
+        }
         return print_mutation_result(downloads.install_offline(files, yes), "install-offline", files);
     }
 
