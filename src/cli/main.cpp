@@ -552,19 +552,19 @@ int main(int argc, char** argv) {
                 with_deps = true;
             } else if (arg == "--to" || arg == "--dest" || arg == "-d") {
                 if (i + 1 >= argc || argv[i + 1][0] == '-') {
-                    std::cerr << arg << " requires a destination directory\\n";
+                    std::cerr << arg << " requires a destination directory\n";
                     return 2;
                 }
                 destination = argv[++i];
             } else if (arg.starts_with("-")) {
-                std::cerr << "Unknown download option: " << arg << '\\n';
+                std::cerr << "Unknown download option: " << arg << '\n';
                 return 2;
             } else {
                 packages.emplace_back(arg);
             }
         }
         if (packages.empty()) {
-            std::cerr << "Usage: fedora-pm download [--dest DIR] [--with-deps] PACKAGE...\\n";
+            std::cerr << "Usage: fedora-pm download [--dest DIR] [--with-deps] PACKAGE...\n";
             return 2;
         }
         if (with_deps) return print_mutation_result(downloads.download_with_dependencies(packages, destination), "download-with-deps", packages);
@@ -639,14 +639,14 @@ int main(int argc, char** argv) {
             const std::string arg = argv[i];
             if (arg == "--yes") yes = true;
             else if (arg.starts_with("-")) {
-                std::cerr << "Unknown " << command << " option: " << arg << '\\n';
+                std::cerr << "Unknown " << command << " option: " << arg << '\n';
                 return 2;
             } else {
                 packages.emplace_back(arg);
             }
         }
         if ((command == "install" || command == "remove") && packages.empty()) {
-            std::cerr << "Usage: fedora-pm " << command << " [--yes] NAME...\\n";
+            std::cerr << "Usage: fedora-pm " << command << " [--yes] NAME...\n";
             return 2;
         }
         if (command == "install")
