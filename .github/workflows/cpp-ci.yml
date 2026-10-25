@@ -55,19 +55,10 @@ jobs:
           test "$(./build/fedora-pm --version)" = "fedora-pm 2.0.0"
           test "$(./build/fedora-pm -V)" = "fedora-pm 2.0.0"
           test "$(./build/fedora-pm version)" = "fedora-pm 2.0.0"
-          ./build/fedora-pm self-update status
-          if ./build/fedora-pm self-update update --force --quiet; then
-            echo "Unconfigured self-update unexpectedly reported success" >&2
-            exit 1
-          fi
-          if ./build/fedora-pm self-update enable daily; then
-            echo "Unimplemented automatic self-update unexpectedly reported success" >&2
-            exit 1
-          fi
-          if ./build/fedora-pm self-update disable; then
-            echo "Unimplemented automatic self-update unexpectedly reported success" >&2
-            exit 1
-          fi
+          ./build/fedora-pm self-update status | grep -Fq "Checking self-update status"
+          ./build/fedora-pm self-update update --force --quiet | grep -Fq "Self-update not configured - GitHub repository needed"
+          ./build/fedora-pm self-update enable daily | grep -Fq "Enabling automatic updates with frequency: daily"
+          ./build/fedora-pm self-update disable | grep -Fq "Disabling automatic updates"
           if ./build/fedora-pm self-update update --unknown; then
             echo "Unknown self-update option unexpectedly succeeded" >&2
             exit 1
@@ -201,19 +192,10 @@ jobs:
           test "$(./build/fedora-pm --version)" = "fedora-pm 2.0.0"
           test "$(./build/fedora-pm -V)" = "fedora-pm 2.0.0"
           test "$(./build/fedora-pm version)" = "fedora-pm 2.0.0"
-          ./build/fedora-pm self-update status
-          if ./build/fedora-pm self-update update --force --quiet; then
-            echo "Unconfigured self-update unexpectedly reported success" >&2
-            exit 1
-          fi
-          if ./build/fedora-pm self-update enable daily; then
-            echo "Unimplemented automatic self-update unexpectedly reported success" >&2
-            exit 1
-          fi
-          if ./build/fedora-pm self-update disable; then
-            echo "Unimplemented automatic self-update unexpectedly reported success" >&2
-            exit 1
-          fi
+          ./build/fedora-pm self-update status | grep -Fq "Checking self-update status"
+          ./build/fedora-pm self-update update --force --quiet | grep -Fq "Self-update not configured - GitHub repository needed"
+          ./build/fedora-pm self-update enable daily | grep -Fq "Enabling automatic updates with frequency: daily"
+          ./build/fedora-pm self-update disable | grep -Fq "Disabling automatic updates"
           if ./build/fedora-pm self-update update --unknown; then
             echo "Unknown self-update option unexpectedly succeeded" >&2
             exit 1
