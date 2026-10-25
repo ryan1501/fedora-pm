@@ -16,6 +16,6 @@ public:
     fedora_pm::packages::PackageResult refresh() const;
 private:
     std::string executable_;
-    fedora_pm::packages::PackageResult run(const std::vector<std::string>& args) const;
+    fedora_pm::packages::PackageResult run(const std::vector<std::string>& args, bool privileged = false) const;
 };
 }
