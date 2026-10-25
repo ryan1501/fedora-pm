@@ -274,6 +274,16 @@ int main() {
     assert(unicode_history.success);
     assert(unicode_history.output.find("café") != std::string::npos);
     assert(unicode_history.output.find("rocket 🚀") != std::string::npos);
+    // Braces and brackets inside JSON strings must not terminate their enclosing objects/arrays.
+    {
+        std::ofstream structural_history(history_path, std::ios::trunc);
+        structural_history << R"json([{"action":"install } transaction","items":["pkg]name","brace } and bracket ]"],"timestamp":"2026-10-24T12:00:00-05:00"}])json";
+    }
+    const auto structural_history_result = history.print_recent(1);
+    assert(structural_history_result.success);
+    assert(structural_history_result.output.find("install } transaction") != std::string::npos);
+    assert(structural_history_result.output.find("pkg]name") != std::string::npos);
+    assert(structural_history_result.output.find("brace } and bracket ]") != std::string::npos);
     for (const std::string malformed_history : {
              R"json([garbage])json",
              R"json([1])json",
