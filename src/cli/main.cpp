@@ -146,12 +146,12 @@ int launch_gui(const char* argv0) {
         if (::access(sibling_gui.c_str(), X_OK) == 0) {
             ::execl(sibling_gui.c_str(), sibling_gui.c_str(), static_cast<char*>(nullptr));
             std::cerr << "Could not launch " << sibling_gui.string() << ": "
-                      << std::strerror(errno) << "\\n";
+                      << std::strerror(errno) << "\n";
             return 1;
         }
     }
     ::execlp("fedora-pm-gui", "fedora-pm-gui", static_cast<char*>(nullptr));
-    std::cerr << "Could not launch fedora-pm-gui: " << std::strerror(errno) << "\\n";
+    std::cerr << "Could not launch fedora-pm-gui: " << std::strerror(errno) << "\n";
     return 1;
 }
 }
