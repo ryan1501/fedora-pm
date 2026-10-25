@@ -345,20 +345,23 @@ std::pair<bool, std::vector<OperationHistoryEntry>> HistoryManager::read_all(std
     const std::regex timestamp_pattern(R"re("timestamp"\s*:\s*"((?:[^"\\]|\\.)*)")re");
     const std::regex items_key_pattern(R"re("items"\s*:\s*\[)re");
     const std::regex string_pattern(R"re("((?:[^"\\]|\\.)*)")re");
+    // Parse the trimmed document, not the raw file buffer: valid files written
+    // by log() end with a newline, so data.size() - 1 is not the closing ']'.
+    const std::string& json = trimmed_data;
     std::vector<std::string> objects;
     std::size_t pos = 1;
-    const std::size_t array_end = data.size() - 1;
+    const std::size_t array_end = json.size() - 1;
     while (pos < array_end) {
-        while (pos < array_end && (data[pos] == ' ' || data[pos] == '\\t' ||
-                                   data[pos] == '\\r' || data[pos] == '\\n' || data[pos] == ','))
+        while (pos < array_end && (json[pos] == ' ' || json[pos] == '\t' ||
+                                   json[pos] == '\r' || json[pos] == '\n' || json[pos] == ','))
             ++pos;
         if (pos >= array_end) break;
-        const std::size_t object_end = matching_json_delimiter(data, pos);
-        if (object_end == std::string::npos || data[pos] != '{') {
+        const std::size_t object_end = matching_json_delimiter(json, pos);
+        if (object_end == std::string::npos || json[pos] != '{') {
             error = "Could not parse an entry in history file: " + path_.string();
             return {false, {}};
         }
-        objects.push_back(data.substr(pos, object_end - pos + 1));
+        objects.push_back(json.substr(pos, object_end - pos + 1));
         pos = object_end + 1;
     }
     std::vector<OperationHistoryEntry> entries;
