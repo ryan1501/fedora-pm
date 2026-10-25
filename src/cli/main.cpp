@@ -196,6 +196,13 @@ int main(int argc, char** argv) {
             }
         } else if (top == "gaming" && sub == "install") {
             replacement = "gaming-install";
+        } else if (top == "gaming" && sub == "install-cachyos") {
+            replacement = "cachyos-install-kernel";
+            // Rust accepts an omitted kernel type and defaults it to "default".
+            // The flattened C++ command requires the type positionally.
+            if (normalized_args.size() < 4 || normalized_args[3].starts_with("-")) {
+                normalized_args.insert(normalized_args.begin() + 3, "default");
+            }
         } else if (top == "cachyos") {
             if (sub == "status") replacement = "cachyos-status";
             else if (sub == "list-kernels") replacement = "cachyos-list-kernels";
