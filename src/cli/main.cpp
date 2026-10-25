@@ -340,9 +340,12 @@ int main(int argc, char** argv) {
     }
 
     fedora_pm::packages::PackageManager pm;
-    if (command == "history") return print_result(fedora_pm::system::HistoryManager{}.print_recent(10));
+    if (command == "history" && argc == 2) return print_result(fedora_pm::system::HistoryManager{}.print_recent(10));
     if (command == "rollback-history") return print_result(pm.history());
-    if (command == "search" && argc >= 3) return print_result(pm.search(argv[2]));
+    if (command == "search") {
+        if (argc != 3) { std::cerr << "Usage: fedora-pm search QUERY\\n"; return 2; }
+        return print_result(pm.search(argv[2]));
+    }
     // Keep the original Rust CLI spelling (info PACKAGE) while retaining the
     // C++ migration's explicit package-info alias and bare system-info command.
     if ((command == "info" || command == "package-info") && argc == 3)
@@ -383,7 +386,7 @@ int main(int argc, char** argv) {
     }
     if (command == "deps" && argc == 3) return print_result(pm.dependencies(argv[2]));
     if (command == "reverse-deps" && argc == 3) return print_result(pm.reverse_dependencies(argv[2]));
-    if (command == "groups") return print_result(pm.installed_groups());
+    if (command == "groups" && argc == 2) return print_result(pm.installed_groups());
 
     fedora_pm::packages::ChangelogManager changelogs;
     if (command == "changelog" && argc == 3) return print_result(changelogs.show(argv[2]));
@@ -548,7 +551,7 @@ int main(int argc, char** argv) {
     }
 
     fedora_pm::system::RepositoryManager repos;
-    if (command == "repo-list") return print_result(repos.list());
+    if (command == "repo-list" && argc == 2) return print_result(repos.list());
     if (command == "repo-info" && argc == 3) return print_result(repos.info(argv[2]));
     if (command == "repo-add" && (argc == 3 || argc == 4)) {
         if (argc == 3)
@@ -560,8 +563,11 @@ int main(int argc, char** argv) {
         return print_mutation_result(command == "repo-enable" ? repos.enable(argv[2]) : repos.disable(argv[2]), command, {argv[2]});
 
     fedora_pm::packages::FlatpakManager flatpak;
-    if (command == "flatpak-search" && argc >= 3) return print_result(flatpak.search(argv[2]));
-    if (command == "flatpak-list") return print_result(flatpak.list_installed());
+    if (command == "flatpak-search") {
+        if (argc != 3) { std::cerr << "Usage: fedora-pm flatpak-search QUERY\\n"; return 2; }
+        return print_result(flatpak.search(argv[2]));
+    }
+    if (command == "flatpak-list" && argc == 2) return print_result(flatpak.list_installed());
     if (command == "flatpak-info" && argc == 3) return print_result(flatpak.info(argv[2]));
     if (command == "flatpak-update") {
         if (argc > 3 || (argc == 3 && std::string(argv[2]) != "--yes")) {
