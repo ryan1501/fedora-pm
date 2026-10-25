@@ -497,8 +497,14 @@ int main(int argc, char** argv) {
     }
 
     fedora_pm::system::DiskSpaceManager disk;
-    if (command == "diskspace") return print_result(disk.analyze());
-    if (command == "orphans") return print_result(disk.orphaned_packages());
+    if (command == "diskspace") {
+        if (argc != 2) { std::cerr << "Usage: fedora-pm diskspace\n"; return 2; }
+        return print_result(disk.analyze());
+    }
+    if (command == "orphans") {
+        if (argc != 2) { std::cerr << "Usage: fedora-pm orphans\n"; return 2; }
+        return print_result(disk.orphaned_packages());
+    }
     if (command == "clean-orphans") {
         if (argc > 3 || (argc == 3 && std::string(argv[2]) != "--yes")) {
             std::cerr << "Usage: fedora-pm clean-orphans [--yes]\n";
@@ -536,7 +542,18 @@ int main(int argc, char** argv) {
             else break;
         }
         std::vector<std::string> packages;
-        for (; i < argc; ++i) packages.emplace_back(argv[i]);
+        for (; i < argc; ++i) {
+            const std::string package = argv[i];
+            if (package.starts_with("-")) {
+                std::cerr << "Download options must appear before package names; unexpected argument: " << package << '\n';
+                return 2;
+            }
+            packages.emplace_back(package);
+        }
+        if (packages.empty()) {
+            std::cerr << "Usage: fedora-pm download [--to DIR] [--with-deps] PACKAGE...\n";
+            return 2;
+        }
         if (with_deps) return print_mutation_result(downloads.download_with_dependencies(packages, destination), "download-with-deps", packages);
         if (destination != ".") return print_mutation_result(downloads.download_to(packages, destination), "download", packages);
         return print_mutation_result(downloads.download(packages), "download", packages);
@@ -593,8 +610,15 @@ int main(int argc, char** argv) {
         if (i < argc && std::string(argv[i]) == "--yes") { yes = true; ++i; }
         std::vector<std::string> packages;
         for (; i < argc; ++i) packages.emplace_back(argv[i]);
-        if (command == "install") return print_mutation_result(pm.install(packages, yes), "install", packages);
-        if (command == "remove") return print_mutation_result(pm.remove(packages, yes), "remove", packages);
+        if (command == "install" || command == "remove") {
+            if (packages.empty()) {
+                std::cerr << "Usage: fedora-pm " << command << " [--yes] NAME...\n";
+                return 2;
+            }
+            return command == "install"
+                ? print_mutation_result(pm.install(packages, yes), "install", packages)
+                : print_mutation_result(pm.remove(packages, yes), "remove", packages);
+        }
         if (!packages.empty()) { std::cerr << "update takes no package arguments\n"; return 2; }
         return print_mutation_result(pm.update(yes), "update", packages.empty() ? std::vector<std::string>{"system"} : packages);
     }
