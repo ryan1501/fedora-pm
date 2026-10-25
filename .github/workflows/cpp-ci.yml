@@ -52,7 +52,7 @@ jobs:
           cp ./build/fedora-pm "$gui_test_dir/bin/fedora-pm"
           cat > "$gui_test_dir/bin/fedora-pm-gui" <<'EOF'
           #!/bin/sh
-          printf 'launched\\n' > "$FEDORAPM_GUI_TEST_MARKER"
+          printf launched > "$FEDORAPM_GUI_TEST_MARKER"
           EOF
           chmod +x "$gui_test_dir/bin/fedora-pm-gui"
           FEDORAPM_GUI_TEST_MARKER="$gui_test_dir/marker" "$gui_test_dir/bin/fedora-pm" --gui info
