@@ -499,13 +499,25 @@ int main(int argc, char** argv) {
         return print_result(fedora_pm::packages::ExportManager{}.export_to_file(path, include_flatpak));
     }
     if (command == "import") {
-        const bool yes = has_yes(argc, argv, 2);
-        const int path_index = yes ? 3 : 2;
-        if (argc != path_index + 1) {
-            std::cerr << "Usage: fedora-pm import [--yes] FILE\n";
+        bool yes = false;
+        bool include_flatpak = false;
+        std::string path;
+        for (int i = 2; i < argc; ++i) {
+            const std::string arg = argv[i];
+            if (arg == "--yes") yes = true;
+            else if (arg == "--with-flatpak") include_flatpak = true;
+            else if (arg.starts_with("-") || !path.empty()) {
+                std::cerr << "Usage: fedora-pm import [--yes] [--with-flatpak] FILE\n";
+                return 2;
+            } else path = arg;
+        }
+        if (path.empty()) {
+            std::cerr << "Usage: fedora-pm import [--yes] [--with-flatpak] FILE\n";
             return 2;
         }
-        return print_mutation_result(fedora_pm::packages::ExportManager{}.import_from_file(argv[path_index], yes), "import", {argv[path_index]});
+        return print_mutation_result(
+            fedora_pm::packages::ExportManager{}.import_from_file(path, yes, include_flatpak),
+            "import", {path});
     }
 
     fedora_pm::system::DiskSpaceManager disk;
