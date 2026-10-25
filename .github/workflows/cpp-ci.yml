@@ -102,7 +102,10 @@ jobs:
           expect_usage_error ./build/fedora-pm install
           expect_usage_error ./build/fedora-pm remove
           expect_usage_error ./build/fedora-pm download
-          expect_usage_error ./build/fedora-pm download firefox --with-deps
+          expect_usage_error ./build/fedora-pm download firefox --bogus
+          expect_usage_error ./build/fedora-pm install firefox --bogus
+          expect_usage_error ./build/fedora-pm remove firefox --bogus
+          expect_usage_error ./build/fedora-pm update firefox --bogus
           expect_usage_error ./build/fedora-pm help extra
           expect_usage_error ./build/fedora-pm rollback-history extra
           expect_usage_error ./build/fedora-pm kernel-remove-old --keep-last 0

@@ -543,36 +543,35 @@ int main(int argc, char** argv) {
 
     fedora_pm::packages::DownloadManager downloads;
     if (command == "download") {
-        int i = 2;
         bool with_deps = false;
         std::string destination = ".";
-        while (i < argc) {
-            const std::string arg = argv[i];
-            if (arg == "--with-deps" || arg == "-w") { with_deps = true; ++i; }
-            else if ((arg == "--to" || arg == "--dest" || arg == "-d") && i + 1 < argc) {
-                destination = argv[i + 1];
-                i += 2;
-            }
-            else if (arg.starts_with("--")) { std::cerr << "Unknown download option: " << arg << '\n'; return 2; }
-            else break;
-        }
         std::vector<std::string> packages;
-        for (; i < argc; ++i) {
-            const std::string package = argv[i];
-            if (package.starts_with("-")) {
-                std::cerr << "Download options must appear before package names; unexpected argument: " << package << '\n';
+        for (int i = 2; i < argc; ++i) {
+            const std::string arg = argv[i];
+            if (arg == "--with-deps" || arg == "-w") {
+                with_deps = true;
+            } else if (arg == "--to" || arg == "--dest" || arg == "-d") {
+                if (i + 1 >= argc || argv[i + 1][0] == '-') {
+                    std::cerr << arg << " requires a destination directory\\n";
+                    return 2;
+                }
+                destination = argv[++i];
+            } else if (arg.starts_with("-")) {
+                std::cerr << "Unknown download option: " << arg << '\\n';
                 return 2;
+            } else {
+                packages.emplace_back(arg);
             }
-            packages.emplace_back(package);
         }
         if (packages.empty()) {
-            std::cerr << "Usage: fedora-pm download [--dest DIR] [--with-deps] PACKAGE...\n";
+            std::cerr << "Usage: fedora-pm download [--dest DIR] [--with-deps] PACKAGE...\\n";
             return 2;
         }
         if (with_deps) return print_mutation_result(downloads.download_with_dependencies(packages, destination), "download-with-deps", packages);
         if (destination != ".") return print_mutation_result(downloads.download_to(packages, destination), "download", packages);
         return print_mutation_result(downloads.download(packages), "download", packages);
     }
+
     if (command == "install-offline") {
         int i = 2;
         bool yes = false;
@@ -634,21 +633,28 @@ int main(int argc, char** argv) {
     }
 
     if (command == "install" || command == "remove" || command == "update") {
-        int i = 2; bool yes = false;
-        if (i < argc && std::string(argv[i]) == "--yes") { yes = true; ++i; }
+        bool yes = false;
         std::vector<std::string> packages;
-        for (; i < argc; ++i) packages.emplace_back(argv[i]);
-        if (command == "install" || command == "remove") {
-            if (packages.empty()) {
-                std::cerr << "Usage: fedora-pm " << command << " [--yes] NAME...\n";
+        for (int i = 2; i < argc; ++i) {
+            const std::string arg = argv[i];
+            if (arg == "--yes") yes = true;
+            else if (arg.starts_with("-")) {
+                std::cerr << "Unknown " << command << " option: " << arg << '\\n';
                 return 2;
+            } else {
+                packages.emplace_back(arg);
             }
-            return command == "install"
-                ? print_mutation_result(pm.install(packages, yes), "install", packages)
-                : print_mutation_result(pm.remove(packages, yes), "remove", packages);
         }
-        if (!packages.empty()) { std::cerr << "update takes no package arguments\n"; return 2; }
-        return print_mutation_result(pm.update(yes), "update", packages.empty() ? std::vector<std::string>{"system"} : packages);
+        if ((command == "install" || command == "remove") && packages.empty()) {
+            std::cerr << "Usage: fedora-pm " << command << " [--yes] NAME...\\n";
+            return 2;
+        }
+        if (command == "install")
+            return print_mutation_result(pm.install(packages, yes), "install", packages);
+        if (command == "remove")
+            return print_mutation_result(pm.remove(packages, yes), "remove", packages);
+        const auto items = packages.empty() ? std::vector<std::string>{"system"} : packages;
+        return print_mutation_result(pm.update(packages, yes), "update", items);
     }
     usage();
     return 2;

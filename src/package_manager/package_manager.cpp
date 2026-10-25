@@ -99,8 +99,16 @@ PackageResult PackageManager::remove(const std::vector<std::string>& packages, b
     return run(args, true);
 }
 PackageResult PackageManager::update(bool assume_yes) const {
+    return update({}, assume_yes);
+}
+PackageResult PackageManager::update(const std::vector<std::string>& packages, bool assume_yes) const {
+    for (const auto& package : packages) {
+        if (!fedora_pm::core::is_valid_package_name(package))
+            return {false, {}, "Invalid package name: " + package};
+    }
     std::vector<std::string> args{"upgrade"};
     if (assume_yes) args.push_back("-y");
+    args.insert(args.end(), packages.begin(), packages.end());
     return run(args, true);
 }
 }

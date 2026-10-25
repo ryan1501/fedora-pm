@@ -27,6 +27,7 @@ public:
     PackageResult install(const std::vector<std::string>& packages, bool assume_yes = false) const;
     PackageResult remove(const std::vector<std::string>& packages, bool assume_yes = false) const;
     PackageResult update(bool assume_yes = false) const;
+    PackageResult update(const std::vector<std::string>& packages, bool assume_yes) const;
 private:
     std::string executable_;
     PackageResult run(const std::vector<std::string>& args, bool privileged = false) const;
