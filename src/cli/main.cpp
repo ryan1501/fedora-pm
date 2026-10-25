@@ -548,8 +548,11 @@ int main(int argc, char** argv) {
         std::string destination = ".";
         while (i < argc) {
             const std::string arg = argv[i];
-            if (arg == "--with-deps") { with_deps = true; ++i; }
-            else if (arg == "--to" && i + 1 < argc) { destination = argv[i + 1]; i += 2; }
+            if (arg == "--with-deps" || arg == "-w") { with_deps = true; ++i; }
+            else if ((arg == "--to" || arg == "--dest" || arg == "-d") && i + 1 < argc) {
+                destination = argv[i + 1];
+                i += 2;
+            }
             else if (arg.starts_with("--")) { std::cerr << "Unknown download option: " << arg << '\n'; return 2; }
             else break;
         }
@@ -563,7 +566,7 @@ int main(int argc, char** argv) {
             packages.emplace_back(package);
         }
         if (packages.empty()) {
-            std::cerr << "Usage: fedora-pm download [--to DIR] [--with-deps] PACKAGE...\n";
+            std::cerr << "Usage: fedora-pm download [--dest DIR] [--with-deps] PACKAGE...\n";
             return 2;
         }
         if (with_deps) return print_mutation_result(downloads.download_with_dependencies(packages, destination), "download-with-deps", packages);
