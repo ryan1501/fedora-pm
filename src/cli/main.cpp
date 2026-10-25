@@ -320,7 +320,23 @@ int main(int argc, char** argv) {
 
     fedora_pm::system::KernelManager kernels;
     if (command == "kernel-current" && argc == 2) return print_result(kernels.current());
-    if (command == "kernel-list" && argc == 2) return print_result(kernels.list_installed());
+    if (command == "kernel-list" && argc == 2) {
+        // Match the original Rust `kernel list` workflow: show the running
+        // kernel, installed kernels, and available kernels in one invocation.
+        const auto current = kernels.current();
+        const auto installed = kernels.list_installed();
+        const auto available = kernels.list_available();
+        const auto append = [](const std::string& a, const std::string& b) {
+            if (a.empty()) return b;
+            if (b.empty()) return a;
+            return a + (a.back() == '\\n' ? "" : "\\n") + b;
+        };
+        return print_result({
+            current.success && installed.success && available.success,
+            append(append(current.output, installed.output), available.output),
+            append(append(current.error, installed.error), available.error)
+        });
+    }
     if (command == "kernel-available" && argc == 2) return print_result(kernels.list_available());
     if (command == "kernel-info" && (argc == 2 || argc == 3))
         return print_result(kernels.info(argc == 3 ? std::optional<std::string>(argv[2]) : std::nullopt));
