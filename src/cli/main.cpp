@@ -391,8 +391,11 @@ int main(int argc, char** argv) {
     fedora_pm::packages::PackageManager pm;
     if (command == "history" && argc == 2) return print_result(fedora_pm::system::HistoryManager{}.print_recent(10));
     if (command == "rollback-history") {
-        std::cerr << "Usage: fedora-pm rollback-history\n";
-        return 2;
+        if (argc != 2) {
+            std::cerr << "Usage: fedora-pm rollback-history\n";
+            return 2;
+        }
+        return print_result(rollback.list_history());
     }
     if (command == "search") {
         if (argc != 3) { std::cerr << "Usage: fedora-pm search QUERY\n"; return 2; }
