@@ -19,6 +19,10 @@
 #include <algorithm>
 #include <charconv>
 #include <cstdlib>
+#include <filesystem>
+#include <cerrno>
+#include <cstring>
+#include <unistd.h>
 #include <iostream>
 #include <optional>
 #include <string>
@@ -135,6 +139,21 @@ int print_mutation_result(const fedora_pm::packages::PackageResult& result,
 bool has_yes(int argc, char** argv, int index) {
     return index < argc && std::string(argv[index]) == "--yes";
 }
+int launch_gui(const char* argv0) {
+    const std::filesystem::path cli_path = argv0 ? argv0 : "";
+    if (cli_path.has_parent_path()) {
+        const auto sibling_gui = cli_path.parent_path() / "fedora-pm-gui";
+        if (::access(sibling_gui.c_str(), X_OK) == 0) {
+            ::execl(sibling_gui.c_str(), sibling_gui.c_str(), static_cast<char*>(nullptr));
+            std::cerr << "Could not launch " << sibling_gui.string() << ": "
+                      << std::strerror(errno) << "\\n";
+            return 1;
+        }
+    }
+    ::execlp("fedora-pm-gui", "fedora-pm-gui", static_cast<char*>(nullptr));
+    std::cerr << "Could not launch fedora-pm-gui: " << std::strerror(errno) << "\\n";
+    return 1;
+}
 }
 int main(int argc, char** argv) {
     // Translate established Rust CLI subcommands to the equivalent C++ commands.
@@ -195,6 +214,11 @@ int main(int argc, char** argv) {
             ++i;
         }
     }
+    // The Rust CLI exposed --gui as a global option. The C++ migration now
+    // launches the companion Qt application instead of treating it as a command.
+    const auto gui_option = std::find(normalized_args.begin() + 1, normalized_args.end(), "--gui");
+    if (gui_option != normalized_args.end()) return launch_gui(argv[0]);
+
     // The original Clap CLI accepted these global switches. They were not
     // consumed by the Rust command handlers, so preserve that behavior while
     // ensuring they do not leak into command-specific argument validation.
