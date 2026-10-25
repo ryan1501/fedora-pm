@@ -81,6 +81,21 @@ jobs:
           expect_usage_error ./build/fedora-pm flatpak-update --bogus
           expect_usage_error ./build/fedora-pm flatpak-install org.example.App --bogus
           expect_usage_error ./build/fedora-pm flatpak-remove org.example.App --bogus
+          # Legacy nested commands should normalize to the corresponding supported C++ command.
+          set +e
+          legacy_driver_output="$(./build/fedora-pm driver install-nvidia --bogus 2>&1)"
+          legacy_driver_status=$?
+          legacy_kernel_output="$(./build/fedora-pm kernel install --bogus 2>&1)"
+          legacy_kernel_status=$?
+          legacy_flatpak_output="$(./build/fedora-pm flatpak update --bogus 2>&1)"
+          legacy_flatpak_status=$?
+          set -e
+          test "$legacy_driver_status" -eq 2
+          test "$legacy_kernel_status" -eq 2
+          test "$legacy_flatpak_status" -eq 2
+          printf '%s\n' "$legacy_driver_output" | grep -Fq 'Usage: fedora-pm nvidia-install'
+          printf '%s\n' "$legacy_kernel_output" | grep -Fq 'Usage: fedora-pm kernel-install'
+          printf '%s\n' "$legacy_flatpak_output" | grep -Fq 'Usage: fedora-pm flatpak-update'
           # Usage errors should emit actual line breaks, not the literal \\n sequence.
           set +e
           ./build/fedora-pm flatpak-update --bogus 2>usage-error.txt
