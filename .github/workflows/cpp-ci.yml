@@ -78,6 +78,7 @@ jobs:
           }
           # Invalid flags must never be silently ignored by system-mutating commands.
           expect_usage_error ./build/fedora-pm nvidia-remove --bogus
+          expect_usage_error ./build/fedora-pm driver setup-dev --bogus
           expect_usage_error ./build/fedora-pm cuda-install --bogus
           expect_usage_error ./build/fedora-pm gaming-install --bogus
           expect_usage_error ./build/fedora-pm rollback-last --bogus
