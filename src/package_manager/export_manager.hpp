@@ -7,6 +7,7 @@ namespace fedora_pm::packages {
 class ExportManager {
 public:
     PackageResult export_to_file(const std::string& path, bool include_flatpak = false) const;
-    PackageResult import_from_file(const std::string& path, bool assume_yes = false) const;
+    PackageResult import_from_file(const std::string& path, bool assume_yes = false,
+                                   bool include_flatpak = false) const;
 };
 }
