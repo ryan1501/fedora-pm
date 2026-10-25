@@ -71,6 +71,21 @@ PackageResult DriverManager::status() const {
     else for (const auto& package : installed) out << "  " << package << '\n';
     return {true, out.str(), {}};
 }
+PackageResult DriverManager::check_nvidia() const {
+    std::ostringstream out;
+    const auto smi = run("nvidia-smi", {});
+    if (smi.success) {
+        out << "nvidia-smi output:\n" << smi.output;
+        if (!smi.output.empty() && smi.output.back() != '\n') out << '\n';
+    } else {
+        out << "nvidia-smi not available\n";
+    }
+    const auto installed = rpm_lines("nvidia*");
+    out << "Installed NVIDIA packages (" << installed.size() << "):\n";
+    if (installed.empty()) out << "  None detected\n";
+    else for (const auto& package : installed) out << "  " << package << '\n';
+    return {true, out.str(), {}};
+}
 PackageResult DriverManager::list_nvidia() const {
     auto a = dnf({"list", "--available", "akmod-nvidia*"});
     auto b = dnf({"list", "--available", "nvidia-driver*"});

@@ -9,6 +9,7 @@ class DriverManager {
 public:
     fedora_pm::packages::PackageResult detect() const;
     fedora_pm::packages::PackageResult status() const;
+    fedora_pm::packages::PackageResult check_nvidia() const;
     fedora_pm::packages::PackageResult list_nvidia() const;
     fedora_pm::packages::PackageResult install_nvidia(std::optional<std::string> version = std::nullopt,
                                                        bool cuda = false, bool assume_yes = false) const;

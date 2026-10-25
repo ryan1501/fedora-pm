@@ -56,6 +56,7 @@ jobs:
           test "$(./build/fedora-pm -V)" = "fedora-pm 2.0.0"
           test "$(./build/fedora-pm version)" = "fedora-pm 2.0.0"
           ./build/fedora-pm self-update status | grep -Fq "Checking self-update status"
+          ./build/fedora-pm driver check-nvidia >/dev/null
           ./build/fedora-pm self-update update --force --quiet | grep -Fq "Self-update not configured - GitHub repository needed"
           ./build/fedora-pm self-update enable daily | grep -Fq "Enabling automatic updates with frequency: daily"
           ./build/fedora-pm self-update disable | grep -Fq "Disabling automatic updates"
@@ -203,6 +204,7 @@ jobs:
           test "$(./build/fedora-pm -V)" = "fedora-pm 2.0.0"
           test "$(./build/fedora-pm version)" = "fedora-pm 2.0.0"
           ./build/fedora-pm self-update status | grep -Fq "Checking self-update status"
+          ./build/fedora-pm driver check-nvidia >/dev/null
           ./build/fedora-pm self-update update --force --quiet | grep -Fq "Self-update not configured - GitHub repository needed"
           ./build/fedora-pm self-update enable daily | grep -Fq "Enabling automatic updates with frequency: daily"
           ./build/fedora-pm self-update disable | grep -Fq "Disabling automatic updates"

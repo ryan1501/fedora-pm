@@ -72,6 +72,7 @@ void usage() {
               << "  gpu-detect                        Detect display controllers\n"
               << "  driver-status                     Show GPU and NVIDIA status\n"
               << "  nvidia-list                       List available NVIDIA driver packages\n"
+              << "  nvidia-check                      Check NVIDIA runtime and installed packages\n"
               << "  nvidia-install [--version V] [--cuda] [--yes]\n"
               << "  nvidia-remove [--yes]             Remove installed NVIDIA packages\n"
               << "  cuda-install [--yes]              Install CUDA packages\n"
@@ -180,7 +181,8 @@ int main(int argc, char** argv) {
             else if (sub == "remove-old") replacement = "kernel-remove-old";
             else if (sub == "info") replacement = "kernel-info";
         } else if (top == "driver") {
-            if (sub == "status" || sub == "check-nvidia") replacement = "driver-status";
+            if (sub == "status") replacement = "driver-status";
+            else if (sub == "check-nvidia") replacement = "nvidia-check";
             else if (sub == "detect") replacement = "gpu-detect";
             else if (sub == "list-nvidia") replacement = "nvidia-list";
             else if (sub == "remove-nvidia") replacement = "nvidia-remove";
@@ -300,6 +302,7 @@ int main(int argc, char** argv) {
     if (command == "gpu-detect" && argc == 2) return print_result(drivers.detect());
     if (command == "driver-status" && argc == 2) return print_result(drivers.status());
     if (command == "nvidia-list" && argc == 2) return print_result(drivers.list_nvidia());
+    if (command == "nvidia-check" && argc == 2) return print_result(drivers.check_nvidia());
     if (command == "nvidia-remove" || command == "cuda-install") {
         if (argc > 3 || (argc == 3 && std::string(argv[2]) != "--yes")) {
             std::cerr << "Usage: fedora-pm " << command << " [--yes]\n";
