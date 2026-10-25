@@ -57,6 +57,15 @@ jobs:
           test "$(./build/fedora-pm --version)" = "fedora-pm 2.0.0"
           test "$(./build/fedora-pm -V)" = "fedora-pm 2.0.0"
           test "$(./build/fedora-pm version)" = "fedora-pm 2.0.0"
+          # Legacy global verbose/quiet switches are accepted before or after commands.
+          ./build/fedora-pm --verbose info >/dev/null
+          ./build/fedora-pm -v info >/dev/null
+          ./build/fedora-pm --quiet info >/dev/null
+          ./build/fedora-pm -q info >/dev/null
+          ./build/fedora-pm info --verbose >/dev/null
+          ./build/fedora-pm info --quiet >/dev/null
+          # self-update update has a command-local quiet option distinct from global --quiet.
+          test "$(./build/fedora-pm self-update update --quiet)" = "Self-update not configured - GitHub repository needed"
           ./build/fedora-pm self-update status | grep -Fq "Checking self-update status"
           ./build/fedora-pm driver check-nvidia >/dev/null
           ./build/fedora-pm self-update update --force --quiet | grep -Fq "Self-update not configured - GitHub repository needed"
