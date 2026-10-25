@@ -41,7 +41,7 @@ sudo dnf install dnf-plugins-core polkit
 sudo dnf install flatpak
 ```
 
-When run as a non-root user, the C++ CLI uses `sudo --non-interactive` for system-changing DNF operations. Configure non-interactive sudo authorization for those commands; they fail rather than prompting for a sudo password. The GUI uses `pkexec` for DNF transaction preview and application.
+When run as a non-root user, the C++ CLI uses `sudo --non-interactive` for system-changing DNF operations. Configure non-interactive sudo authorization for those commands; they fail rather than prompting for a sudo password. Use the global option `--sudo false` (or `--sudo=false`) to explicitly disable CLI elevation for a command; privileged operations will then fail if the current user lacks permission. The GUI uses `pkexec` for DNF transaction preview and application.
 
 From the repository root:
 
@@ -107,7 +107,7 @@ See the checklist in [`docs/CPP_MIGRATION_PLAN.md`](docs/CPP_MIGRATION_PLAN.md).
 
 - Audit remaining mutation paths and continue comparing history behavior with legacy Rust-generated files
 - Real self-update functionality (the current C++ CLI only preserves placeholder command behavior)
-- Exact CLI name, flag, output, and exit-code compatibility, including global flags (`--verbose`, `--quiet`, `--sudo`, `--config-dir`), package-specific updates, `deps --tree`, `size --total/--analyze`, and remaining aliases/options
+- Exact CLI name, flag, output, and exit-code compatibility, including global flags (`--verbose`, `--quiet`, `--config-dir`), package-specific updates, `deps --tree`, `size --total/--analyze`, and remaining aliases/options
 - Broader GUI workflows and privilege/progress/cancellation testing
 - Compatibility testing on Fedora Workstation and Fedora Everything
 - CI builds both RPMs and tests install/uninstall in a disposable Fedora container; real Fedora Workstation/Everything testing and DNF plugin checks remain

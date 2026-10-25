@@ -52,6 +52,8 @@ jobs:
           test -f "$config_dir/config.json"
           ./build/fedora-pm config show --config-dir "$config_dir"
           ./build/fedora-pm --config-dir="$config_dir" config get auto_clean
+          ./build/fedora-pm --config-dir "$config_dir" --sudo false config show >/dev/null
+          ./build/fedora-pm --config-dir="$config_dir" --sudo=false config get auto_clean
           test "$(./build/fedora-pm --version)" = "fedora-pm 2.0.0"
           test "$(./build/fedora-pm -V)" = "fedora-pm 2.0.0"
           test "$(./build/fedora-pm version)" = "fedora-pm 2.0.0"
@@ -78,6 +80,8 @@ jobs:
             fi
           }
           # Invalid flags must never be silently ignored by system-mutating commands.
+          expect_usage_error ./build/fedora-pm --sudo
+          expect_usage_error ./build/fedora-pm --sudo maybe info
           expect_usage_error ./build/fedora-pm nvidia-remove --bogus
           expect_usage_error ./build/fedora-pm driver setup-dev --bogus
           expect_usage_error ./build/fedora-pm cuda-install --bogus

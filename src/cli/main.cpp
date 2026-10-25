@@ -145,29 +145,52 @@ int main(int argc, char** argv) {
     // Pass it through the environment so all managers, including history logging,
     // resolve the same configuration directory.
     for (std::size_t i = 1; i < normalized_args.size();) {
-        std::string value;
-        if (normalized_args[i] == "--config-dir") {
+        const std::string arg = normalized_args[i];
+        if (arg == "--config-dir" || arg == "--sudo") {
+            const bool config_dir = arg == "--config-dir";
+            const std::string option = config_dir ? "--config-dir" : "--sudo";
             if (i + 1 >= normalized_args.size() || normalized_args[i + 1].empty()) {
-                std::cerr << "Option --config-dir requires a directory path\n";
+                std::cerr << "Option " << option << " requires "
+                          << (config_dir ? "a directory path" : "true or false") << "\n";
                 return 2;
             }
-            value = normalized_args[i + 1];
+            const std::string value = normalized_args[i + 1];
+            if (!config_dir && value != "true" && value != "false") {
+                std::cerr << "Option --sudo accepts only true or false\n";
+                return 2;
+            }
             normalized_args.erase(normalized_args.begin() + static_cast<std::ptrdiff_t>(i),
                                   normalized_args.begin() + static_cast<std::ptrdiff_t>(i + 2));
-        } else if (normalized_args[i].starts_with("--config-dir=")) {
-            value = normalized_args[i].substr(std::string("--config-dir=").size());
+            if (config_dir) {
+                if (::setenv("FEDORAPM_CONFIG_DIR", value.c_str(), 1) != 0) {
+                    std::cerr << "Could not set the configuration directory override.\n";
+                    return 1;
+                }
+            } else if (::setenv("FEDORAPM_SUDO_ENABLED", value.c_str(), 1) != 0) {
+                std::cerr << "Could not set the sudo behavior override.\n";
+                return 1;
+            }
+        } else if (arg.starts_with("--config-dir=") || arg.starts_with("--sudo=")) {
+            const bool config_dir = arg.starts_with("--config-dir=");
+            const std::string prefix = config_dir ? "--config-dir=" : "--sudo=";
+            const std::string value = arg.substr(prefix.size());
+            if (value.empty() || (!config_dir && value != "true" && value != "false")) {
+                std::cerr << (config_dir ? "Option --config-dir requires a non-empty directory path"
+                                         : "Option --sudo accepts only true or false") << "\n";
+                return 2;
+            }
             normalized_args.erase(normalized_args.begin() + static_cast<std::ptrdiff_t>(i));
+            if (config_dir) {
+                if (::setenv("FEDORAPM_CONFIG_DIR", value.c_str(), 1) != 0) {
+                    std::cerr << "Could not set the configuration directory override.\n";
+                    return 1;
+                }
+            } else if (::setenv("FEDORAPM_SUDO_ENABLED", value.c_str(), 1) != 0) {
+                std::cerr << "Could not set the sudo behavior override.\n";
+                return 1;
+            }
         } else {
             ++i;
-            continue;
-        }
-        if (value.empty()) {
-            std::cerr << "Option --config-dir requires a non-empty directory path\n";
-            return 2;
-        }
-        if (::setenv("FEDORAPM_CONFIG_DIR", value.c_str(), 1) != 0) {
-            std::cerr << "Could not set the configuration directory override.\n";
-            return 1;
         }
     }
     if (normalized_args.size() >= 3) {

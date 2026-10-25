@@ -1,7 +1,10 @@
 #include "core/process_runner.hpp"
 
+#include <algorithm>
 #include <cerrno>
 #include <csignal>
+#include <cstdlib>
+#include <cctype>
 #include <cstring>
 #include <fcntl.h>
 #include <poll.h>
@@ -79,7 +82,15 @@ void terminate_child(pid_t pid, int& status, bool& child_done) {
 
 ProcessResult run_process(const std::string& program, const std::vector<std::string>& arguments,
                           const ProcessOptions& options) {
-    const bool elevate = options.use_sudo && ::geteuid() != 0;
+    bool sudo_enabled = true;
+    if (const char* setting = std::getenv("FEDORAPM_SUDO_ENABLED")) {
+        std::string normalized(setting);
+        std::transform(normalized.begin(), normalized.end(), normalized.begin(),
+                       [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+        sudo_enabled = normalized != "false" && normalized != "0" &&
+                       normalized != "no" && normalized != "off";
+    }
+    const bool elevate = options.use_sudo && sudo_enabled && ::geteuid() != 0;
     const std::string executable = elevate ? "sudo" : program;
     std::vector<std::string> effective_arguments;
     if (elevate) {

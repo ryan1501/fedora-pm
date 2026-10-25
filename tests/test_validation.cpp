@@ -85,6 +85,19 @@ int main() {
         assert(sudo_output.standard_output == "<--non-interactive>\n</usr/bin/printf>\n<%s>\n<payload>\n");
         std::filesystem::remove_all(sudo_test_dir, sudo_test_error);
     }
+    // An explicit global --sudo false override must bypass sudo even for
+    // operations whose managers normally request privilege elevation.
+    const char* prior_sudo_setting = std::getenv("FEDORAPM_SUDO_ENABLED");
+    const bool had_sudo_setting = prior_sudo_setting != nullptr;
+    const std::string saved_sudo_setting = had_sudo_setting ? prior_sudo_setting : "";
+    assert(::setenv("FEDORAPM_SUDO_ENABLED", "false", 1) == 0);
+    const auto sudo_disabled_output = fedora_pm::core::run_process(
+        "/usr/bin/printf", {"%s", "payload"}, {.use_sudo = true});
+    if (had_sudo_setting) assert(::setenv("FEDORAPM_SUDO_ENABLED", saved_sudo_setting.c_str(), 1) == 0);
+    else assert(::unsetenv("FEDORAPM_SUDO_ENABLED") == 0);
+    assert(sudo_disabled_output.exit_code == 0);
+    assert(sudo_disabled_output.standard_output == "payload");
+
     const auto process_timeout = fedora_pm::core::run_process(
         "/usr/bin/sleep", {"2"}, {.timeout = std::chrono::milliseconds(50)});
     assert(process_timeout.timed_out);
