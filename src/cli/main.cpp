@@ -75,6 +75,8 @@ void usage() {
               << "  nvidia-install [--version V] [--cuda] [--yes]\n"
               << "  nvidia-remove [--yes]             Remove installed NVIDIA packages\n"
               << "  cuda-install [--yes]              Install CUDA packages\n"
+              << "  cuda-status                       Check NVIDIA/CUDA runtime and toolkit availability\n"
+              << "  nvidia-setup-dev [--yes]          Install CUDA development packages\n"
               << "  gaming-install [--yes]            Install fedora-gaming-meta\n"
               << "  cachyos-status                    Show CachyOS repository status\n"
               << "  cachyos-list-kernels              List available CachyOS kernels\n"
@@ -182,6 +184,8 @@ int main(int argc, char** argv) {
             else if (sub == "detect") replacement = "gpu-detect";
             else if (sub == "list-nvidia") replacement = "nvidia-list";
             else if (sub == "remove-nvidia") replacement = "nvidia-remove";
+            else if (sub == "cuda-status") replacement = "cuda-status";
+            else if (sub == "setup-dev") replacement = "nvidia-setup-dev";
             else if (sub == "install-nvidia") {
                 replacement = "nvidia-install";
                 if (normalized_args.size() >= 4 && !normalized_args[3].starts_with("--") &&
@@ -507,6 +511,17 @@ int main(int argc, char** argv) {
             return 2;
         }
         return print_mutation_result(security.update(has_yes(argc, argv, 2)), "security_update", {"security"});
+    }
+
+    if (command == "cuda-status" && argc == 2)
+        return print_result(fedora_pm::system::DriverManager{}.check_cuda_support());
+    if (command == "nvidia-setup-dev") {
+        if (argc > 3 || (argc == 3 && std::string(argv[2]) != "--yes")) {
+            std::cerr << "Usage: fedora-pm driver setup-dev [--yes]\\n";
+            return 2;
+        }
+        return print_mutation_result(fedora_pm::system::DriverManager{}.setup_cuda_development(has_yes(argc, argv, 2)),
+                                     "nvidia_dev_setup", {"cuda-development"});
     }
 
     if (command == "self-update") {
