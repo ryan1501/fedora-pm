@@ -57,7 +57,7 @@ void usage() {
               << "  deps NAME                         Show resolved package dependencies\n"
               << "  reverse-deps NAME                 Show installed packages requiring NAME\n"
               << "  groups                            List installed DNF package groups\n"
-              << "  changelog NAME                    Show package changelog\n"
+              << "  changelog NAME [--limit N]        Show package changelog, optionally limited\n"
               << "  changelog-recent NAME [COUNT]     Show recent installed-package changelog entries\n"
               << "  whats-new [COUNT] | whatsnew [COUNT]  Show available updates and changelog previews\n"
               << "  changelog-compare NAME V1 V2      Show changelog context for two versions\n"
@@ -481,7 +481,21 @@ int main(int argc, char** argv) {
     if (command == "groups" && argc == 2) return print_result(pm.installed_groups());
 
     fedora_pm::packages::ChangelogManager changelogs;
-    if (command == "changelog" && argc == 3) return print_result(changelogs.show(argv[2]));
+    if (command == "changelog") {
+        if (argc == 3) return print_result(changelogs.show(argv[2]));
+        if (argc == 5 && (std::string(argv[3]) == "--limit" || std::string(argv[3]) == "-l")) {
+            std::size_t limit = 0;
+            const std::string value = argv[4];
+            const auto [ptr, ec] = std::from_chars(value.data(), value.data() + value.size(), limit);
+            if (ec != std::errc{} || ptr != value.data() + value.size() || limit == 0 || limit > 500) {
+                std::cerr << "LIMIT must be between 1 and 500\\n";
+                return 2;
+            }
+            return print_result(changelogs.show_limited(argv[2], limit));
+        }
+        std::cerr << "Usage: fedora-pm changelog NAME [--limit N]\\n";
+        return 2;
+    }
     if (command == "changelog-recent" && (argc == 3 || argc == 4)) {
         std::size_t count = 10;
         if (argc == 4) {
