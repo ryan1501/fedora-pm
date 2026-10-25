@@ -109,6 +109,9 @@ jobs:
           expect_usage_error ./build/fedora-pm rollback-history extra
           expect_usage_error ./build/fedora-pm kernel-remove-old --keep-last 0
           expect_usage_error ./build/fedora-pm changelog-recent firefox 0
+          expect_usage_error ./build/fedora-pm changelog firefox --limit 0
+          expect_usage_error ./build/fedora-pm changelog firefox --limit 501
+          expect_usage_error ./build/fedora-pm changelog firefox --bogus
           expect_usage_error ./build/fedora-pm size --top 0
           expect_usage_error ./build/fedora-pm install-offline
           expect_usage_error ./build/fedora-pm install-offline --bogus
