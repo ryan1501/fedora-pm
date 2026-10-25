@@ -89,7 +89,7 @@ void usage() {
               << "  kernel-info [VERSION]             Show matching kernel packages\n"
               << "  export [--with-flatpak] FILE     Export installed RPM packages, optionally Flatpaks\n"
               << "  import [--yes] FILE               Import and install a package list\n"
-              << "  size [--top N]                    Show largest installed packages\n"
+              << "  size [--top N] [--total] [--analyze]  Show installed package size information\n"
               << "  package-size NAME                 Show package size and metadata\n"
               << "  diskspace                         Analyze package/cache/filesystem usage\n"
               << "  orphans                           List DNF extra-package candidates\n"
@@ -539,18 +539,51 @@ int main(int argc, char** argv) {
     if (command == "package-size" && argc == 3) return print_result(disk.package_size(argv[2]));
     if (command == "size") {
         std::size_t limit = 20;
-        if (argc == 4 && std::string(argv[2]) == "--top") {
-            const std::string value = argv[3];
-            const auto [ptr, ec] = std::from_chars(value.data(), value.data() + value.size(), limit);
-            if (ec != std::errc{} || ptr != value.data() + value.size() || limit == 0) {
-                std::cerr << "--top requires a positive integer\n";
+        bool show_top = false, show_total = false, analyze = false;
+        for (int i = 2; i < argc; ++i) {
+            const std::string arg = argv[i];
+            if (arg == "--top") {
+                if (show_top || i + 1 >= argc) {
+                    std::cerr << "Usage: fedora-pm size [--top N] [--total] [--analyze]\n";
+                    return 2;
+                }
+                const std::string value = argv[++i];
+                const auto [ptr, ec] = std::from_chars(value.data(), value.data() + value.size(), limit);
+                if (ec != std::errc{} || ptr != value.data() + value.size() || limit == 0 || limit > 1000) {
+                    std::cerr << "--top requires an integer between 1 and 1000\n";
+                    return 2;
+                }
+                show_top = true;
+            } else if (arg == "--total") {
+                show_total = true;
+            } else if (arg == "--analyze") {
+                analyze = true;
+            } else {
+                std::cerr << "Unknown size option: " << arg << '\n';
                 return 2;
             }
-        } else if (argc != 2) {
-            std::cerr << "Usage: fedora-pm size [--top N]\n";
-            return 2;
         }
-        return print_result(disk.top_packages(limit));
+        if (!show_top && !show_total && !analyze) show_top = true;
+        bool success = true;
+        if (show_total) {
+            const auto result = disk.total_size();
+            if (!result.output.empty()) std::cout << result.output;
+            if (!result.error.empty()) std::cerr << result.error << (result.error.back() == '\n' ? "" : "\n");
+            success = success && result.success;
+        }
+        if (show_top) {
+            const auto result = disk.top_packages(limit);
+            if (!result.output.empty()) std::cout << result.output;
+            if (!result.error.empty()) std::cerr << result.error << (result.error.back() == '\n' ? "" : "\n");
+            success = success && result.success;
+        }
+        if (analyze) {
+            const auto result = disk.analyze();
+            if (!result.output.empty()) std::cout << result.output;
+            if (!result.error.empty()) std::cerr << result.error << (result.error.back() == '\n' ? "" : "\n");
+            success = success && result.success;
+        }
+        return success ? 0 : 1;
     }
 
     fedora_pm::packages::DownloadManager downloads;
