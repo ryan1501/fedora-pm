@@ -88,6 +88,12 @@ jobs:
           expect_usage_error ./build/fedora-pm flatpak-search firefox extra
           expect_usage_error ./build/fedora-pm flatpak-list extra
           expect_usage_error ./build/fedora-pm repo-list extra
+          expect_usage_error ./build/fedora-pm diskspace extra
+          expect_usage_error ./build/fedora-pm orphans extra
+          expect_usage_error ./build/fedora-pm install
+          expect_usage_error ./build/fedora-pm remove
+          expect_usage_error ./build/fedora-pm download
+          expect_usage_error ./build/fedora-pm download firefox --with-deps
           expect_usage_error ./build/fedora-pm kernel remove --bogus
           # Legacy nested commands should normalize to the corresponding supported C++ command.
           set +e
