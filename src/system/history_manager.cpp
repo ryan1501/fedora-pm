@@ -274,7 +274,7 @@ std::size_t matching_json_delimiter(const std::string& input, std::size_t start)
         const char c = input[i];
         if (in_string) {
             if (escaped) escaped = false;
-            else if (c == '\\\\') escaped = true;
+            else if (c == '\\') escaped = true;
             else if (c == '"') in_string = false;
             continue;
         }
