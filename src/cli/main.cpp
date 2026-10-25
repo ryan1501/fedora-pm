@@ -517,7 +517,7 @@ int main(int argc, char** argv) {
         return print_result(fedora_pm::system::DriverManager{}.check_cuda_support());
     if (command == "nvidia-setup-dev") {
         if (argc > 3 || (argc == 3 && std::string(argv[2]) != "--yes")) {
-            std::cerr << "Usage: fedora-pm driver setup-dev [--yes]\\n";
+            std::cerr << "Usage: fedora-pm driver setup-dev [--yes]\n";
             return 2;
         }
         return print_mutation_result(fedora_pm::system::DriverManager{}.setup_cuda_development(has_yes(argc, argv, 2)),
