@@ -137,6 +137,15 @@ jobs:
             echo "Usage error contains a literal \n instead of a line break" >&2
             exit 1
           fi
+          set +e
+          ./build/fedora-pm driver setup-dev --bogus 2>driver-usage-error.txt
+          driver_usage_status=$?
+          set -e
+          test "$driver_usage_status" -eq 2
+          if grep -F '\\n' driver-usage-error.txt; then
+            echo "Driver setup usage error contains a literal \\n instead of a line break" >&2
+            exit 1
+          fi
 
       - name: Validate Fedora RPM specs and desktop metadata
         run: |
