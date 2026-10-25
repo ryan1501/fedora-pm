@@ -33,6 +33,8 @@ void usage() {
     std::cout << "fedora-pm (C++20 migration in progress)\n"
               << "Usage: fedora-pm <command> [arguments]\n"
               << "Options: --version, -V  Show build version\n"
+              << "         -v, --verbose     Accept legacy global verbose flag\n"
+              << "         -q, --quiet       Accept legacy global quiet flag\n"
               << "         --config-dir DIR  Use an alternate configuration directory\n"
               << "Commands:\n"
               << "  info                              Show OS and architecture\n"
@@ -192,6 +194,36 @@ int main(int argc, char** argv) {
         } else {
             ++i;
         }
+    }
+    // The original Clap CLI accepted these global switches. They were not
+    // consumed by the Rust command handlers, so preserve that behavior while
+    // ensuring they do not leak into command-specific argument validation.
+    for (std::size_t i = 1; i < normalized_args.size();) {
+        const std::string arg = normalized_args[i];
+        if (arg == "--verbose" || arg == "-v") {
+            normalized_args.erase(normalized_args.begin() + static_cast<std::ptrdiff_t>(i));
+            continue;
+        }
+        if (arg == "--quiet" || arg == "-q") {
+            // self-update update has its own --quiet/-q option that suppresses
+            // its progress line; leave that command-local option intact.
+            const auto command_it = std::find_if(normalized_args.begin() + 1, normalized_args.end(),
+                [](const std::string& value) { return !value.starts_with("-"); });
+            bool local_self_update_quiet = false;
+            if (command_it != normalized_args.end() && *command_it == "self-update") {
+                const auto command_index = static_cast<std::size_t>(command_it - normalized_args.begin());
+                if (command_index + 1 < normalized_args.size() &&
+                    normalized_args[command_index + 1] == "update" && i > command_index + 1)
+                    local_self_update_quiet = true;
+            }
+            if (local_self_update_quiet) {
+                ++i;
+            } else {
+                normalized_args.erase(normalized_args.begin() + static_cast<std::ptrdiff_t>(i));
+            }
+            continue;
+        }
+        ++i;
     }
     if (normalized_args.size() >= 3) {
         const std::string top = normalized_args[1];
