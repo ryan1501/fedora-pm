@@ -16,6 +16,7 @@
 #include "system/gaming_manager.hpp"
 #include "system/rollback_manager.hpp"
 #include "system/history_manager.hpp"
+#include <algorithm>
 #include <charconv>
 #include <iostream>
 #include <optional>
